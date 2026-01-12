@@ -1,22 +1,22 @@
-**free
-// *===========================================================================
-// * Program Name: PERZIP
-// * Description:  Address validation using PERZIP service
-// *===========================================================================
-// * COPYRIGHT: East Coast Metals
-// *===========================================================================
-// * Purpose:
-// *   Address validation service module using PERZIP
-// *
-// * Modification History:
-// * Task  Date       ID   Description
-// * 3182  2001-08-26 JJF  Initial program creation for address validation
-// * --    2026-01-11 JJF  Modernized to free-format RPG
-// *===========================================================================
-
-ctl-opt nomain;
-ctl-opt expropts(*resdecpos);
-ctl-opt bnddir('QC2LE');
+     H NOMAIN EXPROPTS(*RESDECPOS)
+     H BNDDIR('QC2LE')
+     F*------------------------------------------------------------------------*
+     F*N PROGRAM NAME - PERZIP                                                 *
+     F*------------------------------------------------------------------------*
+     F*P COPYRIGHT East Coast Metals                                           *
+     F*------------------------------------------------------------------------*
+     F*D  address validation using PERZIP                                      *
+     F*------------------------------------------------------------------------*
+     F*S PURPOSE:                                                              *
+     F*S     address validation using PERZIP                                   *
+     F*S                                                                       *
+     F*S SPECIAL NOTES:                                                        *
+     F*S                                                                       *
+     F*M ----------------------------------------------------------------------*
+     F*M TASK       DATE   ID  DESCRIPTION                                     *
+     F*M ---------- ------ --- ------------------------------------------------*
+     F*V JJF   3182 010826 JJF created program                                 *
+     F*M ----------------------------------------------------------------------*
 
            dcl-proc validateAddress export;
             dcl-pi *n char(10000);
@@ -59,112 +59,111 @@ ctl-opt bnddir('QC2LE');
 
             // Call to old\Zschool RPG program ML219403
             // Prototype matching the legacy PLIST for ML219403 (with MLT fields appended)
+            // ML219403 - Address Validation Program Prototype
             dcl-pr ML219403 extpgm('ML219403');
-               caseCtl        char(1);
-               maxAddrLen     char(2);
-               errCode        char(3);
-               errMsg         char(80);
-               cassFile       char(10);
-               dbFlag         char(1);
-               urbName        char(64);
-               firmName       char(64);
-               secAddr        char(64);
-               delAddr        char(64);
-               lastLine       char(64);
-               streetNum      char(10);
-               preDir         char(2);
-               streetName     char(28);
-               streetSfx      char(4);
-               postDir        char(2);
-               secAddrType    char(4);
-               secAddrNum     char(8);
-               sec2Type       char(4);
-               sec2Num        char(8);
-               extraneous     char(64);
-               cityName       char(64);
-               cityAbbrev     char(13);
-               stateName      char(64);
-               zip5           char(5);
-               zip4           char(4);
-               delPoint       char(3);
-               carrierRoute   char(4);
-               countyName     char(25);
-               countyStateCd  char(2);
-               fipsCounty     char(3);
-               fipsState      char(2);
-               congDist       char(2);
-               congStateCd    char(2);
-               ewsFlag        char(1);
-               lacsInd        char(1);
-               recType        char(1);
-               defaultFlag    char(1);
-               pmbx           char(12);
-               strMatchLvl    char(1);
-               secAddrFlag    char(1);
-               elotSeq        char(4);
-               elotAD         char(1);
-               dpvInd         char(1);
-               dpvCmra        char(1);
-               dpvFP          char(1);
-               dpvNotes       char(6);
-               occCode        char(1);
-               dirDpvFlag     char(1);
-               intelCode      char(4);
-               rdiCode        char(1);
-               busResInd      char(1);
-               llkInd         char(1);
-               llkRetCode     char(2);
-               slkInd         char(1);
-               slkRetCode     char(2);
-               retLatLon      char(1);
-               llMatchQual    char(1);
-               latitude       char(9);
-               longitude      char(9);
-               msa2000        char(4);
-               mcd2000        char(5);
-               cdp2000        char(5);
-               censusTract    char(6);
-               censusBlkGrp   char(1);
-               msaCur         char(5);
-               micrCur        char(5);
-               metDivCur      char(5);
-               conSaCur       char(3);
-               zipClass       char(1);
-               timeZone       char(1);
-               telAC1         char(3);
-               telAC2         char(3);
-               telAC3         char(3);
-
-               // MLT fields appended (single occurrence each)
-               mltSecAddr     char(64);   // A1#
-               mltDelAddr     char(64);   // A2#
-               mltStrNum      char(10);   // NO#
-               mltPreDir      char(2);    // PR#
-               mltStrName     char(28);   // NM#
-               mltStrSfx      char(4);    // SF#
-               mltPostDir     char(2);    // PS#
-               mltAptType     char(4);    // AT#
-               mltAptNum      char(8);    // AN#
-               mltCityName    char(28);   // CT#
-               mltCityAbbrev  char(13);   // CA#
-               mltStateCode   char(2);    // ST#
-               mltZip5        char(5);    // Z5#
-               mltZip4        char(4);    // Z4#
-               mltLastLine    char(64);   // LL#
-               mltCarrierRt   char(4);    // CR#
-               mltDelPoint    char(3);    // DP#
-               mltCountyName  char(25);   // CO#
-               mltCountyState char(2);    // CS#
-               mltFipsState   char(2);    // FS#
-               mltFipsCounty  char(3);    // FC#
-               mltCongDist    char(2);    // CD#
-               mltLacsInd     char(1);    // LC#
-               mltStrMatch    char(1);    // SL#
-               mltSecFlag     char(1);    // AF#
+               CaseControl char(1);                    // CASE##
+               MaxAddressLength packed(2:0);           // ADRL##
+               ErrorCode packed(3:0);                  // ECOD##
+               ErrorMessage char(80);                  // EMSG##
+               CassFileName char(10);                  // CASF##
+               DatabaseFlag char(1);                   // DBFL##
+               URBName char(64);                       // URBN##
+               FirmName char(64);                      // FIRM##
+               SecondaryAddress char(64);              // SADR##
+               DeliveryAddress char(64);               // DADR##
+               LastLine char(64);                      // LLIN##
+               StreetNumber char(10);                  // STNO##
+               PreDirection char(2);                   // PRDR##
+               StreetName char(28);                    // STNM##
+               StreetSuffix char(4);                   // STSF##
+               PostDirection char(2);                  // PSDR##
+               SecAddressType char(4);                 // SATP##
+               SecAddressNumber char(8);               // SANO##
+               Sec2AddressType char(4);                // S2TP##
+               Sec2AddressNumber char(8);              // S2NO##
+               ExtraneousInfo char(64);                // EXTR##
+               City char(64);                          // CITY##
+               CityAbbreviation char(13);              // CABV##
+               State char(64);                         // STAT##
+               ZipCode char(5);                        // ZIPC##
+               Zip4 char(4);                           // ZIP4##
+               DeliveryPoint char(3);                  // DPBC##
+               CarrierRoute char(4);                   // CRID##
+               CountyName char(25);                    // CONM##
+               CountyStateCode char(2);                // COST##
+               FIPSCountyNumber char(3);               // FPCO##
+               FIPSStateNumber char(2);                // FPST##
+               CongressionalDistNumber char(2);        // CNDS##
+               CongressionalDistStateCode char(2);     // CNSC##
+               EWSFlag char(1);                        // EWSF##
+               LACSIndicator char(1);                  // LACS##
+               RecordTypeCode char(1);                 // RTYP##
+               DefaultFlag char(1);                    // DFLT##
+               PMBDesignation char(12);                // PMBX##
+               StreetMatchLevelInd char(1);            // SMLI##
+               SecAddressFlag char(1);                 // SAFL##
+               ELOTSequenceNumber char(4);             // LOT###
+               ELOTAscDescCode char(1);                // LTAD##
+               DPVIndicator char(1);                   // DPVI##
+               DPVCMRAIndicator char(1);               // DPVC##
+               DPVFootPrintInd char(1);                // DPVF##
+               DPVFootNotes char(6);                   // DPVN##
+               OccupancyCode char(1);                  // DPVO##
+               DirectoryDPVFlag char(1);               // DDPV##
+               IntelligenceCode char(4);               // ICOD##
+               RDICode char(1);                        // RDIN##
+               BusinessResidentialInd char(1);         // BUSR##
+               LacsLinkIndicator char(1);              // LIND##
+               LacsLinkReturnCode char(2);             // LCOD##
+               SuiteLinkIndicator char(1);             // SIND##
+               SuiteLinkReturnCode char(2);            // SCOD##
+               ReturnLatLon char(1);                   // RTLL##
+               LatLonMatchQuality char(1);             // LLMQ##
+               Latitude char(9);                       // LATI##
+               Longitude char(9);                      // LONG##
+               MSA2000Code char(4);                    // MSA2##
+               MCD2000Code char(5);                    // MCD2##
+               CDP2000Code char(5);                    // CDP2##
+               CensusTract char(6);                    // CNTR##
+               CensusBlockGroup char(1);               // CBGP##
+               CurrentMSACode char(5);                 // MSAC##
+               CurrentMICRSACode char(5);              // MICR##
+               CurrentMetDivCode char(5);              // MDCC##
+               CurrentConSACode char(3);               // CSAC##
+               ZipClass char(1);                       // ZCCL##
+               TimeZone char(1);                       // TMZN##
+               TelephoneAreaCode1 char(3);             // TAC1##
+               TelephoneAreaCode2 char(3);             // TAC2##
+               TelephoneAreaCode3 char(3);             // TAC3##
+               MultSecAddr char(64);                   // A1#
+               MultDelAddr char(64);                   // A2#
+               MultStreetNo char(10);                  // NO#
+               MultPreDir char(2);                     // PR#
+               MultStreetName char(28);                // NM#
+               MultStreetSuffix char(4);               // SF#
+               MultPostDir char(2);                    // PS#
+               MultAptType char(4);                    // AT#
+               MultAptNumber char(8);                  // AN#
+               MultCityName char(64);                  // CT#
+               MultCityAbbr char(13);                  // CA#
+               MultStateCode char(2);                  // ST#
+               MultZipCode char(5);                    // Z5#
+               MultZip4 char(4);                       // Z4#
+               MultLastLine char(64);                  // LL#
+               MultCarrierRte char(4);                 // CR#
+               MultDelPoint char(3);                   // DP#
+               MultCountyName char(25);                // CO#
+               MultCountyStateCD char(2);              // CS#
+               MultFIPSState char(2);                  // FS#
+               MultFIPSCounty char(3);                 // FC#
+               MultCongDist char(2);                   // CD#
+               MultLACSInd char(1);                    // LC#
+               MultStrMatchLev char(1);                // SL#
+               MultSecAdrFlag char(1);                 // AF#
             end-pr;
 
 
-            // Call to old\Zschool RPG program ML218202
+             // Call to old\Zschool RPG program ML218202
             dcl-pr ML218202 extpgm('ML218202');
              zipCode        char(5);     // ZIPC##82
              caseCtl        char(1);     // CASE##82
@@ -185,6 +184,112 @@ ctl-opt bnddir('QC2LE');
              errorCode      char(3);     // ECOD##82
             end-pr;
 
+
+            dcl-ds ML219403_DS qualified;
+               CaseControl                 char(1);
+               MaxAddressLength            packed(2:0);
+               ErrorCode                   packed(3:0);
+               ErrorMessage                char(80);
+               CassFileName                char(10);
+               DatabaseFlag                char(1);
+               URBName                     char(64);
+               FirmName                    char(64);
+               SecondaryAddress            char(64);
+               DeliveryAddress             char(64);
+               LastLine                    char(64);
+               StreetNumber                char(10);
+               PreDirection                char(2);
+               StreetName                  char(28);
+               StreetSuffix                char(4);
+               PostDirection               char(2);
+               SecAddressType              char(4);
+               SecAddressNumber            char(8);
+               Sec2AddressType             char(4);
+               Sec2AddressNumber           char(8);
+               ExtraneousInfo              char(64);
+               City                        char(64);
+               CityAbbreviation            char(13);
+               State                       char(64);
+               ZipCode                     char(5);
+               Zip4                        char(4);
+               DeliveryPoint               char(3);
+               CarrierRoute                char(4);
+               CountyName                  char(25);
+               CountyStateCode             char(2);
+               FIPSCountyNumber            char(3);
+               FIPSStateNumber             char(2);
+               CongressionalDistNumber     char(2);
+               CongressionalDistStateCode  char(2);
+               EWSFlag                     char(1);
+               LACSIndicator               char(1);
+               RecordTypeCode              char(1);
+               DefaultFlag                 char(1);
+               PMBDesignation              char(12);
+               StreetMatchLevelInd         char(1);
+               SecAddressFlag              char(1);
+               ELOTSequenceNumber          char(4);
+               ELOTAscDescCode             char(1);
+               DPVIndicator                char(1);
+               DPVCMRAIndicator            char(1);
+               DPVFootPrintInd             char(1);
+               DPVFootNotes                char(6);
+               OccupancyCode               char(1);
+               DirectoryDPVFlag            char(1);
+               IntelligenceCode            char(4);
+               RDICode                     char(1);
+               BusinessResidentialInd      char(1);
+               LacsLinkIndicator           char(1);
+               LacsLinkReturnCode          char(2);
+               SuiteLinkIndicator          char(1);
+               SuiteLinkReturnCode         char(2);
+               ReturnLatLon                char(1);
+               LatLonMatchQuality          char(1);
+               Latitude                    char(9);
+               Longitude                   char(9);
+               MSA2000Code                 char(4);
+               MCD2000Code                 char(5);
+               CDP2000Code                 char(5);
+               CensusTract                 char(6);
+               CensusBlockGroup            char(1);
+               CurrentMSACode              char(5);
+               CurrentMICRSACode           char(5);
+               CurrentMetDivCode           char(5);
+               CurrentConSACode            char(3);
+               ZipClass                    char(1);
+               TimeZone                    char(1);
+               TelephoneAreaCode1          char(3);
+               TelephoneAreaCode2          char(3);
+               TelephoneAreaCode3          char(3);
+
+               // MLT appended fields
+               MultSecAddr                 char(64);
+               MultDelAddr                 char(64);
+               MultStreetNo                char(10);
+               MultPreDir                  char(2);
+               MultStreetName              char(28);
+               MultStreetSuffix            char(4);
+               MultPostDir                 char(2);
+               MultAptType                 char(4);
+               MultAptNumber               char(8);
+               MultCityName                char(64);
+               MultCityAbbr                char(13);
+               MultStateCode               char(2);
+               MultZipCode                 char(5);
+               MultZip4                    char(4);
+               MultLastLine                char(64);
+               MultCarrierRte              char(4);
+               MultDelPoint                char(3);
+               MultCountyName              char(25);
+               MultCountyStateCD           char(2);
+               MultFIPSState               char(2);
+               MultFIPSCounty              char(3);
+               MultCongDist                char(2);
+               MultLACSInd                 char(1);
+               MultStrMatchLev             char(1);
+               MultSecAdrFlag              char(1);
+            end-ds;
+
+
             //INAME    inAdressname
             //IADDR1   inAddress1
             //IADDR2   inAddress2
@@ -203,6 +308,8 @@ ctl-opt bnddir('QC2LE');
             //ERRMSG   errorMessage
             //MAXADRL  maxadressLength
             //ADDRTYPE addressType
+
+            clear ML219403_DS;
 
 
 
