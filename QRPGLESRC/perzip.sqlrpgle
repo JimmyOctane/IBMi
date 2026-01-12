@@ -309,7 +309,35 @@
             clear ML219403_DS;
             clear ML218202_DS;
 
+            // Map AddressParmDS fields to ML218202_DS for ML218202 call
+            ML218202_DS.zipCode = AddressParmDS.inzip;
+            ML218202_DS.caseCtl = AddressParmDS.returncase;
 
+            // Call ML218202 to get zip code information
+            ML218202(
+                ML218202_DS.zipCode:
+                ML218202_DS.caseCtl:
+                ML218202_DS.seasonalInd:
+                ML218202_DS.zipClass:
+                ML218202_DS.cityName:
+                ML218202_DS.cityAbbrev:
+                ML218202_DS.facilityCode:
+                ML218202_DS.mailNameInd:
+                ML218202_DS.prefCityName:
+                ML218202_DS.cityDelInd:
+                ML218202_DS.autoZoneInd:
+                ML218202_DS.uniqueZipInd:
+                ML218202_DS.financeNum:
+                ML218202_DS.stateCode:
+                ML218202_DS.countyNum:
+                ML218202_DS.countyName:
+                ML218202_DS.errorCode
+            );
+
+            // Map ML218202_DS results back to AddressParmDS
+            AddressParmDS.outCity = ML218202_DS.cityName;
+            AddressParmDS.outState = ML218202_DS.stateCode;
+            AddressParmDS.errorCode = ML218202_DS.errorCode;
 
             return AddressParmDS;
 
