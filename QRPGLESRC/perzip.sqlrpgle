@@ -9,15 +9,11 @@
      //****************************************************************************
 
      // Control Options
-     Ctl-Opt NoMain;                    // Service program (no main procedure)
-     Ctl-Opt Option(*SrcStmt:*NoDebugIO);  // Source statements in debug, no I/O debug
-     Ctl-Opt BndDir('QC2LE');           // Bind to C runtime library
-     Ctl-Opt DftActGrp(*No);            // Use activation group for modern ILE
-     Ctl-Opt ActGrp(*Caller);           // Run in caller's activation group
-     Ctl-Opt AllowNull(*UsrCtl);        // Allow null-capable fields when needed
-     Ctl-Opt UsrPrf(*Owner);            // Run with owner authority if needed
-     Ctl-Opt ExtBinInt(*Yes);           // Use binary integers efficiently
-     Ctl-Opt DecEdit('0,');             // Decimal editing with comma separator
+     Ctl-Opt NoMain;                         // Service program (no main procedure)
+     Ctl-Opt Option(*SrcStmt:*NoDebugIO);    // Source statements in debug, no I/O debug
+     Ctl-Opt BndDir('QC2LE');                // Bind to C runtime library
+     Ctl-Opt ExtBinInt(*Yes);                // Use binary integers efficiently
+     Ctl-Opt DecEdit('0,');                  // Decimal editing with comma separator
      Ctl-Opt Copyright('East Coast Metals - Address Validation');
      F*------------------------------------------------------------------------*
      F*N PROGRAM NAME - PERZIP                                                 *
@@ -203,6 +199,27 @@
              errorCode      char(3);     // ECOD##82
             end-pr;
 
+            // ML218202 Data Structure for easier parameter management
+            dcl-ds ML218202_DS qualified;
+             zipCode        char(5);     // ZIPC##82
+             caseCtl        char(1);     // CASE##82
+             seasonalInd    char(12);    // SIND##82
+             zipClass       char(1);     // ZC#82
+             cityName       char(28);    // CT#82
+             cityAbbrev     char(13);    // NA#82
+             facilityCode   char(1);     // FC#82
+             mailNameInd    char(1);     // MI#82
+             prefCityName   char(28);    // PN#82
+             cityDelInd     char(1);     // CI#82
+             autoZoneInd    char(1);     // ZI#82
+             uniqueZipInd   char(1);     // UI#82
+             financeNum     char(6);     // FN#82
+             stateCode      char(2);     // ST#82
+             countyNum      char(3);     // CY#82
+             countyName     char(25);    // CN#82
+             errorCode      char(3);     // ECOD##82
+            end-ds;
+
 
             dcl-ds ML219403_DS qualified;
                CaseControl                 char(1);
@@ -309,26 +326,8 @@
             end-ds;
 
 
-            //INAME    inAdressname
-            //IADDR1   inAddress1
-            //IADDR2   inAddress2
-            //IADDR3   inAddress3
-            //ICITY    inCity
-            //ISTATE   inState
-            //IZIP     inzip
-            //OADDR1   outAddress1
-            //OADDR2   outAddress2
-            //OADDR3   outAddress3
-            //OCITY    outCity
-            //OSTATE   outState
-            //OZIP     outZip
-            //CASE     returncase
-            //ERRCDE   errorCode
-            //ERRMSG   errorMessage
-            //MAXADRL  maxadressLength
-            //ADDRTYPE addressType
-
             clear ML219403_DS;
+            clear ML218202_DS;
 
 
 
