@@ -1,5 +1,24 @@
-     H NOMAIN EXPROPTS(*RESDECPOS)
-     H BNDDIR('QC2LE')
+**FREE
+
+     //****************************************************************************
+     //* Program:      PERZIP - Address Validation Service Module
+     //* Description:  NOMAIN service program for address validation using PERZIP
+     //* Copyright:    East Coast Metals
+     //* Author:       JJF
+     //* Created:      010826
+     //****************************************************************************
+
+     // Control Options
+     Ctl-Opt NoMain;                    // Service program (no main procedure)
+     Ctl-Opt Option(*SrcStmt:*NoDebugIO);  // Source statements in debug, no I/O debug
+     Ctl-Opt BndDir('QC2LE');           // Bind to C runtime library
+     Ctl-Opt DftActGrp(*No);            // Use activation group for modern ILE
+     Ctl-Opt ActGrp(*Caller);           // Run in caller's activation group
+     Ctl-Opt AllowNull(*UsrCtl);        // Allow null-capable fields when needed
+     Ctl-Opt UsrPrf(*Owner);            // Run with owner authority if needed
+     Ctl-Opt ExtBinInt(*Yes);           // Use binary integers efficiently
+     Ctl-Opt DecEdit('0,');             // Decimal editing with comma separator
+     Ctl-Opt Copyright('East Coast Metals - Address Validation');
      F*------------------------------------------------------------------------*
      F*N PROGRAM NAME - PERZIP                                                 *
      F*------------------------------------------------------------------------*
