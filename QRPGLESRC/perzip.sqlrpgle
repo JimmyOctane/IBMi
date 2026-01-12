@@ -1,22 +1,22 @@
-     H NOMAIN EXPROPTS(*RESDECPOS)
-     H BNDDIR('QC2LE')
-     F*------------------------------------------------------------------------*
-     F*N PROGRAM NAME - PERZIP                                                 *
-     F*------------------------------------------------------------------------*
-     F*P COPYRIGHT East Coast Metals                                           *
-     F*------------------------------------------------------------------------*
-     F*D  address validation using PERZIP                                      *
-     F*------------------------------------------------------------------------*
-     F*S PURPOSE:                                                              *
-     F*S     address validation using PERZIP                                   *
-     F*S                                                                       *
-     F*S SPECIAL NOTES:                                                        *
-     F*S                                                                       *
-     F*M ----------------------------------------------------------------------*
-     F*M TASK       DATE   ID  DESCRIPTION                                     *
-     F*M ---------- ------ --- ------------------------------------------------*
-     F*V JJF   3182 010826 JJF created program                                 *
-     F*M ----------------------------------------------------------------------*
+**free
+// *===========================================================================
+// * Program Name: PERZIP
+// * Description:  Address validation using PERZIP service
+// *===========================================================================
+// * COPYRIGHT: East Coast Metals
+// *===========================================================================
+// * Purpose:
+// *   Address validation service module using PERZIP
+// *
+// * Modification History:
+// * Task  Date       ID   Description
+// * 3182  2001-08-26 JJF  Initial program creation for address validation
+// * --    2026-01-11 JJF  Modernized to free-format RPG
+// *===========================================================================
+
+ctl-opt nomain;
+ctl-opt expropts(*resdecpos);
+ctl-opt bnddir('QC2LE');
 
            dcl-proc validateAddress export;
             dcl-pi *n char(10000);
