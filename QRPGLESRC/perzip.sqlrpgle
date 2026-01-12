@@ -201,23 +201,23 @@
 
             // ML218202 Data Structure for easier parameter management
             dcl-ds ML218202_DS qualified;
-             zipCode        char(5);     // ZIPC##82
-             caseCtl        char(1);     // CASE##82
-             seasonalInd    char(12);    // SIND##82
-             zipClass       char(1);     // ZC#82
-             cityName       char(28);    // CT#82
-             cityAbbrev     char(13);    // NA#82
-             facilityCode   char(1);     // FC#82
-             mailNameInd    char(1);     // MI#82
-             prefCityName   char(28);    // PN#82
-             cityDelInd     char(1);     // CI#82
-             autoZoneInd    char(1);     // ZI#82
-             uniqueZipInd   char(1);     // UI#82
-             financeNum     char(6);     // FN#82
-             stateCode      char(2);     // ST#82
-             countyNum      char(3);     // CY#82
-             countyName     char(25);    // CN#82
-             errorCode      char(3);     // ECOD##82
+               zipCode        char(5);     // ZIPC##82
+               caseCtl        char(1);     // CASE##82
+               seasonalInd    char(12);    // SIND##82
+               zipClass       char(1);     // ZC#82
+               cityName       char(28);    // CT#82
+               cityAbbrev     char(13);    // NA#82
+               facilityCode   char(1);     // FC#82
+               mailNameInd    char(1);     // MI#82
+               prefCityName   char(28);    // PN#82
+               cityDelInd     char(1);     // CI#82
+               autoZoneInd    char(1);     // ZI#82
+               uniqueZipInd   char(1);     // UI#82
+               financeNum     char(6);     // FN#82
+               stateCode      char(2);     // ST#82
+               countyNum      char(3);     // CY#82
+               countyName     char(25);    // CN#82
+               errorCode      char(3);     // ECOD##82
             end-ds;
 
 
