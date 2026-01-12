@@ -288,26 +288,6 @@
                CensusTract                 char(6);
                CensusBlockGroup            char(1);
                CurrentMSACode              char(5);
-               CurrentMICRSACode           char(5);
-               CurrentMetDivCode           char(5);
-               CurrentConSACode            char(3);
-               ZipClass                    char(1);
-               TimeZone                    char(1);
-               TelephoneAreaCode1          char(3);
-               TelephoneAreaCode2          char(3);
-               TelephoneAreaCode3          char(3);
-
-               // MLT appended fields
-               MultSecAddr                 char(64);
-               MultDelAddr                 char(64);
-               MultStreetNo                char(10);
-               MultPreDir                  char(2);
-               MultStreetName              char(28);
-               MultStreetSuffix            char(4);
-               MultPostDir                 char(2);
-               MultAptType                 char(4);
-               MultAptNumber               char(8);
-               MultCityName                char(64);
                MultCityAbbr                char(13);
                MultStateCode               char(2);
                MultZipCode                 char(5);
