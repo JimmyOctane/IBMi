@@ -15,9 +15,9 @@
      F*M ---------- ------ --- ------------------------------------------------*
      F*V JJF   3182 010826 JJF created program                                 *
      F*M ----------------------------------------------------------------------*
-        // PERZIP - Per Zip Address Validation
+        // Address Validation Service - Validates addresses using PERZIP
         dcl-pr validateAddress likeds(AddressParmDS);
-         inAddressDataStructure likeds(AddressParmDS);
+         pAddressDS likeds(AddressParmDS) const;
         end-pr;
 
             dcl-ds AddressParmDS qualified;

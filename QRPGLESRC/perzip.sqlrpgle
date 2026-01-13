@@ -16,9 +16,14 @@
             Ctl-Opt DecEdit('0,');                  // Decimal editing with comma separator
             Ctl-Opt Copyright('East Coast Metals - Address Validation');
 
+           // Address Validation Service - Validates addresses using PERZIP
+            dcl-pr validateAddress likeds(AddressParmDS);
+             pAddressDS likeds(AddressParmDS) const;
+            end-pr;
+
            dcl-proc validateAddress export;
             dcl-pi *n likeds(AddressParmDS);
-             inAddressDataStructure likeds(AddressParmDS);
+             pAddressDS likeds(AddressParmDS) const;
             end-pi;
 
          /COPY qrpglesrc,PERZIP_CP
@@ -313,8 +318,8 @@
             clear ML219403_DS;
             clear ML218202_DS;
 
-            // Map input parameters from inAddressDataStructure to local AddressParmDS
-            AddressParmDS = inAddressDataStructure;
+            // Map input parameters from pAddressDS to local AddressParmDS
+            AddressParmDS = pAddressDS;
 
             // Map AddressParmDS fields to ML218202_DS for ML218202 call
             ML218202_DS.zipCode = AddressParmDS.inzip;
