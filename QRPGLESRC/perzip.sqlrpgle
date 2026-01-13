@@ -17,8 +17,8 @@
             Ctl-Opt Copyright('East Coast Metals - Address Validation');
 
            dcl-proc validateAddress export;
-            dcl-pi *n char(10000);
-             inAddressDataStructure char(371);
+            dcl-pi *n likeds(AddressParmDS);
+             inAddressDataStructure likeds(AddressParmDS);
             end-pi;
 
          /COPY qrpglesrc,PERZIP_CP
@@ -287,29 +287,34 @@
             end-pr;
 
 
-             // Call to old\Zschool RPG program ML218202
+            // ML218202 - ZIP Code Lookup Service Program Prototype
+            // Purpose: Retrieves detailed ZIP code information including city, county, and classification
+            // Legacy Program: old\Zschool RPG program ML218202
             dcl-pr ML218202 extpgm('ML218202');
-             zipCode        char(5);     // ZIPC##82
-             caseCtl        char(1);     // CASE##82
-             seasonalInd    char(12);    // SIND##82
-             zipClass       char(1);     // ZC#82
-             cityName       char(28);    // CT#82
-             cityAbbrev     char(13);    // NA#82
-             facilityCode   char(1);     // FC#82
-             mailNameInd    char(1);     // MI#82
-             prefCityName   char(28);    // PN#82
-             cityDelInd     char(1);     // CI#82
-             autoZoneInd    char(1);     // ZI#82
-             uniqueZipInd   char(1);     // UI#82
-             financeNum     char(6);     // FN#82
-             stateCode      char(2);     // ST#82
-             countyNum      char(3);     // CY#82
-             countyName     char(25);    // CN#82
-             errorCode      char(3);     // ECOD##82
+             *n char(5) const;           // ZIP Code (5-digit) - Input
+             *n char(1);                 // Case Control (U=Upper, L=Lower, M=Mixed) - Input/Output
+             *n char(12);                // Seasonal Indicator - Output
+             *n char(1);                 // ZIP Class (P=PO Box, U=Unique, S=Standard) - Output
+             *n char(28);                // City Name - Output
+             *n char(13);                // City Abbreviation - Output
+             *n char(1);                 // Facility Code - Output
+             *n char(1);                 // Mailing Name Indicator - Output
+             *n char(28);                // Preferred City Name - Output
+             *n char(1);                 // City Delivery Indicator - Output
+             *n char(1);                 // Automated Zone Indicator - Output
+             *n char(1);                 // Unique ZIP Indicator - Output
+             *n char(6);                 // Finance Number - Output
+             *n char(2);                 // State Code - Output
+             *n char(3);                 // County Number - Output
+             *n char(25);                // County Name - Output
+             *n char(3);                 // Error Code (000=Success, non-zero=Error) - Output
             end-pr;
 
             clear ML219403_DS;
             clear ML218202_DS;
+
+            // Map input parameters from inAddressDataStructure to local AddressParmDS
+            AddressParmDS = inAddressDataStructure;
 
             // Map AddressParmDS fields to ML218202_DS for ML218202 call
             ML218202_DS.zipCode = AddressParmDS.inzip;
