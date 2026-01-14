@@ -24,7 +24,7 @@
      Dcl-S zip              Char(10);
      Dcl-S type             Char(20);
      Dcl-S primaryCity      Char(100);
-     Dcl-S acceptableCities Char(200);
+     Dcl-S acceptableCities Char(500);
      Dcl-S state            Char(10);
      Dcl-S latitude         Char(20);
      Dcl-S longitude        Char(20);
@@ -125,7 +125,7 @@
         pZip              Char(10)     Const;
         pType             Char(20)     Const;
         pPrimaryCity      Char(100)    Const;
-        pAcceptableCities Char(200)    Const;
+        pAcceptableCities Char(500)    Const;
         pState            Char(10)     Const;
         pLatitude         Packed(8:2)  Const;
         pLongitude        Packed(8:2)  Const;
@@ -156,8 +156,6 @@
         errorCount += 1;
         If errorCount <= 10;  // Only display first 10 errors
           Dsply ('Error inserting ZIP: ' + %Trim(pZip));
-          Dsply ('City: ' + %Trim(pPrimaryCity));
-          Dsply ('SQLCODE: ' + %Char(SQLCODE));
         EndIf;
       EndIf;
 
@@ -170,14 +168,14 @@
       Dcl-PI *N;
         pZip       Char(10)     Const;
         pType      Char(20)     Const;
-        pCities    Char(200)    Const;
+        pCities    Char(500)    Const;
         pState     Char(10)     Const;
         pLatitude  Packed(8:2)  Const;
         pLongitude Packed(8:2)  Const;
         pCountry   Char(10)     Const;
       End-PI;
 
-      Dcl-S cityList    Varchar(200);
+      Dcl-S cityList    Varchar(500);
       Dcl-S cityName    Varchar(100);
       Dcl-S commaPos    Int(10);
 
@@ -225,6 +223,8 @@
        Dcl-S lineLen    Int(10);
        Dcl-S fieldValue Varchar(500);
        Dcl-S char       Char(1);
+       Dcl-S fieldLen   Int(10);
+       Dcl-S finalLen   Int(10);
 
        // Clear all fields
        zip = '';
@@ -256,7 +256,8 @@
            
            // Extract field value
            If fieldEnd >= fieldStart;
-             fieldValue = %Subst(line : fieldStart : fieldEnd - fieldStart + 1);
+             fieldLen = fieldEnd - fieldStart + 1;
+             fieldValue = %Subst(line : fieldStart : fieldLen);
            Else;
              fieldValue = '';
            EndIf;
@@ -300,7 +301,8 @@
        
        // Process final field (after last comma or entire line if no commas)
        If fieldStart <= lineLen;
-         fieldValue = %Subst(line : fieldStart : lineLen - fieldStart + 1);
+         finalLen = lineLen - fieldStart + 1;
+         fieldValue = %Subst(line : fieldStart : finalLen);
          
          // Remove surrounding quotes and trim
          If %Len(fieldValue) >= 2;

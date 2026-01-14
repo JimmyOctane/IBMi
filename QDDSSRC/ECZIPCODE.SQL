@@ -12,7 +12,7 @@ CREATE TABLE ECZIPCODE (
     ZIP              CHAR(5)        NOT NULL,
     TYPE             CHAR(10)       NOT NULL DEFAULT '',
     PRIMARY_CITY     CHAR(50)       NOT NULL DEFAULT '',
-    ACCEPTABLE_CITIES CHAR(100)     NOT NULL DEFAULT '',
+    ACCEPTABLE_CITIES CHAR(500)     NOT NULL DEFAULT '',
     STATE            CHAR(2)        NOT NULL DEFAULT '',
     LATITUDE         DECIMAL(8,2)   NOT NULL DEFAULT 0,
     LONGITUDE        DECIMAL(8,2)   NOT NULL DEFAULT 0,
@@ -23,12 +23,6 @@ CREATE TABLE ECZIPCODE (
     -- Primary key constraint
     CONSTRAINT ECZIPCODE_PK PRIMARY KEY (ZIP)
 );
-
--- Create index on state for faster lookups
-CREATE INDEX ECZIPCODE_IX1 ON ECZIPCODE(STATE);
-
--- Create index on primary city for search
-CREATE INDEX ECZIPCODE_IX2 ON ECZIPCODE(PRIMARY_CITY);
 
 -- Label the table and columns
 LABEL ON TABLE ECZIPCODE IS 'US ZIP Code Reference Data';
