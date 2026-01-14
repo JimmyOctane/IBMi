@@ -8,9 +8,16 @@
 
      Ctl-Opt DftActGrp(*No) ActGrp(*New);
      Ctl-Opt Option(*SrcStmt:*NoDebugIO);
+     Ctl-Opt BndDir('QC2LE');
 
      // SQL Communication Area
      Exec SQL Include SQLCA;
+
+     // Prototype for strtok C function
+     Dcl-PR strtok Pointer ExtProc('strtok');
+       *n Pointer Value Options(*String);
+       *n Pointer Value Options(*String);
+     End-PR;
 
      // Working Variables
      Dcl-S recordCount    Int(10) Inz(0);
@@ -132,18 +139,17 @@
      Return;
 
      // -----------------------------------------------------------------------
-     // Procedure: parseCSVLine - Parse comma-delimited CSV line
+     // Procedure: parseCSVLine - Parse comma-delimited CSV line using strtok
      // -----------------------------------------------------------------------
      Dcl-Proc parseCSVLine;
        Dcl-PI *N;
          line Varchar(1000) Const;
        End-PI;
 
-       Dcl-S pos       Int(10);
-       Dcl-S fieldNum  Int(10) Inz(1);
-       Dcl-S startPos  Int(10) Inz(1);
-       Dcl-S fieldVal  Varchar(500);
-       Dcl-S lineLen   Int(10);
+       Dcl-S pointer   Pointer;
+       Dcl-S token     Char(500);
+       Dcl-S counter   Int(10) Inz(0);
+       Dcl-S fullstring Char(1000);
 
        // Clear all fields
        zip = '';
@@ -155,41 +161,38 @@
        longitude = '';
        country = '';
 
-       lineLen = %Len(%Trim(line));
+       // Copy to fixed-length string for strtok
+       fullstring = line;
+
+       // Get first token
+       pointer = strtok(fullstring : ',');
        
-       // Parse each field separated by comma
-       For pos = 1 To lineLen;
-         If %Subst(line : pos : 1) = ',' Or pos = lineLen;
-           // Extract field value
-           If pos = lineLen And %Subst(line : pos : 1) <> ',';
-             fieldVal = %Subst(line : startPos : pos - startPos + 1);
-           Else;
-             fieldVal = %Subst(line : startPos : pos - startPos);
-           EndIf;
-
-           // Assign to appropriate field
-           Select;
-             When fieldNum = 1;
-               zip = %Trim(fieldVal);
-             When fieldNum = 2;
-               type = %Trim(fieldVal);
-             When fieldNum = 3;
-               primaryCity = %Trim(fieldVal);
-             When fieldNum = 4;
-               acceptableCities = %Trim(fieldVal);
-             When fieldNum = 5;
-               state = %Trim(fieldVal);
-             When fieldNum = 6;
-               latitude = %Trim(fieldVal);
-             When fieldNum = 7;
-               longitude = %Trim(fieldVal);
-             When fieldNum = 8;
-               country = %Trim(fieldVal);
-           EndSl;
-
-           fieldNum += 1;
-           startPos = pos + 1;
-         EndIf;
-       EndFor;
+       // Loop through all tokens
+       DoW (pointer <> *null);
+         token = %Trim(%Str(pointer));
+         counter += 1;
+         
+         Select;
+           When counter = 1;
+             zip = token;
+           When counter = 2;
+             type = token;
+           When counter = 3;
+             primaryCity = token;
+           When counter = 4;
+             acceptableCities = token;
+           When counter = 5;
+             state = token;
+           When counter = 6;
+             latitude = token;
+           When counter = 7;
+             longitude = token;
+           When counter = 8;
+             country = token;
+         EndSl;
+         
+         // Get next token
+         pointer = strtok(*null : ',');
+       EndDo;
 
      End-Proc;
