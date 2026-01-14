@@ -1,10 +1,12 @@
-            //==============================================================================
-            //  Program:      ZIPEXPAND - Expand ZIP Codes by Acceptable Cities
-            //  Description:  Reads ECZIPCODE and creates duplicate records for each
-            //                acceptable city, replacing PRIMARY_CITY with each city
-            //  Author:       Generated
-            //  Created:      2026-01-14
-            //==============================================================================
+
+
+            //****************************************************************************
+            //* Program:      ZIPEXPAND - Expand ZIP Codes by Acceptable Cities
+            //* Description:  Reads ECZIPCODE and creates duplicate records for each
+            //*               acceptable city, replacing PRIMARY_CITY with each city
+            //* Author:       Generated
+            //* Created:      2026-01-14
+            //****************************************************************************
 
             Ctl-Opt DftActGrp(*No) ActGrp(*New);
             Ctl-Opt Option(*SrcStmt:*NoDebugIO);
@@ -13,20 +15,24 @@
             Exec SQL Include SQLCA;
 
             // Working Variables
-            Dcl-S recordCount    Int(10) Inz(0);
-            Dcl-S insertCount    Int(10) Inz(0);
-            Dcl-S errorCount     Int(10) Inz(0);
-            Dcl-S totalRecords   Int(10) Inz(0);
-            
-            // Field variables from ECZIPCODE
-            Dcl-S zip              Char(5);
-            Dcl-S type             Char(10);
-            Dcl-S primaryCity      Char(50);
-            Dcl-S acceptableCities Char(500);
-            Dcl-S state            Char(2);
-            Dcl-S latitude         Packed(8:2);
-            Dcl-S longitude        Packed(8:2);
-            Dcl-S country          Char(2);
+            dcl-s i              int(10) inz(0);
+            dcl-s maxItemLines   packed(5:0) inz(10000);
+            dcl-s rowCount       int(10) inz(0);
+            dcl-s recordCount    int(10) inz(0);
+            dcl-s insertCount    int(10) inz(0);
+            dcl-s errorCount     int(10) inz(0);
+
+            // Data structure array for bulk fetch
+            dcl-ds zipDS qualified dim(10000);
+              zip              char(5);
+              type             char(10);
+              primaryCity      char(50);
+              acceptableCities char(500);
+              state            char(2);
+              latitude         packed(8:2);
+              longitude        packed(8:2);
+              country          char(2);
+            end-ds;
 
             // -----------------------------------------------------------------------
             // Main Processing
@@ -34,147 +40,158 @@
             *InLR = *On;
 
             // Set SQL options
-            Exec SQL Set Option Commit = *None,
-               DatFmt = *ISO, Closqlcsr = *EndMod;
+            exec SQL set option commit = *None,
+               datfmt = *ISO, closqlcsr = *EndMod;
 
-            Dsply ('Starting ZIP Code Expansion...');
+            dsply ('Starting ZIP Code Expansion...');
 
             // Declare cursor to read ECZIPCODE records with acceptable cities
-            Exec SQL
-              Declare C1 Scroll Cursor For
-              Select ZIP, TYPE, PRIMARY_CITY, ACCEPTABLE_CITIES,
+            exec SQL
+              declare C1 scroll cursor for
+              select ZIP, TYPE, PRIMARY_CITY, ACCEPTABLE_CITIES,
                      STATE, LATITUDE, LONGITUDE, COUNTRY
-              From ECZIPCODE
-              Where TRIM(ACCEPTABLE_CITIES) <> ''
-              For Read Only;
+              from ECZIPCODE
+              where TRIM(ACCEPTABLE_CITIES) <> ''
+              for read only;
 
             // Open cursor
-            Exec SQL Open C1;
-            If SQLCODE < 0;
-              Dsply ('Error opening cursor: ' + %Char(SQLCODE));
-              Return;
-            EndIf;
+            exec SQL open C1;
+            if SQLCODE < 0;
+              dsply ('Error opening cursor: ' + %char(SQLCODE));
+              return;
+            endif;
 
-            // Get count of records in cursor
-            Exec SQL Get Diagnostics :totalRecords = ROW_COUNT;
-            Dsply ('Total records to process: ' + %Char(totalRecords));
+            // Fetch first batch
+            exec SQL fetch first from C1
+              for :maxItemLines rows into :zipDS;
+            exec SQL get diagnostics :rowCount = ROW_COUNT;
 
-            // Read and process each record
-            DoW SQLCODE = 0;
-            Exec SQL Fetch Next From C1 
-                Into :zip, :type, :primaryCity, :acceptableCities,
-                    :state, :latitude, :longitude, :country;
-            
-            If SQLCODE = 0;
+            dsply ('Total records fetched: ' + %char(rowCount));
+
+            // Process batches
+            dow rowCount <> 0;
+              for i = 1 to rowCount;
                 recordCount += 1;
-                
+
                 // Process acceptable cities for this ZIP
-                processAcceptableCities(zip : type : acceptableCities :
-                                        state : latitude : longitude : country);
-                
-                If %Rem(recordCount : 100) = 0;
-                Dsply (%Char(recordCount) + ' records processed...');
-                EndIf;
-            EndIf;
-            EndDo;
+                processAcceptableCities(
+                  zipDS(i).zip :
+                  zipDS(i).type :
+                  zipDS(i).acceptableCities :
+                  zipDS(i).state :
+                  zipDS(i).latitude :
+                  zipDS(i).longitude :
+                  zipDS(i).country
+                );
+
+                if %rem(recordCount : 100) = 0;
+                  dsply (%char(recordCount) + ' records processed...');
+                endif;
+              endfor;
+
+              // Fetch next batch
+              exec SQL fetch next from C1
+                for :maxItemLines rows into :zipDS;
+              exec SQL get diagnostics :rowCount = ROW_COUNT;
+            enddo;
 
             // Close cursor
-            Exec SQL Close C1;
+            exec SQL close C1;
 
             // Display summary
-            Dsply ('=====================================');
-            Dsply ('ZIP Code Expansion Complete');
-            Dsply ('Records Processed: ' + %Char(recordCount));
-            Dsply ('New Records Created: ' + %Char(insertCount));
-            Dsply ('Errors: ' + %Char(errorCount));
-            Dsply ('=====================================');
+            dsply ('=====================================');
+            dsply ('ZIP Code Expansion Complete');
+            dsply ('Records Processed: ' + %char(recordCount));
+            dsply ('New Records Created: ' + %char(insertCount));
+            dsply ('Errors: ' + %char(errorCount));
+            dsply ('=====================================');
 
-            Return;
+            return;
 
             // -----------------------------------------------------------------------
             // Procedure: processAcceptableCities
             // -----------------------------------------------------------------------
-            Dcl-Proc processAcceptableCities;
-            Dcl-PI *N;
-                pZip       Char(5)      Const;
-                pType      Char(10)     Const;
-                pCities    Char(500)    Const;
-                pState     Char(2)      Const;
-                pLatitude  Packed(8:2)  Const;
-                pLongitude Packed(8:2)  Const;
-                pCountry   Char(2)      Const;
-            End-PI;
+            dcl-proc processAcceptableCities;
+              dcl-pi *n;
+                pZip       char(5)      const;
+                pType      char(10)     const;
+                pCities    char(500)    const;
+                pState     char(2)      const;
+                pLatitude  packed(8:2)  const;
+                pLongitude packed(8:2)  const;
+                pCountry   char(2)      const;
+              end-pi;
 
-            Dcl-S cityList    Varchar(500);
-            Dcl-S cityName    Varchar(50);
-            Dcl-S commaPos    Int(10);
+              dcl-s cityList    varchar(500);
+              dcl-s cityName    varchar(50);
+              dcl-s commaPos    int(10);
 
-            cityList = %Trim(pCities);
+              cityList = %trim(pCities);
 
-            // Loop through comma-separated cities
-            DoW %Scan(',': cityList) > 0;
-                commaPos = %Scan(',': cityList);
-                cityName = %Upper(%Trim(%Subst(cityList : 1 : commaPos - 1)));
+              // Loop through comma-separated cities
+              dow %scan(',': cityList) > 0;
+                commaPos = %scan(',': cityList);
+                cityName = %upper(%trim(%subst(cityList : 1 : commaPos - 1)));
 
                 // Insert record with this city as primary
-                If cityName <> '';
-                insertCityRecord(pZip : pType : cityName :
-                                pState : pLatitude : pLongitude : pCountry);
-                EndIf;
+                if cityName <> '';
+                  insertCityRecord(pZip : pType : cityName :
+                                  pState : pLatitude : pLongitude : pCountry);
+                endif;
 
                 // Remove processed city from list
-                cityList = %Trim(%Subst(cityList : commaPos + 1));
-            EndDo;
+                cityList = %trim(%subst(cityList : commaPos + 1));
+              enddo;
 
-            // Handle last city (or only city if no commas left)
-            If cityList <> '';
-                cityName = %Upper(%Trim(cityList));
-                If cityName <> '';
-                insertCityRecord(pZip : pType : cityName :
-                                pState : pLatitude : pLongitude : pCountry);
-                EndIf;
-            EndIf;
+              // Handle last city (or only city if no commas left)
+              if cityList <> '';
+                cityName = %upper(%trim(cityList));
+                if cityName <> '';
+                  insertCityRecord(pZip : pType : cityName :
+                                  pState : pLatitude : pLongitude : pCountry);
+                endif;
+              endif;
 
-            End-Proc;
+            end-proc;
 
             // -----------------------------------------------------------------------
             // Procedure: insertCityRecord
             // -----------------------------------------------------------------------
-            Dcl-Proc insertCityRecord;
-            Dcl-PI *N;
-                pZip       Char(5)      Const;
-                pType      Char(10)     Const;
-                pCity      Varchar(50)  Const;
-                pState     Char(2)      Const;
-                pLatitude  Packed(8:2)  Const;
-                pLongitude Packed(8:2)  Const;
-                pCountry   Char(2)      Const;
-            End-PI;
+            dcl-proc insertCityRecord;
+              dcl-pi *n;
+                pZip       char(5)      const;
+                pType      char(10)     const;
+                pCity      varchar(50)  const;
+                pState     char(2)      const;
+                pLatitude  packed(8:2)  const;
+                pLongitude packed(8:2)  const;
+                pCountry   char(2)      const;
+              end-pi;
 
-            Exec SQL
-                Insert Into ECZIPCODE (
-                ZIP, TYPE, PRIMARY_CITY, ACCEPTABLE_CITIES,
-                STATE, LATITUDE, LONGITUDE, COUNTRY
-                ) Values (
-                :pZip,
-                :pType,
-                :pCity,
-                '',
-                :pState,
-                :pLatitude,
-                :pLongitude,
-                :pCountry
+              exec SQL
+                insert into ECZIPCODE (
+                  ZIP, TYPE, PRIMARY_CITY, ACCEPTABLE_CITIES,
+                  STATE, LATITUDE, LONGITUDE, COUNTRY
+                ) values (
+                  :pZip,
+                  :pType,
+                  :pCity,
+                  '',
+                  :pState,
+                  :pLatitude,
+                  :pLongitude,
+                  :pCountry
                 );
 
-            If SQLCODE = 0;
+              if SQLCODE = 0;
                 insertCount += 1;
-            ElseIf SQLCODE = -803;  // Duplicate key - already exists
+              elseif SQLCODE = -803;  // Duplicate key - already exists
                 // Ignore duplicate key errors
-            Else;
+              else;
                 errorCount += 1;
-                If errorCount <= 10;
-                Dsply ('Error inserting ZIP: ' + %Trim(pZip));
-                EndIf;
-            EndIf;
+                if errorCount <= 10;
+                  dsply ('Error inserting ZIP: ' + %trim(pZip));
+                endif;
+              endif;
 
-            End-Proc;
+            end-proc;
