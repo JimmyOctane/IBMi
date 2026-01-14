@@ -102,12 +102,6 @@
          // Insert primary record
          insertRecord(zip : type : primaryCity : acceptableCities :
                      state : latitudeNum : longitudeNum : country);
-
-         // If acceptable cities contains commas, create additional records
-         If %Scan(',': acceptableCities) > 0;
-           parseAcceptableCities(zip : type : acceptableCities :
-                                state : latitudeNum : longitudeNum : country);
-         EndIf;
        EndIf;
      EndDo;
 
@@ -161,9 +155,9 @@
       Else;
         errorCount += 1;
         If errorCount <= 10;  // Only display first 10 errors
-          Dsply ('Error inserting ZIP ' + %Trim(pZip) +
-                 ' City ' + %Trim(pPrimaryCity) +
-                 ': ' + %Char(SQLCODE));
+          Dsply ('Error inserting ZIP: ' + %Trim(pZip));
+          Dsply ('City: ' + %Trim(pPrimaryCity));
+          Dsply ('SQLCODE: ' + %Char(SQLCODE));
         EndIf;
       EndIf;
 
@@ -255,14 +249,10 @@
            inQuotes = Not inQuotes;
          EndIf;
          
-         // Check for field delimiter (comma outside quotes)
-         If (char = ',' And Not inQuotes) Or position = lineLen;
-           // Determine field end position
-           If position = lineLen And char <> ',';
-             fieldEnd = position;
-           Else;
-             fieldEnd = position - 1;
-           EndIf;
+         // Check for field delimiter (comma outside quotes) or end of line
+         If (char = ',' And Not inQuotes);
+           // Field ends before the comma
+           fieldEnd = position - 1;
            
            // Extract field value
            If fieldEnd >= fieldStart;
@@ -307,5 +297,40 @@
          
          position += 1;
        EndDo;
+       
+       // Process final field (after last comma or entire line if no commas)
+       If fieldStart <= lineLen;
+         fieldValue = %Subst(line : fieldStart : lineLen - fieldStart + 1);
+         
+         // Remove surrounding quotes and trim
+         If %Len(fieldValue) >= 2;
+           If %Subst(fieldValue : 1 : 1) = '"' And
+              %Subst(fieldValue : %Len(fieldValue) : 1) = '"';
+             fieldValue = %Subst(fieldValue : 2 : %Len(fieldValue) - 2);
+           EndIf;
+         EndIf;
+         fieldValue = %Trim(fieldValue);
+         
+         // Assign to appropriate field
+         counter += 1;
+         Select;
+           When counter = 1;
+             zip = fieldValue;
+           When counter = 2;
+             type = fieldValue;
+           When counter = 3;
+             primaryCity = fieldValue;
+           When counter = 4;
+             acceptableCities = fieldValue;
+           When counter = 5;
+             state = fieldValue;
+           When counter = 6;
+             latitude = fieldValue;
+           When counter = 7;
+             longitude = fieldValue;
+           When counter = 8;
+             country = fieldValue;
+         EndSl;
+       EndIf;
 
      End-Proc;

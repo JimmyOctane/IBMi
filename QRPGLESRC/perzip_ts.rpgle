@@ -1,21 +1,22 @@
-     H DFTACTGRP(*No) BNDDIR('ECBIND') OPTION(*SRCSTMT: *NODEBUGIO)
-     F*------------------------------------------------------------------------*
-     F*N PROGRAM NAME - PERZIP_TS                                            *
-     F*------------------------------------------------------------------------*
-     F*P COPYRIGHT East Coast Metals                                          *
-     F*------------------------------------------------------------------------*
-     F*D Test Program for PERZIP Address Validation                           *
-     F*------------------------------------------------------------------------*
-     F*S PURPOSE:                                                             *
-     F*S    Test the PERZIP address validation service program                *
-     F*S                                                                       *
-     F*S SPECIAL NOTES:                                                       *
-     F*S                                                                       *
-     F*M ----------------------------------------------------------------------*
-     F*M TASK       DATE   ID  DESCRIPTION                                    *
-     F*M ---------- ------ --- -----------------------------------------------*
-     F*V JJF   3182 012626 JJF created test program                           *
-     F*M ----------------------------------------------------------------------*
+     H DFTACTGRP(*No) BNDDIR('ECBIND')
+     H OPTION(*SRCSTMT: *NODEBUGIO)
+     F*------------------------------------------------------------------*
+     F*N PROGRAM NAME - PERZIP_TS                                       *
+     F*------------------------------------------------------------------*
+     F*P COPYRIGHT East Coast Metals                                    *
+     F*------------------------------------------------------------------*
+     F*D Test Program for PERZIP Address Validation                     *
+     F*------------------------------------------------------------------*
+     F*S PURPOSE:                                                        *
+     F*S    Test the PERZIP address validation service program          *
+     F*S                                                                 *
+     F*S SPECIAL NOTES:                                                 *
+     F*S                                                                 *
+     F*M ----------------------------------------------------------------*
+     F*M TASK       DATE   ID  DESCRIPTION                              *
+     F*M ---------- ------ --- -----------------------------------------*
+     F*V JJF   3182 012626 JJF created test program                     *
+     F*M ----------------------------------------------------------------*
 
         // PERZIP Address Validation Test Program
         
@@ -48,7 +49,8 @@
         dsply ('Error Code: ' + %trim(resultDS.errorCode));
         
         if resultDS.errorCode <> *blanks;
-           dsply ('Error Msg: ' + %trim(resultDS.errorMessage));
+           dsply ('Error Msg: ' +
+                  %trim(resultDS.errorMessage));
         endif;
 
         return;
