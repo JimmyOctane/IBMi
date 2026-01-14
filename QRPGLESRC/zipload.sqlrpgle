@@ -8,16 +8,9 @@
 
      Ctl-Opt DftActGrp(*No) ActGrp(*New);
      Ctl-Opt Option(*SrcStmt:*NoDebugIO);
-     Ctl-Opt BndDir('QC2LE');
 
      // SQL Communication Area
      Exec SQL Include SQLCA;
-
-     // Prototype for strtok C function
-     Dcl-PR strtok Pointer ExtProc('strtok');
-       *n Pointer Value Options(*String);
-       *n Pointer Value Options(*String);
-     End-PR;
 
      // Working Variables
      Dcl-S recordCount    Int(10) Inz(0);
@@ -78,6 +71,9 @@
            Iter;
          EndIf;
 
+         // Handle empty fields between commas (e.g., ',,' becomes ', ,')
+         inputLine = %ScanRpl(',,' : ', ,' : inputLine);
+
          // Parse CSV line
          parseCSVLine(inputLine);
 
@@ -85,6 +81,14 @@
          If %Trim(zip) = '';
            Iter;
          EndIf;
+
+         // Uppercase all inputs
+         zip = %Upper(%Trim(zip));
+         type = %Upper(%Trim(type));
+         primaryCity = %Upper(%Trim(primaryCity));
+         acceptableCities = %Upper(%Trim(acceptableCities));
+         state = %Upper(%Trim(state));
+         country = %Upper(%Trim(country));
 
          // Convert latitude/longitude to numeric
          Monitor;
@@ -95,33 +99,14 @@
            longitudeNum = 0;
          EndMon;
 
-         // Insert record into database
-         Exec SQL
-           Insert Into ECZIPCODE (
-             ZIP, TYPE, PRIMARY_CITY, ACCEPTABLE_CITIES,
-             STATE, LATITUDE, LONGITUDE, COUNTRY
-           ) Values (
-             :zip,
-             :type,
-             :primaryCity,
-             :acceptableCities,
-             :state,
-             :latitudeNum,
-             :longitudeNum,
-             :country
-           );
+         // Insert primary record
+         insertRecord(zip : type : primaryCity : acceptableCities :
+                     state : latitudeNum : longitudeNum : country);
 
-         If SQLCODE = 0;
-           recordCount += 1;
-           If %Rem(recordCount : 1000) = 0;
-             Dsply (%Char(recordCount) + ' records processed...');
-           EndIf;
-         Else;
-           errorCount += 1;
-           If errorCount <= 10;  // Only display first 10 errors
-             Dsply ('Error inserting ZIP ' + %Trim(zip) + 
-                    ': ' + %Char(SQLCODE));
-           EndIf;
+         // If acceptable cities contains commas, create additional records
+         If %Scan(',': acceptableCities) > 0;
+           parseAcceptableCities(zip : type : acceptableCities :
+                                state : latitudeNum : longitudeNum : country);
          EndIf;
        EndIf;
      EndDo;
@@ -138,18 +123,114 @@
 
      Return;
 
-     // -----------------------------------------------------------------------
-     // Procedure: parseCSVLine - Parse comma-delimited CSV line using strtok
-     // -----------------------------------------------------------------------
+    // -----------------------------------------------------------------------
+    // Procedure: insertRecord - Insert a ZIP code record
+    // -----------------------------------------------------------------------
+    Dcl-Proc insertRecord;
+      Dcl-PI *N;
+        pZip              Char(10)     Const;
+        pType             Char(20)     Const;
+        pPrimaryCity      Char(100)    Const;
+        pAcceptableCities Char(200)    Const;
+        pState            Char(10)     Const;
+        pLatitude         Packed(8:2)  Const;
+        pLongitude        Packed(8:2)  Const;
+        pCountry          Char(10)     Const;
+      End-PI;
+
+      Exec SQL
+        Insert Into ECZIPCODE (
+          ZIP, TYPE, PRIMARY_CITY, ACCEPTABLE_CITIES,
+          STATE, LATITUDE, LONGITUDE, COUNTRY
+        ) Values (
+          :pZip,
+          :pType,
+          :pPrimaryCity,
+          :pAcceptableCities,
+          :pState,
+          :pLatitude,
+          :pLongitude,
+          :pCountry
+        );
+
+      If SQLCODE = 0;
+        recordCount += 1;
+        If %Rem(recordCount : 1000) = 0;
+          Dsply (%Char(recordCount) + ' records processed...');
+        EndIf;
+      Else;
+        errorCount += 1;
+        If errorCount <= 10;  // Only display first 10 errors
+          Dsply ('Error inserting ZIP ' + %Trim(pZip) +
+                 ' City ' + %Trim(pPrimaryCity) +
+                 ': ' + %Char(SQLCODE));
+        EndIf;
+      EndIf;
+
+    End-Proc;
+
+    // -----------------------------------------------------------------------
+    // Procedure: parseAcceptableCities - Parse acceptable cities and insert
+    // -----------------------------------------------------------------------
+    Dcl-Proc parseAcceptableCities;
+      Dcl-PI *N;
+        pZip       Char(10)     Const;
+        pType      Char(20)     Const;
+        pCities    Char(200)    Const;
+        pState     Char(10)     Const;
+        pLatitude  Packed(8:2)  Const;
+        pLongitude Packed(8:2)  Const;
+        pCountry   Char(10)     Const;
+      End-PI;
+
+      Dcl-S cityList    Varchar(200);
+      Dcl-S cityName    Varchar(100);
+      Dcl-S commaPos    Int(10);
+
+      cityList = %Trim(pCities);
+
+      // Loop through comma-separated cities
+      DoW %Scan(',': cityList) > 0;
+        commaPos = %Scan(',': cityList);
+        cityName = %Trim(%Subst(cityList : 1 : commaPos - 1));
+
+        // Insert record with this city as primary
+        If cityName <> '';
+          insertRecord(pZip : pType : cityName : pCities :
+                      pState : pLatitude : pLongitude : pCountry);
+        EndIf;
+
+        // Remove processed city from list
+        cityList = %Trim(%Subst(cityList : commaPos + 1));
+      EndDo;
+
+      // Handle last city (or only city if no commas left)
+      If cityList <> '';
+        cityName = %Trim(cityList);
+        If cityName <> '';
+          insertRecord(pZip : pType : cityName : pCities :
+                      pState : pLatitude : pLongitude : pCountry);
+        EndIf;
+      EndIf;
+
+    End-Proc;
+
+    // -----------------------------------------------------------------------
+    // Procedure: parseCSVLine - Parse CSV line handling quoted fields
+    // -----------------------------------------------------------------------
      Dcl-Proc parseCSVLine;
        Dcl-PI *N;
          line Varchar(1000) Const;
        End-PI;
 
-       Dcl-S pointer   Pointer;
-       Dcl-S token     Char(500);
-       Dcl-S counter   Int(10) Inz(0);
-       Dcl-S fullstring Char(1000);
+       Dcl-S position   Int(10);
+       Dcl-S fieldStart Int(10);
+       Dcl-S fieldEnd   Int(10);
+       Dcl-S counter    Int(10) Inz(0);
+       Dcl-S inQuotes   Ind Inz(*Off);
+       Dcl-S lineLen    Int(10);
+       Dcl-S fieldValue Varchar(500);
+       Dcl-S char       Char(1);
 
        // Clear all fields
        zip = '';
@@ -161,38 +242,70 @@
        longitude = '';
        country = '';
 
-       // Copy to fixed-length string for strtok
-       fullstring = line;
-
-       // Get first token
-       pointer = strtok(fullstring : ',');
+       lineLen = %Len(line);
+       position = 1;
+       fieldStart = 1;
        
-       // Loop through all tokens
-       DoW (pointer <> *null);
-         token = %Trim(%Str(pointer));
-         counter += 1;
+       // Parse each character
+       DoW position <= lineLen;
+         char = %Subst(line : position : 1);
          
-         Select;
-           When counter = 1;
-             zip = token;
-           When counter = 2;
-             type = token;
-           When counter = 3;
-             primaryCity = token;
-           When counter = 4;
-             acceptableCities = token;
-           When counter = 5;
-             state = token;
-           When counter = 6;
-             latitude = token;
-           When counter = 7;
-             longitude = token;
-           When counter = 8;
-             country = token;
-         EndSl;
+         // Toggle quote state
+         If char = '"';
+           inQuotes = Not inQuotes;
+         EndIf;
          
-         // Get next token
-         pointer = strtok(*null : ',');
+         // Check for field delimiter (comma outside quotes)
+         If (char = ',' And Not inQuotes) Or position = lineLen;
+           // Determine field end position
+           If position = lineLen And char <> ',';
+             fieldEnd = position;
+           Else;
+             fieldEnd = position - 1;
+           EndIf;
+           
+           // Extract field value
+           If fieldEnd >= fieldStart;
+             fieldValue = %Subst(line : fieldStart : fieldEnd - fieldStart + 1);
+           Else;
+             fieldValue = '';
+           EndIf;
+           
+           // Remove surrounding quotes and trim
+           If %Len(fieldValue) >= 2;
+             If %Subst(fieldValue : 1 : 1) = '"' And
+                %Subst(fieldValue : %Len(fieldValue) : 1) = '"';
+               fieldValue = %Subst(fieldValue : 2 : %Len(fieldValue) - 2);
+             EndIf;
+           EndIf;
+           fieldValue = %Trim(fieldValue);
+           
+           // Assign to appropriate field
+           counter += 1;
+           Select;
+             When counter = 1;
+               zip = fieldValue;
+             When counter = 2;
+               type = fieldValue;
+             When counter = 3;
+               primaryCity = fieldValue;
+             When counter = 4;
+               acceptableCities = fieldValue;
+             When counter = 5;
+               state = fieldValue;
+             When counter = 6;
+               latitude = fieldValue;
+             When counter = 7;
+               longitude = fieldValue;
+             When counter = 8;
+               country = fieldValue;
+           EndSl;
+           
+           // Move to next field
+           fieldStart = position + 1;
+         EndIf;
+         
+         position += 1;
        EndDo;
 
      End-Proc;
