@@ -16,20 +16,25 @@
             Ctl-Opt DecEdit('0,');                  // Decimal editing with comma separator
             Ctl-Opt Copyright('East Coast Metals - Address Validation');
 
-           // Address Validation Service - Validates addresses using PERZIP
-            dcl-pr validateAddress likeds(AddressParmDS);
-             pAddressDS likeds(AddressParmDS) const;
+            // SQL Communication Area
+            Exec SQL Include SQLCA;
+
+          /COPY qrpglesrc,PERZIP_CP
+            
+
+            // Non-US Address Detection Service
+            dcl-pr isNonUSAddress ind;
+             inCity char(25) const;
             end-pr;
 
            dcl-proc validateAddress export;
-            dcl-pi *n likeds(AddressParmDS);
-             pAddressDS likeds(AddressParmDS) const;
-            end-pi;
-
-         /COPY qrpglesrc,PERZIP_CP
+             dcl-pi *n likeds(AddressParmDS);
+              pAddressDS likeds(AddressParmDS) const;
+             end-pi;
             //***********************************************************/
             // Main Procedure                                           */
             //***********************************************************/
+            
             dcl-s foundIt int(10:0) inz;
 
             // Grouped MLT structure: 100 entries, each entry contains all MLT fields
@@ -315,15 +320,34 @@
              *n char(3);                 // Error Code (000=Success, non-zero=Error) - Output
             end-pr;
 
+            // Local variable declaration
+            dcl-ds localAddressDS likeds(AddressParmDS);
+            
             clear ML219403_DS;
             clear ML218202_DS;
 
-            // Map input parameters from pAddressDS to local AddressParmDS
-            AddressParmDS = pAddressDS;
+            // Map input parameters from pAddressDS to local variable
+            localAddressDS = pAddressDS;
 
-            // Map AddressParmDS fields to ML218202_DS for ML218202 call
-            ML218202_DS.zipCode = AddressParmDS.inzip;
-            ML218202_DS.caseCtl = AddressParmDS.returncase;
+            // Check for non-US addresses and exit early if found
+            if isNonUSAddress(localAddressDS.inCity);
+                // Clear all output fields for international addresses
+                clear localAddressDS.outAddress1;
+                clear localAddressDS.outAddress2;
+                clear localAddressDS.outAddress3;
+                clear localAddressDS.outCity;
+                clear localAddressDS.outState;
+                clear localAddressDS.outZip;
+                localAddressDS.errorCode = 'INT';
+                localAddressDS.errorMessage = 'International addresses not supported';
+                clear localAddressDS.maxadressLength;
+                clear localAddressDS.addressType;
+                return localAddressDS;
+            endif;
+
+            // Map localAddressDS fields to ML218202_DS for ML218202 call
+            ML218202_DS.zipCode = localAddressDS.inzip;
+            ML218202_DS.caseCtl = localAddressDS.returncase;
 
             // Call ML218202 to get zip code information
             ML218202(
@@ -346,14 +370,166 @@
                 ML218202_DS.errorCode
             );
 
-            // Map ML218202_DS results back to AddressParmDS
-            AddressParmDS.outCity = ML218202_DS.cityName;
-            AddressParmDS.outState = ML218202_DS.stateCode;
-            AddressParmDS.errorCode = ML218202_DS.errorCode;
+            // Map ML218202_DS results back to localAddressDS
+            localAddressDS.outCity = ML218202_DS.cityName;
+            localAddressDS.outState = ML218202_DS.stateCode;
+            localAddressDS.errorCode = ML218202_DS.errorCode;
 
+            // Check and insert ZIP/City data into ECZIPCODE if needed
+            If ML218202_DS.errorCode = '000'; // Only process if ZIP lookup was successful
+                checkAndInsertZipData(
+                    %Trim(ML218202_DS.zipCode) :
+                    %Trim(ML218202_DS.cityName) :
+                    %Trim(ML218202_DS.stateCode)
+                );
+            EndIf;
 
+            return localAddressDS;
 
-            return AddressParmDS;
+          end-proc   validateAddress;
 
-         end-proc   validateAddress;
+          // -----------------------------------------------------------------------
+          // Procedure: checkAndInsertZipData - Check ECZIPCODE and insert if missing
+          //
+          // Address Validation Error Codes Reference:
+          // ADR - Insufficient address information
+          // ANS - Address not on street
+          // BNC - PO Box not found in city
+          // BNR - Box missing or not found in RR/RC
+          // DBE - USPS database exception
+          // DPV - Address could not be DPV‑confirmed
+          // ERR - No update from database
+          // LLK - Address LACS‑Link converted
+          // LLN - Insufficient last line
+          // MLT - Multiple addresses found
+          // NDR - Non‑delivery address
+          // PGM - Program error
+          // RNF - RR/HC not found in city
+          // SNF - Street not found in city
+          // STR - Street name not found
+          // XST - ZIP+4 database member missing for state
+          //
+          // Informational Codes (Status, not errors):
+          // ALT - Alternate address used
+          // BNR - Box missing or not found in RR/RC (informational when DPV still succeeds)
+          // LLK - Address updated by LACSLink (conversion performed)
+          // SLK - Address updated by SuiteLink (suite appended)
+          // VAC - Address identified as vacant (not an error, just status)
+          // CMZ - CMRA indicator set (Commercial Mail Receiving Agency)
+          // NCO - Address updated by NCOALink (if enabled in your PER modules)
+          // -----------------------------------------------------------------------
+          dcl-proc checkAndInsertZipData;
+            dcl-pi *n;
+              zipCode     char(5) const;
+              cityName    char(28) const;
+              stateCode   char(2) const;
+            end-pi;
+
+            dcl-s recordExists ind inz(*off);
+
+            // Set SQL options
+            Exec SQL Set Option Commit = *None, DatFmt = *ISO;
+
+            // Check if ZIP/City combination exists - Improved version with proper error handling
+            Monitor;
+              Exec SQL
+                Select 1 Into :recordExists
+                From ECZIPCODE
+                Where ZIP = :zipCode
+                  And UPPER(PRIMARY_CITY) = UPPER(:cityName)
+                With UR;
+                
+              If SQLCODE = 0;
+                recordExists = *On;
+              ElseIf SQLCODE = 100; // No data found
+                recordExists = *Off;
+              Else; // SQL error occurred
+                recordExists = *Off;
+                // Log error - SQLCODE contains the error code
+              EndIf;
+              
+            On-Error;
+              recordExists = *Off;
+              // Handle any other errors that might occur
+            EndMon;
+
+            // If record doesn't exist, insert it
+            If Not recordExists;
+              insertZipRecord(zipCode : cityName : stateCode);
+            EndIf;
+
+          end-proc;
+
+          // -----------------------------------------------------------------------
+          // Procedure: isNonUSAddress - Check if city indicates non-US address
+          // Modern replacement for the old GOTO-based international detection logic
+          // Uses %list for clean, efficient array initialization
+          // -----------------------------------------------------------------------
+          dcl-proc isNonUSAddress;
+            dcl-pi *n ind;
+              inCity char(25) const;
+            end-pi;
+            
+            // Array of international indicators - simple initialization
+            dcl-s internationalIndicators char(10) dim(3);
+            dcl-s cityUpper char(25);
+            dcl-s i int(10);
+            
+            // Initialize array elements
+            internationalIndicators(1) = 'CANADA';
+            internationalIndicators(2) = 'ONTARIO';
+            internationalIndicators(3) = 'GERMANY';
+            
+            // Convert city to uppercase for case-insensitive comparison
+            cityUpper = %upper(%trim(inCity));
+            
+            // Check each international indicator using %scan for partial matches
+            for i = 1 to %elem(internationalIndicators);
+              if %scan(%trim(internationalIndicators(i)) : cityUpper) > 0;
+                return *on;  // Non-US address found
+              endif;
+            endfor;
+            
+            return *off;  // No international indicators found
+          end-proc;
+
+          // -----------------------------------------------------------------------
+          // Procedure: insertZipRecord - Insert new ZIP code record into ECZIPCODE
+          // -----------------------------------------------------------------------
+          dcl-proc insertZipRecord;
+            dcl-pi *n;
+              zipCode     char(5) const;
+              cityName    char(28) const;
+              stateCode   char(2) const;
+            end-pi;
+
+            Monitor;
+              Exec SQL
+                Insert Into ECZIPCODE (
+                  ZIP,
+                  TYPE,
+                  PRIMARY_CITY,
+                  STATE,
+                  LATITUDE,
+                  LONGITUDE,
+                  COUNTRY
+                ) Values (
+                  :zipCode,
+                  'STANDARD',
+                  UPPER(:cityName),
+                  UPPER(:stateCode),
+                  0.00,
+                  0.00,
+                  'US'
+                );
+
+              // Log successful insert (optional - could be enhanced with proper logging)
+              // No action needed for successful insert
+              
+            On-Error;
+              // Silently handle duplicate key or other insert errors
+              // In production, you might want to log this to an error table
+            EndMon;
+
+          end-proc;
 
