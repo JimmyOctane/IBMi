@@ -163,32 +163,32 @@
                TelephoneAreaCode2          char(3);
                TelephoneAreaCode3          char(3);
 
-               // MLT appended fields
-               MultSecAddr                 char(64);
-               MultDelAddr                 char(64);
-               MultStreetNo                char(10);
-               MultPreDir                  char(2);
-               MultStreetName              char(28);
-               MultStreetSuffix            char(4);
-               MultPostDir                 char(2);
-               MultAptType                 char(4);
-               MultAptNumber               char(8);
-               MultCityName                char(64);
-               MultCityAbbr                char(13);
-               MultStateCode               char(2);
-               MultZipCode                 char(5);
-               MultZip4                    char(4);
-               MultLastLine                char(64);
-               MultCarrierRte              char(4);
-               MultDelPoint                char(3);
-               MultCountyName              char(25);
-               MultCountyStateCD           char(2);
-               MultFIPSState               char(2);
-               MultFIPSCounty              char(3);
-               MultCongDist                char(2);
-               MultLACSInd                 char(1);
-               MultStrMatchLev             char(1);
-               MultSecAdrFlag              char(1);
+               // MLT appended fields - Multiple address arrays (up to 30 matches)
+               MultSecAddr                 char(64) dim(30);
+               MultDelAddr                 char(64) dim(30);
+               MultStreetNo                char(10) dim(30);
+               MultPreDir                  char(2) dim(30);
+               MultStreetName              char(28) dim(30);
+               MultStreetSuffix            char(4) dim(30);
+               MultPostDir                 char(2) dim(30);
+               MultAptType                 char(4) dim(30);
+               MultAptNumber               char(8) dim(30);
+               MultCityName                char(64) dim(30);
+               MultCityAbbr                char(13) dim(30);
+               MultStateCode               char(2) dim(30);
+               MultZipCode                 char(5) dim(30);
+               MultZip4                    char(4) dim(30);
+               MultLastLine                char(64) dim(30);
+               MultCarrierRte              char(4) dim(30);
+               MultDelPoint                char(3) dim(30);
+               MultCountyName              char(25) dim(30);
+               MultCountyStateCD           char(2) dim(30);
+               MultFIPSState               char(2) dim(30);
+               MultFIPSCounty              char(3) dim(30);
+               MultCongDist                char(2) dim(30);
+               MultLACSInd                 char(1) dim(30);
+               MultStrMatchLev             char(1) dim(30);
+               MultSecAdrFlag              char(1) dim(30);
             end-ds;
 
             // Call to old\Zschool RPG program ML219403
@@ -269,31 +269,31 @@
                TelephoneAreaCode1 char(3);             // TAC1##
                TelephoneAreaCode2 char(3);             // TAC2##
                TelephoneAreaCode3 char(3);             // TAC3##
-               MultSecAddr char(64);                   // A1#
-               MultDelAddr char(64);                   // A2#
-               MultStreetNo char(10);                  // NO#
-               MultPreDir char(2);                     // PR#
-               MultStreetName char(28);                // NM#
-               MultStreetSuffix char(4);               // SF#
-               MultPostDir char(2);                    // PS#
-               MultAptType char(4);                    // AT#
-               MultAptNumber char(8);                  // AN#
-               MultCityName char(64);                  // CT#
-               MultCityAbbr char(13);                  // CA#
-               MultStateCode char(2);                  // ST#
-               MultZipCode char(5);                    // Z5#
-               MultZip4 char(4);                       // Z4#
-               MultLastLine char(64);                  // LL#
-               MultCarrierRte char(4);                 // CR#
-               MultDelPoint char(3);                   // DP#
-               MultCountyName char(25);                // CO#
-               MultCountyStateCD char(2);              // CS#
-               MultFIPSState char(2);                  // FS#
-               MultFIPSCounty char(3);                 // FC#
-               MultCongDist char(2);                   // CD#
-               MultLACSInd char(1);                    // LC#
-               MultStrMatchLev char(1);                // SL#
-               MultSecAdrFlag char(1);                 // AF#
+               MultSecAddr char(64) dim(30);           // A1#
+               MultDelAddr char(64) dim(30);           // A2#
+               MultStreetNo char(10) dim(30);          // NO#
+               MultPreDir char(2) dim(30);             // PR#
+               MultStreetName char(28) dim(30);        // NM#
+               MultStreetSuffix char(4) dim(30);       // SF#
+               MultPostDir char(2) dim(30);            // PS#
+               MultAptType char(4) dim(30);            // AT#
+               MultAptNumber char(8) dim(30);          // AN#
+               MultCityName char(64) dim(30);          // CT#
+               MultCityAbbr char(13) dim(30);          // CA#
+               MultStateCode char(2) dim(30);          // ST#
+               MultZipCode char(5) dim(30);            // Z5#
+               MultZip4 char(4) dim(30);               // Z4#
+               MultLastLine char(64) dim(30);          // LL#
+               MultCarrierRte char(4) dim(30);         // CR#
+               MultDelPoint char(3) dim(30);           // DP#
+               MultCountyName char(25) dim(30);        // CO#
+               MultCountyStateCD char(2) dim(30);      // CS#
+               MultFIPSState char(2) dim(30);          // FS#
+               MultFIPSCounty char(3) dim(30);         // FC#
+               MultCongDist char(2) dim(30);           // CD#
+               MultLACSInd char(1) dim(30);            // LC#
+               MultStrMatchLev char(1) dim(30);        // SL#
+               MultSecAdrFlag char(1) dim(30);         // AF#
             end-pr;
 
 
@@ -338,8 +338,8 @@
                 clear localAddressDS.outCity;
                 clear localAddressDS.outState;
                 clear localAddressDS.outZip;
-                localAddressDS.errorCode = 'INT';
-                localAddressDS.errorMessage = 'International addresses not supported';
+                clear localAddressDS.errorCode;
+                clear localAddressDS.errorMessage;
                 clear localAddressDS.maxadressLength;
                 clear localAddressDS.addressType;
                 return localAddressDS;
@@ -382,6 +382,135 @@
                     %Trim(ML218202_DS.cityName) :
                     %Trim(ML218202_DS.stateCode)
                 );
+            EndIf;
+
+            // Map localAddressDS fields to ML219403_DS for ML219403 call
+            ML219403_DS.CaseControl = localAddressDS.returncase;
+            ML219403_DS.MaxAddressLength = 64;  // Standard maximum address length
+            ML219403_DS.FirmName = localAddressDS.inAdressname;
+            ML219403_DS.DeliveryAddress = localAddressDS.inAddress1 + ' ' + localAddressDS.inAddress2;
+            ML219403_DS.City = localAddressDS.inCity;
+            ML219403_DS.State = localAddressDS.inState;
+            ML219403_DS.ZipCode = %subst(localAddressDS.inZip:1:5);  // Extract 5-digit ZIP
+            
+            // Call ML219403 to get address validation
+            ML219403(
+                ML219403_DS.CaseControl:
+                ML219403_DS.MaxAddressLength:
+                ML219403_DS.ErrorCode:
+                ML219403_DS.ErrorMessage:
+                ML219403_DS.CassFileName:
+                ML219403_DS.DatabaseFlag:
+                ML219403_DS.URBName:
+                ML219403_DS.FirmName:
+                ML219403_DS.SecondaryAddress:
+                ML219403_DS.DeliveryAddress:
+                ML219403_DS.LastLine:
+                ML219403_DS.StreetNumber:
+                ML219403_DS.PreDirection:
+                ML219403_DS.StreetName:
+                ML219403_DS.StreetSuffix:
+                ML219403_DS.PostDirection:
+                ML219403_DS.SecAddressType:
+                ML219403_DS.SecAddressNumber:
+                ML219403_DS.Sec2AddressType:
+                ML219403_DS.Sec2AddressNumber:
+                ML219403_DS.ExtraneousInfo:
+                ML219403_DS.City:
+                ML219403_DS.CityAbbreviation:
+                ML219403_DS.State:
+                ML219403_DS.ZipCode:
+                ML219403_DS.Zip4:
+                ML219403_DS.DeliveryPoint:
+                ML219403_DS.CarrierRoute:
+                ML219403_DS.CountyName:
+                ML219403_DS.CountyStateCode:
+                ML219403_DS.FIPSCountyNumber:
+                ML219403_DS.FIPSStateNumber:
+                ML219403_DS.CongressionalDistNumber:
+                ML219403_DS.CongressionalDistStateCode:
+                ML219403_DS.EWSFlag:
+                ML219403_DS.LACSIndicator:
+                ML219403_DS.RecordTypeCode:
+                ML219403_DS.DefaultFlag:
+                ML219403_DS.PMBDesignation:
+                ML219403_DS.StreetMatchLevelInd:
+                ML219403_DS.SecAddressFlag:
+                ML219403_DS.ELOTSequenceNumber:
+                ML219403_DS.ELOTAscDescCode:
+                ML219403_DS.DPVIndicator:
+                ML219403_DS.DPVCMRAIndicator:
+                ML219403_DS.DPVFootPrintInd:
+                ML219403_DS.DPVFootNotes:
+                ML219403_DS.OccupancyCode:
+                ML219403_DS.DirectoryDPVFlag:
+                ML219403_DS.IntelligenceCode:
+                ML219403_DS.RDICode:
+                ML219403_DS.BusinessResidentialInd:
+                ML219403_DS.LacsLinkIndicator:
+                ML219403_DS.LacsLinkReturnCode:
+                ML219403_DS.SuiteLinkIndicator:
+                ML219403_DS.SuiteLinkReturnCode:
+                ML219403_DS.ReturnLatLon:
+                ML219403_DS.LatLonMatchQuality:
+                ML219403_DS.Latitude:
+                ML219403_DS.Longitude:
+                ML219403_DS.MSA2000Code:
+                ML219403_DS.MCD2000Code:
+                ML219403_DS.CDP2000Code:
+                ML219403_DS.CensusTract:
+                ML219403_DS.CensusBlockGroup:
+                ML219403_DS.CurrentMSACode:
+                ML219403_DS.CurrentMICRSACode:
+                ML219403_DS.CurrentMetDivCode:
+                ML219403_DS.CurrentConSACode:
+                ML219403_DS.ZipClass:
+                ML219403_DS.TimeZone:
+                ML219403_DS.TelephoneAreaCode1:
+                ML219403_DS.TelephoneAreaCode2:
+                ML219403_DS.TelephoneAreaCode3:
+                ML219403_DS.MultSecAddr:
+                ML219403_DS.MultDelAddr:
+                ML219403_DS.MultStreetNo:
+                ML219403_DS.MultPreDir:
+                ML219403_DS.MultStreetName:
+                ML219403_DS.MultStreetSuffix:
+                ML219403_DS.MultPostDir:
+                ML219403_DS.MultAptType:
+                ML219403_DS.MultAptNumber:
+                ML219403_DS.MultCityName:
+                ML219403_DS.MultCityAbbr:
+                ML219403_DS.MultStateCode:
+                ML219403_DS.MultZipCode:
+                ML219403_DS.MultZip4:
+                ML219403_DS.MultLastLine:
+                ML219403_DS.MultCarrierRte:
+                ML219403_DS.MultDelPoint:
+                ML219403_DS.MultCountyName:
+                ML219403_DS.MultCountyStateCD:
+                ML219403_DS.MultFIPSState:
+                ML219403_DS.MultFIPSCounty:
+                ML219403_DS.MultCongDist:
+                ML219403_DS.MultLACSInd:
+                ML219403_DS.MultStrMatchLev:
+                ML219403_DS.MultSecAdrFlag
+            );
+
+            // Map ML219403_DS results back to localAddressDS (override previous values if validation successful)
+            If ML219403_DS.ErrorCode = 0; // No errors from address validation
+                localAddressDS.outAddress1 = %trim(ML219403_DS.SecondaryAddress);
+                localAddressDS.outAddress2 = %trim(ML219403_DS.DeliveryAddress);
+                localAddressDS.outCity = %trim(ML219403_DS.City);
+                localAddressDS.outState = %trim(ML219403_DS.State);
+                localAddressDS.outZip = %trim(ML219403_DS.ZipCode);
+                if ML219403_DS.Zip4 <> *blanks;
+                    localAddressDS.outZip = %trim(localAddressDS.outZip) + '-' + %trim(ML219403_DS.Zip4);
+                endif;
+                localAddressDS.errorCode = '000';
+                localAddressDS.errorMessage = *blanks;
+            Else; // Use ML218202 results if ML219403 had errors
+                localAddressDS.errorCode = %editc(ML219403_DS.ErrorCode:'Z');
+                localAddressDS.errorMessage = %trim(ML219403_DS.ErrorMessage);
             EndIf;
 
             return localAddressDS;
