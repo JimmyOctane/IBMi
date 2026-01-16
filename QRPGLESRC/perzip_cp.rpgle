@@ -21,7 +21,7 @@
         end-pr;
 
             dcl-ds AddressParmDS qualified;
-             inAdressname       char(30);   // Input name
+             inAddressname      char(30);   // Input name
              inAddress1         char(30);   // Input addr 1
              inAddress2         char(30);   // Input addr 2
              inAddress3         char(30);   // Input addr 3
@@ -35,9 +35,10 @@
              outState           char(2);    // Output state
              outZip             char(10);   // Output zip
              returncase         char(1);    // Address case
+             outCase            char(1);    // Output case
              errorCode          char(3);    // Error code
              errorMessage       char(80);   // Error message
-             maxadressLength    char(2);    // Max addr len
+             maxAddressLength   char(2);    // Max addr len
              addressType        char(1);    // Addr type M/S
             end-ds;
 

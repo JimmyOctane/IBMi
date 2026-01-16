@@ -2,18 +2,19 @@
 
             //****************************************************************************
             //* Program:      PERZIP - Address Validation Service Module
-            //* Description:  NOMAIN service program for address validation using PERZIP
+            //* Description:  NOMAIN service program for address validation using
+            //*               PERZIP
             //* Copyright:    East Coast Metals
             //* Author:       JJF
             //* Created:      010826
             //****************************************************************************
 
             // Control Options
-            Ctl-Opt NoMain;                         // Service program (no main procedure)
-            Ctl-Opt Option(*SrcStmt:*NoDebugIO);    // Source statements in debug, no I/O debug
+            Ctl-Opt NoMain;                         // Service program (no main)
+            Ctl-Opt Option(*SrcStmt:*NoDebugIO);    // Source statements in debug
             Ctl-Opt BndDir('QC2LE');                // Bind to C runtime library
-            Ctl-Opt ExtBinInt(*Yes);                // Use binary integers efficiently
-            Ctl-Opt DecEdit('0,');                  // Decimal editing with comma separator
+            Ctl-Opt ExtBinInt(*Yes);                // Use binary integers
+            Ctl-Opt DecEdit('0,');                  // Decimal editing with comma
             Ctl-Opt Copyright('East Coast Metals - Address Validation');
 
             // SQL Communication Area
@@ -192,7 +193,8 @@
             end-ds;
 
             // Call to old\Zschool RPG program ML219403
-            // Prototype matching the legacy PLIST for ML219403 (with MLT fields appended)
+            // Prototype matching the legacy PLIST for ML219403 (with MLT fields
+            // appended)
             // ML219403 - Address Validation Program Prototype
             dcl-pr ML219403 extpgm('ML219403');
                CaseControl char(1);                    // CASE##
@@ -298,13 +300,14 @@
 
 
             // ML218202 - ZIP Code Lookup Service Program Prototype
-            // Purpose: Retrieves detailed ZIP code information including city, county, and classification
+            // Purpose: Retrieves detailed ZIP code information including city,
+            // county, and classification
             // Legacy Program: old\Zschool RPG program ML218202
             dcl-pr ML218202 extpgm('ML218202');
              *n char(5) const;           // ZIP Code (5-digit) - Input
-             *n char(1);                 // Case Control (U=Upper, L=Lower, M=Mixed) - Input/Output
+             *n char(1);                 // Case Control (U/L/M) - Input/Output
              *n char(12);                // Seasonal Indicator - Output
-             *n char(1);                 // ZIP Class (P=PO Box, U=Unique, S=Standard) - Output
+             *n char(1);                 // ZIP Class (P/U/S) - Output
              *n char(28);                // City Name - Output
              *n char(13);                // City Abbreviation - Output
              *n char(1);                 // Facility Code - Output
@@ -317,7 +320,7 @@
              *n char(2);                 // State Code - Output
              *n char(3);                 // County Number - Output
              *n char(25);                // County Name - Output
-             *n char(3);                 // Error Code (000=Success, non-zero=Error) - Output
+             *n char(3);                 // Error Code (000=Success) - Output
             end-pr;
 
             // Local variable declaration
@@ -340,7 +343,7 @@
                 clear localAddressDS.outZip;
                 clear localAddressDS.errorCode;
                 clear localAddressDS.errorMessage;
-                clear localAddressDS.maxadressLength;
+                clear localAddressDS.maxAddressLength;
                 clear localAddressDS.addressType;
                 return localAddressDS;
             endif;
@@ -348,6 +351,8 @@
             // Map localAddressDS fields to ML218202_DS for ML218202 call
             ML218202_DS.zipCode = localAddressDS.inzip;
             ML218202_DS.caseCtl = localAddressDS.returncase;
+            ML218202_DS.cityName = localAddressDS.inCity;
+            ML218202_DS.stateCode = localAddressDS.inState;
 
             // Call ML218202 to get zip code information
             ML218202(
@@ -370,13 +375,20 @@
                 ML218202_DS.errorCode
             );
 
-            // Map ML218202_DS results back to localAddressDS
-            localAddressDS.outCity = ML218202_DS.cityName;
-            localAddressDS.outState = ML218202_DS.stateCode;
-            localAddressDS.errorCode = ML218202_DS.errorCode;
+            // Map ML218202_DS results back to localAddressDS only for successful lookup
+            If ML218202_DSerrorCode = *blanks;
+                localAddressDS.outCity = ML218202_DS.cityName;
+                localAddressDS.outState = ML218202_DS.stateCode;
+                localAddressDS.errorCode = ML218202_DS.errorCode;
+            Else;
+                // Keep original input values if ZIP lookup fails
+                localAddressDS.outCity = localAddressDS.inCity;
+                localAddressDS.outState = localAddressDS.inState;
+                localAddressDS.errorCode = ML218202_DS.errorCode;
+            EndIf;
 
             // Check and insert ZIP/City data into ECZIPCODE if needed
-            If ML218202_DS.errorCode = '000'; // Only process if ZIP lookup was successful
+            If ML218202_DSerrorCode = *blanks; // Only if ZIP lookup successful
                 checkAndInsertZipData(
                     %Trim(ML218202_DS.zipCode) :
                     %Trim(ML218202_DS.cityName) :
@@ -384,14 +396,22 @@
                 );
             EndIf;
 
+            // Initialize all ML219403_DS fields before mapping
+            clear ML219403_DS;
+            
             // Map localAddressDS fields to ML219403_DS for ML219403 call
             ML219403_DS.CaseControl = localAddressDS.returncase;
-            ML219403_DS.MaxAddressLength = 64;  // Standard maximum address length
-            ML219403_DS.FirmName = localAddressDS.inAdressname;
-            ML219403_DS.DeliveryAddress = localAddressDS.inAddress1 + ' ' + localAddressDS.inAddress2;
+            ML219403_DS.MaxAddressLength =
+                %int(localAddressDS.maxAddressLength);
+            ML219403_DS.FirmName = localAddressDS.inAddressname;
+            ML219403_DS.SecondaryAddress = localAddressDS.inAddress2;
+            ML219403_DS.DeliveryAddress = localAddressDS.inAddress1;
+            ML219403_DS.LastLine = %trim(localAddressDS.inCity) + ' ' +
+                                   %trim(localAddressDS.inState) + ' ' +
+                                   %trim(localAddressDS.inZip);
             ML219403_DS.City = localAddressDS.inCity;
             ML219403_DS.State = localAddressDS.inState;
-            ML219403_DS.ZipCode = %subst(localAddressDS.inZip:1:5);  // Extract 5-digit ZIP
+            ML219403_DS.ZipCode = %subst(localAddressDS.inZip:1:5);  // 5-digit ZIP
             
             // Call ML219403 to get address validation
             ML219403(
@@ -496,19 +516,33 @@
                 ML219403_DS.MultSecAdrFlag
             );
 
-            // Map ML219403_DS results back to localAddressDS (override previous values if validation successful)
-            If ML219403_DS.ErrorCode = 0; // No errors from address validation
-                localAddressDS.outAddress1 = %trim(ML219403_DS.SecondaryAddress);
-                localAddressDS.outAddress2 = %trim(ML219403_DS.DeliveryAddress);
+            // Map ML219403_DS results back to localAddressDS (override if
+            // validation successful)
+            If ML219403_DS.ErrorCode = 0; // No errors from validation
+                localAddressDS.outAddress1 =
+                    %trim(ML219403_DS.SecondaryAddress);
+                localAddressDS.outAddress2 =
+                    %trim(ML219403_DS.DeliveryAddress);
                 localAddressDS.outCity = %trim(ML219403_DS.City);
                 localAddressDS.outState = %trim(ML219403_DS.State);
                 localAddressDS.outZip = %trim(ML219403_DS.ZipCode);
                 if ML219403_DS.Zip4 <> *blanks;
-                    localAddressDS.outZip = %trim(localAddressDS.outZip) + '-' + %trim(ML219403_DS.Zip4);
+                    localAddressDS.outZip = %trim(localAddressDS.outZip) + '-'
+                                          + %trim(ML219403_DS.Zip4);
                 endif;
-                localAddressDS.errorCode = '000';
+                localAddressDS.errorCode = *blanks;
                 localAddressDS.errorMessage = *blanks;
             Else; // Use ML218202 results if ML219403 had errors
+                // Preserve existing output values if they exist, otherwise use input
+                if localAddressDS.outCity = *blanks;
+                    localAddressDS.outCity = localAddressDS.inCity;
+                endif;
+                if localAddressDS.outState = *blanks;
+                    localAddressDS.outState = localAddressDS.inState;
+                endif;
+                if localAddressDS.outZip = *blanks;
+                    localAddressDS.outZip = localAddressDS.inZip;
+                endif;
                 localAddressDS.errorCode = %editc(ML219403_DS.ErrorCode:'Z');
                 localAddressDS.errorMessage = %trim(ML219403_DS.ErrorMessage);
             EndIf;
@@ -518,7 +552,8 @@
           end-proc   validateAddress;
 
           // -----------------------------------------------------------------------
-          // Procedure: checkAndInsertZipData - Check ECZIPCODE and insert if missing
+          // Procedure: checkAndInsertZipData - Check ECZIPCODE and insert if
+          // missing
           //
           // Address Validation Error Codes Reference:
           // ADR - Insufficient address information
@@ -540,12 +575,13 @@
           //
           // Informational Codes (Status, not errors):
           // ALT - Alternate address used
-          // BNR - Box missing or not found in RR/RC (informational when DPV still succeeds)
+          // BNR - Box missing or not found in RR/RC (informational when DPV
+          // still succeeds)
           // LLK - Address updated by LACSLink (conversion performed)
           // SLK - Address updated by SuiteLink (suite appended)
           // VAC - Address identified as vacant (not an error, just status)
           // CMZ - CMRA indicator set (Commercial Mail Receiving Agency)
-          // NCO - Address updated by NCOALink (if enabled in your PER modules)
+          // NCO - Address updated by NCOALink (if enabled in PER modules)
           // -----------------------------------------------------------------------
           dcl-proc checkAndInsertZipData;
             dcl-pi *n;
@@ -559,7 +595,8 @@
             // Set SQL options
             Exec SQL Set Option Commit = *None, DatFmt = *ISO;
 
-            // Check if ZIP/City combination exists - Improved version with proper error handling
+            // Check if ZIP/City combination exists - Improved version with
+            // proper error handling
             Monitor;
               Exec SQL
                 Select 1 Into :recordExists
@@ -591,7 +628,8 @@
 
           // -----------------------------------------------------------------------
           // Procedure: isNonUSAddress - Check if city indicates non-US address
-          // Modern replacement for the old GOTO-based international detection logic
+          // Modern replacement for the old GOTO-based international detection
+          // logic
           // Uses %list for clean, efficient array initialization
           // -----------------------------------------------------------------------
           dcl-proc isNonUSAddress;
@@ -612,7 +650,8 @@
             // Convert city to uppercase for case-insensitive comparison
             cityUpper = %upper(%trim(inCity));
             
-            // Check each international indicator using %scan for partial matches
+            // Check each international indicator using %scan for partial
+            // matches
             for i = 1 to %elem(internationalIndicators);
               if %scan(%trim(internationalIndicators(i)) : cityUpper) > 0;
                 return *on;  // Non-US address found
@@ -623,7 +662,8 @@
           end-proc;
 
           // -----------------------------------------------------------------------
-          // Procedure: insertZipRecord - Insert new ZIP code record into ECZIPCODE
+          // Procedure: insertZipRecord - Insert new ZIP code record into
+          // ECZIPCODE
           // -----------------------------------------------------------------------
           dcl-proc insertZipRecord;
             dcl-pi *n;
@@ -652,7 +692,8 @@
                   'US'
                 );
 
-              // Log successful insert (optional - could be enhanced with proper logging)
+              // Log successful insert (optional - could be enhanced with
+              // proper logging)
               // No action needed for successful insert
               
             On-Error;

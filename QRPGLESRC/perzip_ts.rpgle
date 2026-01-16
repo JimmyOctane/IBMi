@@ -30,7 +30,7 @@
         addressParmDS.inState = 'IL';
         addressParmDS.inzip = '61364';
         addressParmDS.returncase = 'U';
-        addressParmDS.maxadressLength = '30';
+        addressParmDS.maxAddressLength = '30';
         addressParmDS.addressType = 'S';
       // Call the validation service
         addressParmDS = validateAddress(addressParmDS);
