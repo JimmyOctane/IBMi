@@ -704,4 +704,113 @@
 
           end-proc;
 
+          // -----------------------------------------------------------------------
+          // Procedure: processInboundAddress - Handle inbound address parameters
+          // Modernized version of legacy address squishing and field mapping logic
+          // -----------------------------------------------------------------------
+          dcl-proc processInboundAddress;
+            dcl-pi *n likeds(AddressParmDS);
+              inAddressParms likeds(AddressParmDS) const;
+            end-pi;
+
+            dcl-ds processedAddress likeds(AddressParmDS);
+            dcl-s pos6 char(1);
+            dcl-s pos7to10 char(4);
+            dcl-s pos6to9 char(4);
+
+            // Initialize output structure with input values
+            processedAddress = inAddressParms;
+
+            // First check address and squish if separated
+            // If ADDR1 has data, ADDR2 is blank, but ADDR3 has data,
+            // move ADDR1 to ADDR2 and clear ADDR1
+            if processedAddress.inAddress1 <> *blanks
+               and processedAddress.inAddress2 = *blanks
+               and processedAddress.inAddress3 <> *blanks;
+              processedAddress.inAddress2 = processedAddress.inAddress1;
+              clear processedAddress.inAddress1;
+            endif;
+
+            // Parse ZIP code positions for later use
+            if %len(%trim(processedAddress.inZip)) >= 6;
+              pos6 = %subst(processedAddress.inZip:6:1);
+              if %len(%trim(processedAddress.inZip)) >= 10;
+                pos7to10 = %subst(processedAddress.inZip:7:4);
+              endif;
+              if %len(%trim(processedAddress.inZip)) >= 9;
+                pos6to9 = %subst(processedAddress.inZip:6:4);
+              endif;
+            endif;
+
+            // Address field mapping based on MaxAddressLength
+            select;
+              // For 60-character addresses, combine ADDR2 and ADDR3 for delivery
+              when processedAddress.maxAddressLength = '60';
+                processedAddress.outAddress2 = %trim(processedAddress.inAddress2)
+                                             + ' '
+                                             + %trim(processedAddress.inAddress3);
+
+              // Standard address mapping with various combinations
+              when processedAddress.maxAddressLength <> '60'
+                   and processedAddress.inAddress3 <> *blanks
+                   and processedAddress.inAddress2 <> *blanks;
+                processedAddress.outAddress2 = processedAddress.inAddress3;  // Delivery
+                processedAddress.outAddress1 = processedAddress.inAddress2;  // Secondary
+
+              when processedAddress.maxAddressLength <> '60'
+                   and processedAddress.inAddress3 = *blanks
+                   and processedAddress.inAddress2 <> *blanks
+                   and processedAddress.inAddress1 <> *blanks;
+                processedAddress.outAddress2 = processedAddress.inAddress2;  // Delivery
+                processedAddress.outAddress1 = processedAddress.inAddress1;  // Secondary
+
+              when processedAddress.maxAddressLength <> '60'
+                   and processedAddress.inAddress3 = *blanks
+                   and processedAddress.inAddress2 = *blanks
+                   and processedAddress.inAddress1 <> *blanks;
+                processedAddress.outAddress2 = processedAddress.inAddress1;  // Delivery
+
+              when processedAddress.maxAddressLength <> '60'
+                   and processedAddress.inAddress3 <> *blanks
+                   and processedAddress.inAddress2 = *blanks
+                   and processedAddress.inAddress1 <> *blanks;
+                processedAddress.outAddress2 = processedAddress.inAddress3;  // Delivery
+                processedAddress.outAddress1 = processedAddress.inAddress1;  // Secondary
+            endsl;
+
+            // Set city and state
+            processedAddress.outCity = processedAddress.inCity;
+            processedAddress.outState = processedAddress.inState;
+
+            // Handle ZIP code formatting
+            select;
+              // ZIP has hyphen in position 6 with ZIP+4 data
+              when pos6 = '-' and pos7to10 <> *blanks;
+                processedAddress.outZip = %subst(processedAddress.inZip:1:5)
+                                        + '-'
+                                        + pos7to10;
+
+              // ZIP has hyphen in position 6 but no ZIP+4 data
+              when pos6 = '-' and pos7to10 = *blanks;
+                processedAddress.outZip = %subst(processedAddress.inZip:1:5);
+
+              // ZIP has data in position 6 (not hyphen or space) - treat as ZIP+4
+              when pos6 <> '-' and pos6 <> ' ';
+                processedAddress.outZip = %subst(processedAddress.inZip:1:5)
+                                        + '-'
+                                        + pos6to9;
+
+              // ZIP has space in position 6 and no additional data
+              when pos6 = ' ' and pos7to10 = *blanks;
+                processedAddress.outZip = %subst(processedAddress.inZip:1:5);
+
+              // Default case - use ZIP as-is
+              other;
+                processedAddress.outZip = processedAddress.inZip;
+            endsl;
+
+            return processedAddress;
+
+          end-proc;
+
 
