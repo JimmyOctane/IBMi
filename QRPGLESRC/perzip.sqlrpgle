@@ -56,6 +56,7 @@
                mltZip4        char(4);    // Z4#
                mltLastLine    char(64);   // LL#
                mltCarrierRt   char(4);    // CR#
+
                mltDelPoint    char(3);    // DP#
                mltCountyName  char(25);   // CO#
                mltCountyState char(2);    // CS#
@@ -561,12 +562,12 @@
           // BNC - PO Box not found in city
           // BNR - Box missing or not found in RR/RC
           // DBE - USPS database exception
-          // DPV - Address could not be DPVconfirmed
+          // DPV - Address could not be DPV\Zconfirmed
           // ERR - No update from database
-          // LLK - Address LACSLink converted
+          // LLK - Address LACS\ZLink converted
           // LLN - Insufficient last line
           // MLT - Multiple addresses found
-          // NDR - Nondelivery address
+          // NDR - Non\Zdelivery address
           // PGM - Program error
           // RNF - RR/HC not found in city
           // SNF - Street not found in city
