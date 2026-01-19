@@ -28,6 +28,11 @@
              inCity char(25) const;
             end-pr;
 
+            // Inbound Address Processing Service
+            dcl-pr processInboundAddress likeds(AddressParmDS);
+             inAddressParms likeds(AddressParmDS) const;
+            end-pr;
+
            dcl-proc validateAddress export;
              dcl-pi *n likeds(AddressParmDS);
               pAddressDS likeds(AddressParmDS) const;
@@ -330,8 +335,8 @@
             clear ML219403_DS;
             clear ML218202_DS;
 
-            // Map input parameters from pAddressDS to local variable
-            localAddressDS = pAddressDS;
+            // Process inbound address parameters first
+            localAddressDS = processInboundAddress(pAddressDS);
 
             // Check for non-US addresses and exit early if found
             if isNonUSAddress(localAddressDS.inCity);
@@ -747,35 +752,35 @@
               // For 60-character addresses, combine ADDR2 and ADDR3 for delivery
               when processedAddress.maxAddressLength = '60';
                 processedAddress.outAddress2 = %trim(processedAddress.inAddress2)
-                                             + ' '
-                                             + %trim(processedAddress.inAddress3);
+                                             + ' ' +
+                                             %trim(processedAddress.inAddress3);
 
               // Standard address mapping with various combinations
               when processedAddress.maxAddressLength <> '60'
                    and processedAddress.inAddress3 <> *blanks
                    and processedAddress.inAddress2 <> *blanks;
-                processedAddress.outAddress2 = processedAddress.inAddress3;  // Delivery
-                processedAddress.outAddress1 = processedAddress.inAddress2;  // Secondary
+                processedAddress.outAddress2 = processedAddress.inAddress3;
+                processedAddress.outAddress1 = processedAddress.inAddress2;
 
               when processedAddress.maxAddressLength <> '60'
                    and processedAddress.inAddress3 = *blanks
                    and processedAddress.inAddress2 <> *blanks
                    and processedAddress.inAddress1 <> *blanks;
-                processedAddress.outAddress2 = processedAddress.inAddress2;  // Delivery
-                processedAddress.outAddress1 = processedAddress.inAddress1;  // Secondary
+                processedAddress.outAddress2 = processedAddress.inAddress2;
+                processedAddress.outAddress1 = processedAddress.inAddress1;
 
               when processedAddress.maxAddressLength <> '60'
                    and processedAddress.inAddress3 = *blanks
                    and processedAddress.inAddress2 = *blanks
                    and processedAddress.inAddress1 <> *blanks;
-                processedAddress.outAddress2 = processedAddress.inAddress1;  // Delivery
+                processedAddress.outAddress2 = processedAddress.inAddress1;
 
               when processedAddress.maxAddressLength <> '60'
                    and processedAddress.inAddress3 <> *blanks
                    and processedAddress.inAddress2 = *blanks
                    and processedAddress.inAddress1 <> *blanks;
-                processedAddress.outAddress2 = processedAddress.inAddress3;  // Delivery
-                processedAddress.outAddress1 = processedAddress.inAddress1;  // Secondary
+                processedAddress.outAddress2 = processedAddress.inAddress3;
+                processedAddress.outAddress1 = processedAddress.inAddress1;
             endsl;
 
             // Set city and state
