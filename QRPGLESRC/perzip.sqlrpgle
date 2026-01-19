@@ -21,7 +21,7 @@
             Exec SQL Include SQLCA;
 
           /COPY qrpglesrc,PERZIP_CP
-            
+
 
             // Non-US Address Detection Service
             dcl-pr isNonUSAddress ind;
@@ -35,7 +35,7 @@
             //***********************************************************/
             // Main Procedure                                           */
             //***********************************************************/
-            
+
             dcl-s foundIt int(10:0) inz;
 
             // Grouped MLT structure: 100 entries, each entry contains all MLT fields
@@ -90,8 +90,8 @@
 
             dcl-ds ML219403_DS qualified;
                CaseControl                 char(1);
-               MaxAddressLength            packed(2:0);
-               ErrorCode                   packed(3:0);
+               MaxAddressLength            char(2);
+               ErrorCode                   char(3);
                ErrorMessage                char(80);
                CassFileName                char(10);
                DatabaseFlag                char(1);
@@ -164,32 +164,32 @@
                TelephoneAreaCode2          char(3);
                TelephoneAreaCode3          char(3);
 
-               // MLT appended fields - Multiple address arrays (up to 30 matches)
-               MultSecAddr                 char(64) dim(30);
-               MultDelAddr                 char(64) dim(30);
-               MultStreetNo                char(10) dim(30);
-               MultPreDir                  char(2) dim(30);
-               MultStreetName              char(28) dim(30);
-               MultStreetSuffix            char(4) dim(30);
-               MultPostDir                 char(2) dim(30);
-               MultAptType                 char(4) dim(30);
-               MultAptNumber               char(8) dim(30);
-               MultCityName                char(64) dim(30);
-               MultCityAbbr                char(13) dim(30);
-               MultStateCode               char(2) dim(30);
-               MultZipCode                 char(5) dim(30);
-               MultZip4                    char(4) dim(30);
-               MultLastLine                char(64) dim(30);
-               MultCarrierRte              char(4) dim(30);
-               MultDelPoint                char(3) dim(30);
-               MultCountyName              char(25) dim(30);
-               MultCountyStateCD           char(2) dim(30);
-               MultFIPSState               char(2) dim(30);
-               MultFIPSCounty              char(3) dim(30);
-               MultCongDist                char(2) dim(30);
-               MultLACSInd                 char(1) dim(30);
-               MultStrMatchLev             char(1) dim(30);
-               MultSecAdrFlag              char(1) dim(30);
+               // MLT appended fields - Multiple address arrays (up to (100) matches)
+               MultSecAddr                 char(64) dim(100);
+               MultDelAddr                 char(64) dim(100);
+               MultStreetNo                char(10) dim(100);
+               MultPreDir                  char(2)  dim(100);
+               MultStreetName              char(28) dim(100);
+               MultStreetSuffix            char(4)  dim(100);
+               MultPostDir                 char(2)  dim(100);
+               MultAptType                 char(4)  dim(100);
+               MultAptNumber               char(8)  dim(100);
+               MultCityName                char(64) dim(100);
+               MultCityAbbr                char(13) dim(100);
+               MultStateCode               char(2)  dim(100);
+               MultZipCode                 char(5)  dim(100);
+               MultZip4                    char(4)  dim(100);
+               MultLastLine                char(64) dim(100);
+               MultCarrierRte              char(4)  dim(100);
+               MultDelPoint                char(3)  dim(100);
+               MultCountyName              char(25) dim(100);
+               MultCountyStateCD           char(2)  dim(100);
+               MultFIPSState               char(2)  dim(100);
+               MultFIPSCounty              char(3)  dim(100);
+               MultCongDist                char(2)  dim(100);
+               MultLACSInd                 char(1)  dim(100);
+               MultStrMatchLev             char(1)  dim(100);
+               MultSecAdrFlag              char(1)  dim(100);
             end-ds;
 
             // Call to old\Zschool RPG program ML219403
@@ -198,8 +198,8 @@
             // ML219403 - Address Validation Program Prototype
             dcl-pr ML219403 extpgm('ML219403');
                CaseControl char(1);                    // CASE##
-               MaxAddressLength packed(2:0);           // ADRL##
-               ErrorCode packed(3:0);                  // ECOD##
+               MaxAddressLength char(2);               // ADRL##
+               ErrorCode char(3);                      // ECOD##
                ErrorMessage char(80);                  // EMSG##
                CassFileName char(10);                  // CASF##
                DatabaseFlag char(1);                   // DBFL##
@@ -271,31 +271,31 @@
                TelephoneAreaCode1 char(3);             // TAC1##
                TelephoneAreaCode2 char(3);             // TAC2##
                TelephoneAreaCode3 char(3);             // TAC3##
-               MultSecAddr char(64) dim(30);           // A1#
-               MultDelAddr char(64) dim(30);           // A2#
-               MultStreetNo char(10) dim(30);          // NO#
-               MultPreDir char(2) dim(30);             // PR#
-               MultStreetName char(28) dim(30);        // NM#
-               MultStreetSuffix char(4) dim(30);       // SF#
-               MultPostDir char(2) dim(30);            // PS#
-               MultAptType char(4) dim(30);            // AT#
-               MultAptNumber char(8) dim(30);          // AN#
-               MultCityName char(64) dim(30);          // CT#
-               MultCityAbbr char(13) dim(30);          // CA#
-               MultStateCode char(2) dim(30);          // ST#
-               MultZipCode char(5) dim(30);            // Z5#
-               MultZip4 char(4) dim(30);               // Z4#
-               MultLastLine char(64) dim(30);          // LL#
-               MultCarrierRte char(4) dim(30);         // CR#
-               MultDelPoint char(3) dim(30);           // DP#
-               MultCountyName char(25) dim(30);        // CO#
-               MultCountyStateCD char(2) dim(30);      // CS#
-               MultFIPSState char(2) dim(30);          // FS#
-               MultFIPSCounty char(3) dim(30);         // FC#
-               MultCongDist char(2) dim(30);           // CD#
-               MultLACSInd char(1) dim(30);            // LC#
-               MultStrMatchLev char(1) dim(30);        // SL#
-               MultSecAdrFlag char(1) dim(30);         // AF#
+               MultSecAddr char(64) dim(100);          // A1#
+               MultDelAddr char(64) dim(100);          // A2#
+               MultStreetNo char(10) dim(100);         // NO#
+               MultPreDir char(2) dim(100);            // PR#
+               MultStreetName char(28) dim(100);       // NM#
+               MultStreetSuffix char(4) dim(100);      // SF#
+               MultPostDir char(2) dim(100);           // PS#
+               MultAptType char(4) dim(100);           // AT#
+               MultAptNumber char(8) dim(100);         // AN#
+               MultCityName char(64) dim(100);         // CT#
+               MultCityAbbr char(13) dim(100);         // CA#
+               MultStateCode char(2) dim(100);         // ST#
+               MultZipCode char(5) dim(100);           // Z5#
+               MultZip4 char(4) dim(100);              // Z4#
+               MultLastLine char(64) dim(100);         // LL#
+               MultCarrierRte char(4) dim(100);        // CR#
+               MultDelPoint char(3) dim(100);          // DP#
+               MultCountyName char(25) dim(100);       // CO#
+               MultCountyStateCD char(2) dim(100);     // CS#
+               MultFIPSState char(2) dim(100);         // FS#
+               MultFIPSCounty char(3) dim(100);        // FC#
+               MultCongDist char(2) dim(100);          // CD#
+               MultLACSInd char(1) dim(100);           // LC#
+               MultStrMatchLev char(1) dim(100);       // SL#
+               MultSecAdrFlag char(1) dim(100);        // AF#
             end-pr;
 
 
@@ -325,7 +325,7 @@
 
             // Local variable declaration
             dcl-ds localAddressDS likeds(AddressParmDS);
-            
+
             clear ML219403_DS;
             clear ML218202_DS;
 
@@ -376,7 +376,7 @@
             );
 
             // Map ML218202_DS results back to localAddressDS only for successful lookup
-            If ML218202_DSerrorCode = *blanks;
+            If ML218202_DS.errorCode = *blanks;
                 localAddressDS.outCity = ML218202_DS.cityName;
                 localAddressDS.outState = ML218202_DS.stateCode;
                 localAddressDS.errorCode = ML218202_DS.errorCode;
@@ -388,31 +388,30 @@
             EndIf;
 
             // Check and insert ZIP/City data into ECZIPCODE if needed
-            If ML218202_DSerrorCode = *blanks; // Only if ZIP lookup successful
+            If ML218202_DS.errorCode = *blanks; // Only if ZIP lookup successful
                 checkAndInsertZipData(
-                    %Trim(ML218202_DS.zipCode) :
-                    %Trim(ML218202_DS.cityName) :
-                    %Trim(ML218202_DS.stateCode)
+                    %Trim(pAddressDS.inzip) :
+                    %Trim(pAddressDS.inCity ) :
+                    %Trim(pAddressDS.inState)
                 );
             EndIf;
 
             // Initialize all ML219403_DS fields before mapping
             clear ML219403_DS;
-            
+
             // Map localAddressDS fields to ML219403_DS for ML219403 call
-            ML219403_DS.CaseControl = localAddressDS.returncase;
-            ML219403_DS.MaxAddressLength =
-                %int(localAddressDS.maxAddressLength);
-            ML219403_DS.FirmName = localAddressDS.inAddressname;
-            ML219403_DS.SecondaryAddress = localAddressDS.inAddress2;
-            ML219403_DS.DeliveryAddress = localAddressDS.inAddress1;
-            ML219403_DS.LastLine = %trim(localAddressDS.inCity) + ' ' +
-                                   %trim(localAddressDS.inState) + ' ' +
-                                   %trim(localAddressDS.inZip);
-            ML219403_DS.City = localAddressDS.inCity;
-            ML219403_DS.State = localAddressDS.inState;
-            ML219403_DS.ZipCode = %subst(localAddressDS.inZip:1:5);  // 5-digit ZIP
-            
+            ML219403_DS.CaseControl = pAddressDS.returncase;
+            ML219403_DS.MaxAddressLength = pAddressDS.maxAddressLength ;
+            ML219403_DS.FirmName = pAddressDS.inAddressname;
+            ML219403_DS.SecondaryAddress = pAddressDS.inAddress2;
+            ML219403_DS.DeliveryAddress = pAddressDS.inAddress1;
+            ML219403_DS.LastLine = %trim(pAddressDS.inCity) + ' ' +
+                                   %trim(pAddressDS.inState) + ' ' +
+                                   %trim(pAddressDS.inZip);
+            ML219403_DS.City = pAddressDS.inCity;
+            ML219403_DS.State = pAddressDS.inState;
+            ML219403_DS.ZipCode = %subst(pAddressDS.inZip:1:5);  // 5-digit ZIP
+
             // Call ML219403 to get address validation
             ML219403(
                 ML219403_DS.CaseControl:
@@ -489,6 +488,7 @@
                 ML219403_DS.TelephoneAreaCode1:
                 ML219403_DS.TelephoneAreaCode2:
                 ML219403_DS.TelephoneAreaCode3:
+                // arrays
                 ML219403_DS.MultSecAddr:
                 ML219403_DS.MultDelAddr:
                 ML219403_DS.MultStreetNo:
@@ -518,7 +518,7 @@
 
             // Map ML219403_DS results back to localAddressDS (override if
             // validation successful)
-            If ML219403_DS.ErrorCode = 0; // No errors from validation
+            If ML219403_DS.ErrorCode = *blanks; // No errors from validation
                 localAddressDS.outAddress1 =
                     %trim(ML219403_DS.SecondaryAddress);
                 localAddressDS.outAddress2 =
@@ -543,7 +543,7 @@
                 if localAddressDS.outZip = *blanks;
                     localAddressDS.outZip = localAddressDS.inZip;
                 endif;
-                localAddressDS.errorCode = %editc(ML219403_DS.ErrorCode:'Z');
+                localAddressDS.errorCode = ML219403_DS.ErrorCode;
                 localAddressDS.errorMessage = %trim(ML219403_DS.ErrorMessage);
             EndIf;
 
@@ -561,12 +561,12 @@
           // BNC - PO Box not found in city
           // BNR - Box missing or not found in RR/RC
           // DBE - USPS database exception
-          // DPV - Address could not be DPV‑confirmed
+          // DPV - Address could not be DPVconfirmed
           // ERR - No update from database
-          // LLK - Address LACS‑Link converted
+          // LLK - Address LACSLink converted
           // LLN - Insufficient last line
           // MLT - Multiple addresses found
-          // NDR - Non‑delivery address
+          // NDR - Nondelivery address
           // PGM - Program error
           // RNF - RR/HC not found in city
           // SNF - Street not found in city
@@ -604,7 +604,7 @@
                 Where ZIP = :zipCode
                   And UPPER(PRIMARY_CITY) = UPPER(:cityName)
                 With UR;
-                
+
               If SQLCODE = 0;
                 recordExists = *On;
               ElseIf SQLCODE = 100; // No data found
@@ -613,7 +613,7 @@
                 recordExists = *Off;
                 // Log error - SQLCODE contains the error code
               EndIf;
-              
+
             On-Error;
               recordExists = *Off;
               // Handle any other errors that might occur
@@ -636,20 +636,20 @@
             dcl-pi *n ind;
               inCity char(25) const;
             end-pi;
-            
+
             // Array of international indicators - simple initialization
             dcl-s internationalIndicators char(10) dim(3);
             dcl-s cityUpper char(25);
             dcl-s i int(10);
-            
+
             // Initialize array elements
             internationalIndicators(1) = 'CANADA';
             internationalIndicators(2) = 'ONTARIO';
             internationalIndicators(3) = 'GERMANY';
-            
+
             // Convert city to uppercase for case-insensitive comparison
             cityUpper = %upper(%trim(inCity));
-            
+
             // Check each international indicator using %scan for partial
             // matches
             for i = 1 to %elem(internationalIndicators);
@@ -657,7 +657,7 @@
                 return *on;  // Non-US address found
               endif;
             endfor;
-            
+
             return *off;  // No international indicators found
           end-proc;
 
@@ -695,11 +695,12 @@
               // Log successful insert (optional - could be enhanced with
               // proper logging)
               // No action needed for successful insert
-              
+
             On-Error;
               // Silently handle duplicate key or other insert errors
               // In production, you might want to log this to an error table
             EndMon;
 
           end-proc;
+
 
