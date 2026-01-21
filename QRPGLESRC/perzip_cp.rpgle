@@ -35,10 +35,8 @@
              outState           char(2);    // Output state
              outZip             char(10);   // Output zip
              returncase         char(1);    // Address case
-             outCase            char(1);    // Output case
              errorCode          char(3);    // Error code
              errorMessage       char(80);   // Error message
-             maxAddressLength   char(2);    // Max addr len
+             maxaddressLength   char(2);    // Max addr len
              addressType        char(1);    // Addr type M/S
             end-ds;
-

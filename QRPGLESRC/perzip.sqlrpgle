@@ -751,9 +751,10 @@
             select;
               // For 60-character addresses, combine ADDR2 and ADDR3 for delivery
               when processedAddress.maxAddressLength = '60';
-                processedAddress.outAddress2 = %trim(processedAddress.inAddress2)
-                                             + ' ' +
-                                             %trim(processedAddress.inAddress3);
+                processedAddress.outAddress2 =
+                %trim(processedAddress.inAddress2)
+                + ' ' +
+                %trim(processedAddress.inAddress3);
 
               // Standard address mapping with various combinations
               when processedAddress.maxAddressLength <> '60'
@@ -817,5 +818,6 @@
             return processedAddress;
 
           end-proc;
+
 
 
