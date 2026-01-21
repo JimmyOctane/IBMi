@@ -65,7 +65,7 @@
       //******************************************************************************
 
       // Copy members for data structures and prototypes
-      /copy GETITEM_CP
+      /copy qrpglesrc,GETITEM_CP
 
       //************************************************************
       // GETITEM - External Procedure
@@ -83,7 +83,6 @@
        end-pi;
 
         // Local variables
-        dcl-ds resultItemDS likeds(returnItemDS);
         dcl-s currentDate date;
         dcl-s threeMonthsAgo date;
         dcl-s prevYearStart date;
@@ -99,10 +98,14 @@
         dcl-s oeDate date;
         dcl-s poIndex packed(3:0);
         dcl-ds currentPO likeds(openPO_t);
+        dcl-ds returnItemDS likeds(returnItemDS) template;
+        dcl-s company char(2);
+        dcl-s branch char(3);
+        dcl-s section char(3);
 
         // Initialize return structure
-        clear resultItemDS;
-        resultItemDS.Found = *off;
+        clear returnItemDS;
+        returnItemDS.Found = *off;
 
         // Set current date and calculate date ranges
         currentDate = %date();
@@ -118,7 +121,7 @@
         // Input parameter validation
         if inItem = 0;
           // Invalid item - return empty result
-          return resultItemDS;
+          return returnItemDS;
         endif;
 
         // Check if branch is 0 - use IVPMSTR only (no branch-specific data)
@@ -164,62 +167,62 @@
           // Check for SQL errors on open
           if SQLCODE <> 0;
             exec sql close getitem_master_cursor;
-            return resultItemDS;
+            return returnItemDS;
           endif;
 
           // Fetch the master record
           exec sql
             fetch getitem_master_cursor into
-              :resultItemDS.Company,
-              :resultItemDS.Branch,
-              :resultItemDS.Section,
-              :resultItemDS.Group,
-              :resultItemDS.Category,
-              :resultItemDS.Product,
-              :resultItemDS.Description,
-              :resultItemDS.OnHand,
-              :resultItemDS.WACUnitCost,
-              :resultItemDS.ExtWACCost,
-              :resultItemDS.MarketCost,
-              :resultItemDS.ExtMarketCost,
-              :resultItemDS.ReplacementCost,
-              :resultItemDS.ExtReplacementCost,
-              :resultItemDS.SubstituteCode,
-              :resultItemDS.AssociatedCode,
-              :resultItemDS.ComponentCode,
-              :resultItemDS.DeleteCode,
-              :resultItemDS.ChangedCode,
-              :resultItemDS.StockingUOM,
-              :resultItemDS.ItemWeight,
-              :resultItemDS.LockedCode,
-              :resultItemDS.ManufacturerNumber;
+              :returnItemDS.Company,
+              :returnItemDS.Branch,
+              :returnItemDS.Section,
+              :returnItemDS.Group,
+              :returnItemDS.Category,
+              :returnItemDS.Product,
+              :returnItemDS.Description,
+              :returnItemDS.OnHand,
+              :returnItemDS.WACUnitCost,
+              :returnItemDS.ExtWACCost,
+              :returnItemDS.MarketCost,
+              :returnItemDS.ExtMarketCost,
+              :returnItemDS.ReplacementCost,
+              :returnItemDS.ExtReplacementCost,
+              :returnItemDS.SubstituteCode,
+              :returnItemDS.AssociatedCode,
+              :returnItemDS.ComponentCode,
+              :returnItemDS.DeleteCode,
+              :returnItemDS.ChangedCode,
+              :returnItemDS.StockingUOM,
+              :returnItemDS.ItemWeight,
+              :returnItemDS.LockedCode,
+              :returnItemDS.ManufacturerNumber;
 
           // Check fetch results
           if SQLCODE = 0;
-            resultItemDS.Found = *on;
+            returnItemDS.Found = *on;
           elseif SQLCODE = 100;
-            resultItemDS.Found = *off;
+            returnItemDS.Found = *off;
           else;
-            resultItemDS.Found = *off;
+            returnItemDS.Found = *off;
           endif;
 
           // Close cursor and get sales data for master-only query
           exec sql close getitem_master_cursor;
 
           // Set sales data to zero for branch = 0 case
-          resultItemDS.Month1Sales = 0;
-          resultItemDS.Month2Sales = 0;
-          resultItemDS.Month3Sales = 0;
-          resultItemDS.Last3MonthsSales = 0;
-          resultItemDS.Last3MonthsReturns = 0;
-          resultItemDS.Last3MonthsAvg = 0;
-          resultItemDS.PrevYearSales = 0;
-          resultItemDS.PrevYearReturns = 0;
-          resultItemDS.PrevYearAvg = 0;
-          resultItemDS.POCount = 0;
-          clear resultItemDS.OpenPOs;
+          returnItemDS.Month1Sales = 0;
+          returnItemDS.Month2Sales = 0;
+          returnItemDS.Month3Sales = 0;
+          returnItemDS.Last3MonthsSales = 0;
+          returnItemDS.Last3MonthsReturns = 0;
+          returnItemDS.Last3MonthsAvg = 0;
+          returnItemDS.PrevYearSales = 0;
+          returnItemDS.PrevYearReturns = 0;
+          returnItemDS.PrevYearAvg = 0;
+          returnItemDS.POCount = 0;
+          clear returnItemDS.OpenPOs;
 
-          return resultItemDS;
+          return returnItemDS;
         endif;
 
         // Branch is not 0 - use full join with IVPMSBR and ARPMBCH
@@ -264,46 +267,46 @@
         if SQLCODE <> 0;
           // SQL error occurred
           exec sql close getitem_cursor;
-          return resultItemDS;
+          return returnItemDS;
         endif;
 
         // Fetch the first (and expected only) record
         exec sql
           fetch getitem_cursor into
-            :resultItemDS.Company,
-            :resultItemDS.Branch,
-            :resultItemDS.Section,
-            :resultItemDS.Group,
-            :resultItemDS.Category,
-            :resultItemDS.Product,
-            :resultItemDS.Description,
-            :resultItemDS.OnHand,
-            :resultItemDS.WACUnitCost,
-            :resultItemDS.ExtWACCost,
-            :resultItemDS.MarketCost,
-            :resultItemDS.ExtMarketCost,
-            :resultItemDS.ReplacementCost,
-            :resultItemDS.ExtReplacementCost,
-            :resultItemDS.SubstituteCode,
-            :resultItemDS.AssociatedCode,
-            :resultItemDS.ComponentCode,
-            :resultItemDS.DeleteCode,
-            :resultItemDS.ChangedCode,
-            :resultItemDS.StockingUOM,
-            :resultItemDS.ItemWeight,
-            :resultItemDS.LockedCode,
-            :resultItemDS.ManufacturerNumber;
+            :returnItemDS.Company,
+            :returnItemDS.Branch,
+            :returnItemDS.Section,
+            :returnItemDS.Group,
+            :returnItemDS.Category,
+            :returnItemDS.Product,
+            :returnItemDS.Description,
+            :returnItemDS.OnHand,
+            :returnItemDS.WACUnitCost,
+            :returnItemDS.ExtWACCost,
+            :returnItemDS.MarketCost,
+            :returnItemDS.ExtMarketCost,
+            :returnItemDS.ReplacementCost,
+            :returnItemDS.ExtReplacementCost,
+            :returnItemDS.SubstituteCode,
+            :returnItemDS.AssociatedCode,
+            :returnItemDS.ComponentCode,
+            :returnItemDS.DeleteCode,
+            :returnItemDS.ChangedCode,
+            :returnItemDS.StockingUOM,
+            :returnItemDS.ItemWeight,
+            :returnItemDS.LockedCode,
+            :returnItemDS.ManufacturerNumber;
 
         // Check fetch results
         if SQLCODE = 0;
           // Record found successfully
-          resultItemDS.Found = *on;
+          returnItemDS.Found = *on;
         elseif SQLCODE = 100;
           // No data found - this is normal, not an error
-          resultItemDS.Found = *off;
+          returnItemDS.Found = *off;
         else;
           // Other SQL error
-          resultItemDS.Found = *off;
+          returnItemDS.Found = *off;
         endif;
 
         // Close cursor
@@ -329,9 +332,9 @@
                      concat '-01') < :currentDate;
 
         // Initialize monthly totals
-        resultItemDS.Month1Sales = 0;
-        resultItemDS.Month2Sales = 0;
-        resultItemDS.Month3Sales = 0;
+        returnItemDS.Month1Sales = 0;
+        returnItemDS.Month2Sales = 0;
+        returnItemDS.Month3Sales = 0;
 
         // Open cursor and process records
         exec sql open sales_cursor;
@@ -341,11 +344,11 @@
 
         dow SQLCODE = 0;
           if oeDate >= month1Start and oeDate < currentDate;
-            resultItemDS.Month1Sales += salesCount;
+            returnItemDS.Month1Sales += salesCount;
           elseif oeDate >= month2Start and oeDate < month1Start;
-            resultItemDS.Month2Sales += salesCount;
+            returnItemDS.Month2Sales += salesCount;
           elseif oeDate >= month3Start and oeDate < month2Start;
-            resultItemDS.Month3Sales += salesCount;
+            returnItemDS.Month3Sales += salesCount;
           endif;
 
           exec sql
@@ -355,9 +358,9 @@
         exec sql close sales_cursor;
 
         // Total last 3 months sales
-        resultItemDS.Last3MonthsSales = resultItemDS.Month1Sales +
-                                        resultItemDS.Month2Sales +
-                                        resultItemDS.Month3Sales;
+        returnItemDS.Last3MonthsSales = returnItemDS.Month1Sales +
+                                        returnItemDS.Month2Sales +
+                                        returnItemDS.Month3Sales;
 
         // Get returns for this item/branch with 3-month date filter
         exec sql
@@ -373,14 +376,14 @@
                      concat right('0' concat varchar(OEMO08), 2)
                      concat '-01') < :currentDate;
 
-        resultItemDS.Last3MonthsReturns = returnsCount;
+        returnItemDS.Last3MonthsReturns = returnsCount;
 
         // Calculate average of the 3 monthly totals (safe division)
         if MONTHS_FOR_ANALYSIS > 0;
-          resultItemDS.Last3MonthsAvg = resultItemDS.Last3MonthsSales
+          returnItemDS.Last3MonthsAvg = returnItemDS.Last3MonthsSales
                                         / MONTHS_FOR_ANALYSIS;
         else;
-          resultItemDS.Last3MonthsAvg = 0;
+          returnItemDS.Last3MonthsAvg = 0;
         endif;
 
         // Get previous year sales data with date filter
@@ -397,7 +400,7 @@
                      concat right('0' concat varchar(OEMO08), 2)
                      concat '-01') <= :prevYearEnd;
 
-        resultItemDS.PrevYearSales = salesCount;
+        returnItemDS.PrevYearSales = salesCount;
 
         // Get previous year returns data with date filter
         exec sql
@@ -413,18 +416,18 @@
                      concat right('0' concat varchar(OEMO08), 2)
                      concat '-01') <= :prevYearEnd;
 
-        resultItemDS.PrevYearReturns = returnsCount;
+        returnItemDS.PrevYearReturns = returnsCount;
 
         // Calculate previous year monthly average (safe division)
         if PREV_YEAR_MONTHS > 0;
-          resultItemDS.PrevYearAvg = resultItemDS.PrevYearSales
+          returnItemDS.PrevYearAvg = returnItemDS.PrevYearSales
                                      / PREV_YEAR_MONTHS;
         else;
-          resultItemDS.PrevYearAvg = 0;
+          returnItemDS.PrevYearAvg = 0;
         endif;
 
         // Get open purchase orders for this item/branch
-        resultItemDS.POCount = 0;
+        returnItemDS.POCount = 0;
         poIndex = 0;
 
         exec sql
@@ -450,8 +453,8 @@
 
         dow SQLCODE = 0 and poIndex < MAX_PO_RECORDS;
           poIndex += 1;
-          resultItemDS.OpenPOs(poIndex) = currentPO;
-          resultItemDS.POCount = poIndex;
+          returnItemDS.OpenPOs(poIndex) = currentPO;
+          returnItemDS.POCount = poIndex;
 
           exec sql
             fetch po_cursor into :currentPO.Status, :currentPO.ETADate,
@@ -462,6 +465,7 @@
         exec sql close po_cursor;
 
         // Return the result
-        return resultItemDS;
+        return returnItemDS;
 
        end-proc GETITEM;
+

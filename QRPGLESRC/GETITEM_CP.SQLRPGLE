@@ -12,50 +12,44 @@
 
       // Open Purchase Order structure
       dcl-ds openPO_t qualified template;
-        Status char(1);                              // PO Status
-        ETADate date;                                // Expected arrival date
-        PONumber packed(7:0);                        // Purchase order number
-        POLine packed(3:0);                          // PO line number
-        Quantity packed(11:2);                       // Order quantity
+        Status            char(1);                     // PO Status Code (pocd20)
+        ETADate          date;                        // Expected arrival date
+        PONumber         packed(7:0);                 // PO Number (pono01)
+        POLine           packed(3:0);                 // PO Line (pono05)
+        Quantity         packed(11:2);                // Quantity ordered (poqy01)
       end-ds;
 
       // Main return data structure for item information
-      dcl-ds returnItemDS qualified template;
-        Company char(2);                             // Company code
-        Branch char(3);                              // Branch/Location code
-        Section char(3);                             // Item section code
-        Group char(3);                               // Item group code
-        Category char(3);                            // Item category code
-        Product packed(15:5);                        // Product identifier
-        Description char(30);                        // Item description
-        OnHand packed(11:2);                         // On-hand quantity
-        WACUnitCost packed(11:4);                    // Weighted average cost
-        ExtWACCost packed(13:2);                     // Extended WAC cost
-        MarketCost packed(11:4);                     // Market cost per unit
-        ExtMarketCost packed(13:2);                  // Extended market cost
-        ReplacementCost packed(11:4);                // Replacement cost per unit
-        ExtReplacementCost packed(13:2);             // Extended replacement cost
-        SubstituteCode char(1);                      // Item substitute code
-        AssociatedCode char(1);                      // Associated item code
-        ComponentCode char(1);                       // Item component code
-        DeleteCode char(1);                          // Item delete code
-        ChangedCode char(1);                         // Item changed code
-        StockingUOM char(3);                         // Stocking unit of measure
-        ItemWeight packed(9:4);                      // Inventory item weight
-        LockedCode char(1);                          // Item locked for update
-        ManufacturerNumber char(30);                 // Manufacturer number
-        Month1Sales packed(11:2);                    // Last month sales
-        Month2Sales packed(11:2);                    // 2 months ago sales
-        Month3Sales packed(11:2);                    // 3 months ago sales
-        Last3MonthsSales packed(11:2);               // Total last 3 months sales
-        Last3MonthsReturns packed(11:2);             // Total last 3 months returns
-        Last3MonthsAvg packed(11:2);                 // Average monthly sales
-        PrevYearSales packed(11:2);                  // Previous year sales
-        PrevYearReturns packed(11:2);                // Previous year returns
-        PrevYearAvg packed(11:2);                    // Previous year monthly avg
-        POCount packed(3:0);                         // Number of open POs
-        OpenPOs likeds(openPO_t) dim(50);            // Open purchase orders array
-        Found ind;                                   // Record found indicator
+      dcl-ds returnItemDS qualified;
+        Company           char(2);                    // c.GLNO01 - Company code
+        Branch            char(3);                    // c.IVNO10 - Branch number
+        Section           char(2);                    // b.IVCD17 - Product section
+        Group             char(2);                    // b.IVCD18 - Product group
+        Category          char(2);                    // b.IVCD19 - Product category
+        Product           char(30);                   // b.IVNO04 - Product identifier
+        Description       char(30);                   // b.IVDN01 - Product description
+        OnHand            packed(11:2);               // c.IVQY01 - Quantity on hand
+        WACUnitCost       packed(11:2);               // c.IVAMW6 - WAC per unit
+        ExtWACCost        packed(13:2);               // Calculated: OnHand * WACUnitCost
+        MarketCost        packed(11:2);               // b.IVAM05 - Market cost per unit
+        ExtMarketCost     packed(13:2);               // Calculated: MarketCost * OnHand
+        ReplacementCost   packed(11:2);               // b.IVAM34 - Replacement cost per unit
+        ExtReplacementCost packed(13:2);              // Calculated: ReplacementCost * OnHand
+        // Sales data - Last 3 months (individual buckets)
+        Month1Sales       packed(11:2);               // Most recent month sales
+        Month2Sales       packed(11:2);               // 2nd month back sales
+        Month3Sales       packed(11:2);               // 3rd month back sales
+        Last3MonthsSales  packed(11:2);               // Total sales qty last 3 months
+        Last3MonthsReturns packed(11:2);              // Total returns qty last 3 months
+        Last3MonthsAvg    packed(11:2);               // Average monthly sales last 3 months
+        // Sales data - Previous year same period
+        PrevYearSales     packed(11:2);               // Sales qty prev year same period
+        PrevYearReturns   packed(11:2);               // Returns qty prev year same period
+        PrevYearAvg       packed(11:2);               // Average monthly sales prev year
+        // Open Purchase Orders Array
+        OpenPOs           likeds(openPO_t) dim(50);   // Array of open POs
+        POCount           packed(3:0);                // Number of open POs found
+        Found             ind;                        // Record found indicator
       end-ds;
 
       // Procedure prototype for GETITEM
