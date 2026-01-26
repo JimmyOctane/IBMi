@@ -18,6 +18,7 @@
 
         // Transfer CSV Generation Service
         dcl-pr generateTransferCSV int(10);
+         company packed(3:0);
          parmDate char(10) options(*nopass);
          csvPath varchar(100) options(*nopass);
          branchArray packed(3:0) dim(100) options(*nopass);

@@ -32,7 +32,7 @@
       csvPath = '';
       tableName = '';
       includeHeaders = 'Y';
-      resultCount = generateTransferCSV(testDate : csvPath : branches : tableName :
+      resultCount = generateTransferCSV(1 : testDate : csvPath : branches : tableName :
                                        includeHeaders);
       msg = 'Records: ' + %char(resultCount);
       dsply msg;
@@ -44,7 +44,7 @@
       csvPath = '';
       tableName = 'transfer_data.csv';
       includeHeaders = 'Y';
-      resultCount = generateTransferCSV(testDate : csvPath : branches : tableName :
+      resultCount = generateTransferCSV(1 : testDate : csvPath : branches : tableName :
                                        includeHeaders);
       msg = 'Records: ' + %char(resultCount);
       dsply msg;
@@ -56,7 +56,7 @@
       msg = 'Test 3: ' + testDate + ' TXT';
       dsply msg;
       includeHeaders = 'N';
-      resultCount = generateTransferCSV(testDate : csvPath : branches : tableName :
+      resultCount = generateTransferCSV(1 : testDate : csvPath : branches : tableName :
                                        includeHeaders);
       msg = 'Records: ' + %char(resultCount);
       dsply msg;
@@ -68,7 +68,7 @@
       csvPath = '';
       tableName = 'invalid_test.csv';
       includeHeaders = 'Y';
-      resultCount = generateTransferCSV(testDate : csvPath : branches : tableName :
+      resultCount = generateTransferCSV(1 : testDate : csvPath : branches : tableName :
                                        includeHeaders);
       msg = 'Records: ' + %char(resultCount);
       dsply msg;
@@ -80,7 +80,7 @@
       msg = 'Test 5: ' + testDate + ' CSV';
       dsply msg;
       includeHeaders = 'Y';
-      resultCount = generateTransferCSV(testDate : csvPath : branches : tableName :
+      resultCount = generateTransferCSV(1 : testDate : csvPath : branches : tableName :
                                        includeHeaders);
       msg = 'Records: ' + %char(resultCount);
       dsply msg;

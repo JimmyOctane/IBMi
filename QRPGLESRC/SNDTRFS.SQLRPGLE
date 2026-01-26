@@ -1,10 +1,50 @@
             //****************************************************************************
             //* Program:      SNDTRFS - Transfer CSV Generation Service Module
             //* Description:  NOMAIN service program for generating CSV files of
-            //*               transfer data to IFS
+            //*               transfer data to IFS. Extracts transfer records from
+            //*               IVPTRL/IVPTTH/IVPTRH tables and generates formatted
+            //*               CSV or TXT output files with optional headers and
+            //*               timestamped filenames.
+            //*
+            //* Parameters:   company - Company code (required, validated against
+            //*                        GLPMHDR.GLNO01)
+            //*               parmDate - Filter date in ISO format (optional, defaults
+            //*                         to time-based logic if not provided)
+            //*               csvPath - Output file path (optional, defaults to
+            //*                        '/tmp/transfer_data.csv')
+            //*               branchArray - Array of branch codes to filter (required,
+            //*                            validated against ARPMBCH for company)
+            //*               tableName - Output filename with extension (optional,
+            //*                          determines delimiter and adds timestamp)
+            //*               includeHeaders - 'Y'/'N' to include column headers
+            //*                               (optional, defaults to no headers)
+            //*
+            //* Returns:      Number of records processed (positive integer)
+            //*               -1: General error (SQL or file write failure)
+            //*               -2: No valid branches provided in array
+            //*               -3: Branch array parameter required
+            //*               -4: Invalid company code
+            //*               -5: Invalid branch for specified company
+            //*
+            //* Tables Used:  IVPTRL - Transfer detail records (line items)
+            //*               IVPTTH - Transfer header (sending branch info)
+            //*               IVPTRH - Transfer header (receiving branch info)
+            //*               IVPMSTR - Item master (validation)
+            //*               GLPMHDR - Company master (validation)
+            //*               ARPMBCH - Branch master (validation)
+            //*
+            //* Features:     - Company and branch validation
+            //*               - Time-based date filtering logic
+            //*               - CSV and TXT format support with proper delimiters
+            //*               - Automatic timestamp in output filenames
+            //*               - Optional column headers
+            //*               - Error handling with specific return codes
+            //*
             //* Copyright:    East Coast Metals
             //* Author:       JJF
             //* Created:      012325
+            //* Modified:     012325 JJF - Added company validation
+            //*               012325 JJF - Added branch validation
             //****************************************************************************
 
             // Control Options
@@ -22,6 +62,7 @@
             // Generate Transfer CSV procedure
             dcl-proc generateTransferCSV export;
               dcl-pi *n int(10);
+                company packed(3:0);
                 parmDate char(10) options(*nopass);
                 csvPath varchar(100) options(*nopass);
                 branchArray packed(3:0) dim(100) options(*nopass);
@@ -29,23 +70,27 @@
                 includeHeaders char(1) options(*nopass);
               end-pi;
 
-              // Field Definitions
-              dcl-s csvString varchar(32000) inz;
-              dcl-c CR const(x'0d');
-              dcl-c CRLF const(x'0d25');
-              dcl-s i int(10) inz;
-              dcl-s maxItemLines packed(5: 0) inz(500);
-              dcl-s rowcount int(10) inz;
-              dcl-s totalRows int(10) inz;
+              // Field Definitions - Variables
+              dcl-s branchInList varchar(1000) inz;
               dcl-s CSVIFSPath varchar(100) inz('/tmp/transfer_data.csv');
               dcl-s csvLine varchar(500) inz;
+              dcl-s csvString varchar(32000) inz;
               dcl-s currentTime time inz;
-              dcl-s filterDate char(10) inz;
-              dcl-s isValidDate ind inz;
-              dcl-s branchInList varchar(1000) inz;
               dcl-s delimiter char(1) inz;
-              dcl-s timestampedName varchar(150) inz;
               dcl-s dotPosition int(10) inz;
+              dcl-s filterDate char(10) inz;
+              dcl-s i int(10) inz;
+              dcl-s isValidDate ind inz;
+              dcl-s maxItemLines packed(5: 0) inz(500);
+              dcl-s rowcount int(10) inz;
+              dcl-s timestampedName varchar(150) inz;
+              dcl-s totalRows int(10) inz;
+              dcl-s validBranch ind inz(*off);
+              dcl-s validCompany ind inz(*off);
+
+              // Field Definitions - Constants
+              dcl-c CR const(x'0d');
+              dcl-c CRLF const(x'0d25');
               dcl-c endOfDay const(t'00.00.00');
               dcl-c startOfDay const(t'07.00.00');
               dcl-c TAB const(x'09');
@@ -87,6 +132,17 @@
 
               exec sql set option commit=*none, datfmt=*iso, closqlcsr=*endmod;
 
+              // Validate company parameter using GLPMHDR table
+              exec sql
+                select '1'
+                into :validCompany
+                from GLPMHDR
+                where GLNO01 = :company;
+              
+              if not(validCompany);
+                return -4;  // Error: Invalid company
+              endif;
+
               // Override default path if provided
               if %parms() >= 2 and %trim(csvPath) <> '';
                 CSVIFSPath = csvPath;
@@ -104,7 +160,7 @@
                                   %subst(%trim(tableName) : dotPosition);
                 else;
                   // No extension found, just append timestamp
-                  timestampedName = %trim(tableName) + %char(%timestamp());
+                  timestampedName = %trim(tableName) + '_' + %char(%timestamp());
                 endif;
                 
                 // Update CSVIFSPath with timestamped name
@@ -149,11 +205,24 @@
                 endif;
               endif;
 
-              // Build branch list for IN clause
+              // Build branch list for IN clause and validate branches
               if %parms() >= 3;
                 branchInList = '';
                 for i = 1 to %elem(branchArray);
                   if branchArray(i) > 0;
+                    // Validate each branch against company in ARPMBCH
+                    validBranch = *off;
+                    exec sql
+                      select '1'
+                      into :validBranch
+                      from ARPMBCH
+                      where ARNO15 = :company
+                        and ARNO16 = :branchArray(i);
+                    
+                    if not(validBranch);
+                      return -5;  // Error: Invalid branch for company
+                    endif;
+                    
                     if branchInList <> '';
                       branchInList += ',';
                     endif;
