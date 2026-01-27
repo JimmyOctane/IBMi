@@ -32,8 +32,10 @@
             //*               IVPMSTR - Item master (validation)
             //*               GLPMHDR - Company master (validation)
             //*               ARPMBCH - Branch master (validation)
+            //*               CL_ITMMST - Item master filter (validation)
             //*
             //* Features:     - Company and branch validation
+            //*               - Item validation against CL_ITMMST table
             //*               - Time-based date filtering logic
             //*               - CSV and TXT format support with proper delimiters
             //*               - Automatic timestamp in output filenames
@@ -45,6 +47,7 @@
             //* Created:      012325
             //* Modified:     012325 JJF - Added company validation
             //*               012325 JJF - Added branch validation
+            //*               012625 JJF - Added item validation against CL_ITMMST
             //****************************************************************************
 
             // Control Options
@@ -287,7 +290,11 @@
                 trh.IVCD70  = 'C' and
                 date(digits(rh.IVCC21)  ||  digits(rh.IVYR21) || '-' ||
                      digits(rh.IVMO21) || '-' ||
-                     digits(rh.IVDY21)) = date(:filterDate)
+                     digits(rh.IVDY21)) = date(:filterDate) and
+                rd.ivno07 in (select
+                  dec(FIELDS10,6,0) as item
+                  from CL_ITMMST
+                  group by FIELDS10)
                 ) subquery
                 for read only;
 
