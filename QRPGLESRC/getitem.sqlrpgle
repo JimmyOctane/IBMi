@@ -19,7 +19,8 @@
       // Returns: GETITEM_DS data structure containing:
       //   - Basic item information (company, branch, section, group, category)
       //   - Product details (identifier, description)
-      //   - Quantities and costs (on-hand, WAC unit cost, market cost, replacement cost)
+      //   - Quantities (on-hand, allocated, reserved, backordered, available)
+      //   - Costs (WAC unit cost, market cost, replacement cost)
       //   - Calculated extended costs (extended WAC, market, replacement)
       //   - Item attributes (substitute, associated, component, delete, changed codes)
       //   - Physical properties (stocking UOM, item weight, manufacturer number)
@@ -137,6 +138,10 @@
                    b.IVNO04,                          // Product
                    b.IVDN01,                          // Description
                    coalesce(sum(s.IVQY01), 0),        // OnHand (sum all branches)
+                   coalesce(sum(s.IVQY02), 0),        // QtyAllocated (sum all branches)
+                   coalesce(sum(s.IVQY03), 0),        // QtyReserved (sum all branches)
+                   coalesce(sum(s.IVQY04), 0),        // QtyBackordered (sum all branches)
+                   coalesce(sum(s.IVQY23), 0),        // QtyAvailable (sum all branches)
                    0,                                 // WACUnitCost (0 - no branch)
                    0,                                 // ExtWACCost (0 - no branch)
                    b.IVAM05,                          // MarketCost
@@ -181,6 +186,10 @@
               :returnItemDS.Product,
               :returnItemDS.Description,
               :returnItemDS.OnHand,
+              :returnItemDS.QtyAllocated,
+              :returnItemDS.QtyReserved,
+              :returnItemDS.QtyBackordered,
+              :returnItemDS.QtyAvailable,
               :returnItemDS.WACUnitCost,
               :returnItemDS.ExtWACCost,
               :returnItemDS.MarketCost,
@@ -236,6 +245,10 @@
                  b.IVNO04,                            // Product
                  b.IVDN01,                            // Description
                  c.IVQY01,                            // OnHand
+                 c.IVQY02,                            // QtyAllocated
+                 c.IVQY03,                            // QtyReserved
+                 c.IVQY04,                            // QtyBackordered
+                 c.IVQY23,                            // QtyAvailable
                  c.IVAMW6,                            // WACUnitCost
                  (c.IVQY01 * c.IVAMW6),               // ExtWACCost
                  b.IVAM05,                            // MarketCost
@@ -281,6 +294,10 @@
             :returnItemDS.Product,
             :returnItemDS.Description,
             :returnItemDS.OnHand,
+            :returnItemDS.QtyAllocated,
+            :returnItemDS.QtyReserved,
+            :returnItemDS.QtyBackordered,
+            :returnItemDS.QtyAvailable,
             :returnItemDS.WACUnitCost,
             :returnItemDS.ExtWACCost,
             :returnItemDS.MarketCost,

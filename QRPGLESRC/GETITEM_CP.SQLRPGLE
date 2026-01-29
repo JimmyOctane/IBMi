@@ -29,6 +29,10 @@
         Product           char(30);                   // b.IVNO04 - Product identifier
         Description       char(30);                   // b.IVDN01 - Product description
         OnHand            packed(11:2);               // c.IVQY01 - Quantity on hand
+        QtyAllocated      packed(7:0);                // c.IVQY02 - Quantity Allocated
+        QtyReserved       packed(7:0);                // c.IVQY03 - Quantity Reserved
+        QtyBackordered    packed(7:0);                // c.IVQY04 - Quantity Backordered
+        QtyAvailable      packed(7:0);                // c.IVQY23 - Quantity Available
         WACUnitCost       packed(11:2);               // c.IVAMW6 - WAC per unit
         ExtWACCost        packed(13:2);               // Calculated: OnHand * WACUnitCost
         MarketCost        packed(11:2);               // b.IVAM05 - Market cost per unit
