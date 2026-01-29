@@ -37,6 +37,6 @@
              returncase         char(1);    // Address case
              errorCode          char(3);    // Error code
              errorMessage       char(80);   // Error message
-             maxaddressLength   char(2);    // Max addr len
+             maxaddressLength   zoned(2: 0); // Max addr len
              addressType        char(1);    // Addr type M/S
             end-ds;
