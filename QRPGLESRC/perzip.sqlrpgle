@@ -1,59 +1,68 @@
 
 
-            //****************************************************************************
-            //* Program:      PERZIP - USPS Address Validation & ZIP+4 Lookup Service
-            //* Description:  NOMAIN service program providing comprehensive address
-            //*               validation, standardization, and ZIP+4 lookup using USPS
-            //*               certified ML219403 and ML218202 validation engines with
-            //*               multiple address matching and ECZIPCODE database integration
-            //*
-            //* Program Structure:
-            //*   Main Procedures:
-            //*     - validateAddress()     : Primary validation entry point
-            //*     - processInboundAddress(): Address parameter processing & formatting
-            //*     - isNonUSAddress()      : International address detection
-            //*     - checkAndInsertZipData(): ECZIPCODE database maintenance
-            //*     - insertZipRecord()     : ZIP code record insertion
-            //*
-            //* External Dependencies:
-            //*   Legacy Programs:
-            //*     - ML219403: USPS CASS-certified address validation engine
-            //*               Returns standardized addresses, ZIP+4, carrier routes,
-            //*               DPV validation, LACS updates, multiple match handling
-            //*     - ML218202: ZIP code lookup service for city/county information
-            //*               Returns city names, state codes, county data, ZIP class
-            //*
-            //*   Database Tables:
-            //*     - ECZIPCODE: ZIP code master table for validation and storage
-            //*               Fields: ZIP, TYPE, PRIMARY_CITY, STATE, LATITUDE,
-            //*                      LONGITUDE, COUNTRY
-            //*
-            //*   Copy Members:
-            //*     - PERZIP_CP: Common data structures and prototypes
-            //*               Contains AddressParmDS template for parameter passing
-            //*
-            //* Data Structures:
-            //*   - AddressParmDS: Parameter template for address validation calls
-            //*   - ML219403_DS:  Complete parameter structure for address validation
-            //*   - ML218202_DS:  Parameter structure for ZIP code lookups
-            //*   - MltEntry:     Multiple address match results (100 entry array)
-            //*
-            //* Key Features:
-            //*   - USPS CASS certification compliance for address validation
-            //*   - ZIP+4 lookup and standardization
-            //*   - Multiple address matching with up to 100 results
-            //*   - International address detection and bypass
-            //*   - Automatic ECZIPCODE database maintenance
-            //*   - DPV (Delivery Point Validation) processing
-            //*   - LACS (Locatable Address Conversion System) updates
-            //*   - Carrier route and delivery point assignment
-            //*   - Business/residential classification
-            //*   - Congressional district and FIPS code assignment
-            //*
-            //* Copyright:    East Coast Metals
-            //* Author:       JJF
-            //* Created:      010826
-            //****************************************************************************
+       // ------------------------------------------------------------------
+       // PROGRAM NAME - PERZIP
+       // ------------------------------------------------------------------
+       // COPYRIGHT East Coast Metals
+       // ------------------------------------------------------------------
+       // USPS Address Validation & ZIP+4 Lookup Service
+       // NOMAIN service program providing comprehensive address validation,
+       // standardization, and ZIP+4 lookup using USPS certified ML219403
+       // and ML218202 validation engines with multiple address matching
+       // and ECZIPCODE database integration
+       // ------------------------------------------------------------------
+       // PURPOSE:
+       //    USPS CASS certification compliance for address validation
+       //    ZIP+4 lookup and standardization
+       //    Multiple address matching with up to 100 results
+       //    International address detection and bypass
+       //    Automatic ECZIPCODE database maintenance
+       //    DPV (Delivery Point Validation) processing
+       //    LACS (Locatable Address Conversion System) updates
+       //    Carrier route and delivery point assignment
+       //    Business/residential classification
+       //    Congressional district and FIPS code assignment
+       //
+       // SPECIAL NOTES:
+       //    External Dependencies:
+       //      Legacy Programs:
+       //        - ML219403: USPS CASS-certified address validation engine
+       //        - ML218202: ZIP code lookup service for city/county information
+       //      Database Tables:
+       //        - ECZIPCODE: ZIP code master table for validation and storage
+       //      Copy Members:
+       //        - PERZIP_CP: Common data structures and prototypes
+       //
+       // ----------------------------------------------------------------
+       // PER/ZIP4 ERROR CODE DESCRIPTIONS:
+       // ----------------------------------------------------------------
+       // ADR - insufficient address information
+       // ALT - address changed from alternate to base
+       // ANS - address not on street
+       // BNC - PO Box not found in city (finance number)
+       // BNR - Box missing or not found in RR/HC (default taken)
+       // DBE - USPS database exception (firm required to make match)
+       // DBX - US Postal Service database has expired
+       // DPV - Delivery Point Validation failed
+       // EWS - Early Warning System (EWS) match
+       // LLK - address changed by LACSLink processing
+       // LLN - insufficient last line (city, state, ZIP) information
+       // MLT - multiple addresses found
+       // NDA - nondelivery address
+       // PGM - program error
+       // PWX - Password has expired
+       // RNF - RR/HC number not found in city (finance number)
+       // SIZ - Address cannot be abbreviated to given length
+       // SLK - address changed by SuiteLink processing
+       // SNF - street not found in city (finance number)
+       // STR - street name not found
+       // XST - ZIP+4 database member missing for state
+       // ----------------------------------------------------------------
+       // ----------------------------------------------------------------
+       // TASK       DATE   ID  DESCRIPTION
+       // ---------- ------ --- -----------------------------------------
+       // JJF   3182 010826 JJF created program
+       // ----------------------------------------------------------------
 
             // Control Options
             Ctl-Opt NoMain;                         // Service program (no main)

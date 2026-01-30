@@ -1,20 +1,45 @@
-     F*------------------------------------------------------------------*
-     F*N PROGRAM NAME - PERZIP                                          *
-     F*------------------------------------------------------------------*
-     F*P COPYRIGHT East Coast Metals                                    *
-     F*------------------------------------------------------------------*
-     F*D address validation using PERZIP                                *
-     F*------------------------------------------------------------------*
-     F*S PURPOSE:                                                        *
-     F*S    Per Zip Address Validation                                  *
-     F*S                                                                 *
-     F*S SPECIAL NOTES:                                                 *
-     F*S                                                                 *
-     F*M ----------------------------------------------------------------*
-     F*M TASK       DATE   ID  DESCRIPTION                              *
-     F*M ---------- ------ --- -----------------------------------------*
-     F*V JJF   3182 010826 JJF created program                          *
-     F*M ----------------------------------------------------------------*
+       // ------------------------------------------------------------------
+       // PROGRAM NAME - PERZIP
+       // ------------------------------------------------------------------
+       // COPYRIGHT East Coast Metals
+       // ------------------------------------------------------------------
+       // address validation using PERZIP
+       // ------------------------------------------------------------------
+       // PURPOSE:
+       //    Per Zip Address Validation
+       //
+       // SPECIAL NOTES:
+       //
+       // ----------------------------------------------------------------
+       // PER/ZIP4 ERROR CODE DESCRIPTIONS:
+       // ----------------------------------------------------------------
+       // ADR - insufficient address information
+       // ALT - address changed from alternate to base
+       // ANS - address not on street
+       // BNC - PO Box not found in city (finance number)
+       // BNR - Box missing or not found in RR/HC (default taken)
+       // DBE - USPS database exception (firm required to make match)
+       // DBX - US Postal Service database has expired
+       // DPV - Delivery Point Validation failed
+       // EWS - Early Warning System (EWS) match
+       // LLK - address changed by LACSLink processing
+       // LLN - insufficient last line (city, state, ZIP) information
+       // MLT - multiple addresses found
+       // NDA - nondelivery address
+       // PGM - program error
+       // PWX - Password has expired
+       // RNF - RR/HC number not found in city (finance number)
+       // SIZ - Address cannot be abbreviated to given length
+       // SLK - address changed by SuiteLink processing
+       // SNF - street not found in city (finance number)
+       // STR - street name not found
+       // XST - ZIP+4 database member missing for state
+       // ----------------------------------------------------------------
+       // ----------------------------------------------------------------
+       // TASK       DATE   ID  DESCRIPTION
+       // ---------- ------ --- -----------------------------------------
+       // JJF   3182 010826 JJF created program
+       // ----------------------------------------------------------------
         // Address Validation Service
         dcl-pr validateAddress likeds(AddressParmDS);
          pAddressDS likeds(AddressParmDS) const;
