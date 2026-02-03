@@ -1,0 +1,85 @@
+IFS SQL Reference - Proper Syntax for IBM i
+==========================================
+
+1. QSYS2.IFS_OBJECT_STATISTICS - List files and directories in IFS
+   ----------------------------------------------------------------
+   
+   Correct syntax:
+   select path_name, object_name, object_type, data_size, create_timestamp, modify_timestamp
+   from table(qsys2.ifs_object_statistics(
+     start_path_name => '/home/directory_name',
+     subtree_directories => 'YES',
+     object_type_list => '*STMF'))
+   where upper(path_name) like '%.XML';
+
+   Key parameters:
+   - start_path_name (NOT start_object_name)
+   - path_name in SELECT (returns full path)
+   - object_name in SELECT (returns just filename)
+   - subtree_directories => 'YES' for recursive scan
+   - object_type_list => '*STMF' for stream files
+
+2. QSYS2.IFS_READ - Read file contents from IFS
+   ---------------------------------------------
+   
+   Correct syntax:
+   select line, line_number
+   from table(qsys2.ifs_read(
+     path_name => '/full/path/to/file.xml'))
+   order by line_number;
+
+   Returns:
+   - line: varchar content of each line
+   - line_number: sequential line number
+
+3. Common IFS File Filtering Examples
+   ----------------------------------
+   
+   XML files only:
+   where upper(path_name) like '%.XML'
+   
+   Files modified today:
+   where date(modify_timestamp) = current_date
+   
+   Files larger than 1MB:
+   where data_size > 1048576
+   
+   Specific directory only (non-recursive):
+   subtree_directories => 'NO'
+
+4. Reading Multiple Files in Loop
+   ------------------------------
+   
+   -- Get file list first
+   declare files_cursor cursor for 
+   select path_name 
+   from table(qsys2.ifs_object_statistics(...));
+   
+   -- Then read each file content
+   declare content_cursor cursor for
+   select line 
+   from table(qsys2.ifs_read(path_name => :file_path_variable));
+
+5. Common Errors to Avoid
+   ----------------------
+   
+   ❌ start_object_name (incorrect parameter name)
+   ✅ start_path_name (correct parameter name)
+   
+   ❌ object_name in path filter (won't work for full paths)
+   ✅ path_name in path filter (works with full paths)
+   
+   ❌ Reusing same cursor name in nested loops
+   ✅ Use different cursor names (cursor1, cursor2, etc.)
+
+6. Performance Tips
+   ----------------
+   
+   - Use specific file extensions in WHERE clause
+   - Limit directory depth when possible
+   - Process files in batches
+   - Close cursors promptly
+   - Consider file size limits for memory usage
+
+Updated: 2025-01-30
+Reference: IBM i 7.4 SQL Reference
