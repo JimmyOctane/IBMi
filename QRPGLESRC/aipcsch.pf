@@ -1,0 +1,35 @@
+     A*------------------------------------------------------------------------*
+     A*N FILE NAME - AIPCSCH                                                   *
+     A*------------------------------------------------------------------------*
+     A*D WEB COMMERCE SHOPPING CART ORDER HEADER FILE                          *
+     A*M ----------------------------------------------------------------------*
+     A*M TASK       DATE   ID  DESCRIPTION                                     *
+     A*M ---------- ------ --- ------------------------------------------------*
+!A   A*V RPG-242    103025 DKS NEUCO INTEGRATION                               *
+     A*M ----------------------------------------------------------------------*
+     A                                      REF(DBFREF)
+     A          R AIFCSCH                   TEXT('SHOPPING CART HEADER FILE')
+     A            WBNO29    R
+     A            OECD01    R
+     A            OECD03    R
+     A            OEDN01    R
+     A            OENO07    R
+     A            OENO16    R
+     A            ARCDC6    R
+     A            ARAD10    R
+     A            ARAD11    R
+     A            ARAD12    R
+     A            ARCY04    R
+     A            ARST04    R
+     A            ARZP18    R
+     A            OEMO07    R
+     A            OEDY07    R
+     A            OECC07    R
+     A            OEYR07    R
+     A            ARNO07    R
+     A            ARNO08    R
+     A            ARNO09    R
+     A            OENO24    R
+     A            APNO01    R
+     A            OPTM36    R
+     A          K WBNO29
