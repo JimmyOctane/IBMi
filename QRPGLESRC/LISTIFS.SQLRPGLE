@@ -47,6 +47,9 @@
       //
       //******************************************************************************
 
+      // SQL Communication Area
+      exec sql include sqlca;
+
       // Copy members for data structures and prototypes
       /copy qrpglesrc,LISTIFS_CP
 
@@ -58,14 +61,14 @@
        // Named constants
        dcl-c MAX_FILES const(1000);            // Maximum files to return
 
-       dcl-pi LISTIFS likeds(returnListDS) export;
+       dcl-pi LISTIFS likeds(returnListDS);
          inPath varchar(50) const;              // IFS directory path input
        end-pi;
 
         // Local variables
         dcl-s fileIndex packed(5:0);
         dcl-s currentFileName varchar(100);
-        dcl-ds returnDS likeds(returnListDS) template;
+        dcl-ds returnDS likeds(returnListDS);
 
         // Initialize return structure
         clear returnDS;
@@ -82,13 +85,13 @@
         // Declare cursor for IFS file listing using IFS_OBJECT_STATISTICS
         exec sql
           declare listifs_cursor cursor for
-          select OBJECT_NAME
+          select PATHNAME_NAME
           from TABLE(QSYS2.IFS_OBJECT_STATISTICS(
             START_PATH_NAME => :inPath,
             SUBTREE_DIRECTORIES => 'NO'
           ))
           where OBJECT_TYPE = '*STMF'
-          order by OBJECT_NAME
+          order by PATHNAME_NAME
           for read only;
 
         // Open cursor
@@ -108,7 +111,7 @@
         // Process files until no more records or maximum reached
         dow SQLCODE = 0 and fileIndex < MAX_FILES;
           fileIndex += 1;
-          returnDS.FileNames(fileIndex).FileName = %trim(currentFileName);
+          returnDS.FileNames(fileIndex) = %trim(currentFileName);
           returnDS.FileCount = fileIndex;
 
           // Fetch next record
@@ -134,3 +137,4 @@
         return returnDS;
 
        end-proc LISTIFS;
+

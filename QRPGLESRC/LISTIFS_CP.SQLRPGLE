@@ -16,13 +16,13 @@
       end-ds;
 
       // Main return data structure for IFS file list
-      dcl-ds returnListDS qualified template;
-        FileNames         likeds(fileEntry_t) dim(1000);  // Array of file names
+      dcl-ds returnListDS qualified ;
+        FileNames         varchar(100) dim(1000);         // Array of file names
         FileCount         packed(5:0);                    // Number of files found
         Found             ind;                            // Files found indicator
       end-ds;
 
       // Procedure prototype for LISTIFS
-      dcl-pr LISTIFS likeds(returnListDS) export;
+      dcl-pr LISTIFS likeds(returnListDS);
         inPath varchar(50) const;                         // IFS directory path input
       end-pr;
