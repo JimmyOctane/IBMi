@@ -51,6 +51,7 @@
        // NDA - nondelivery address
        // PGM - program error
        // PWX - Password has expired
+       // RIC - Residential/Commercial Indicator Conflict (RDI mismatch)
        // RNF - RR/HC number not found in city (finance number)
        // SIZ - Address cannot be abbreviated to given length
        // SLK - address changed by SuiteLink processing
@@ -629,6 +630,9 @@
           // MLT - Multiple addresses found
           // NDR - Non\Zdelivery address
           // PGM - Program error
+          // RIC - Residential/Commercial Indicator Conflict (RDI mismatch between
+          //       input classification and USPS RDI classification - not fatal,
+          //       address can still be standardized)
           // RNF - RR/HC not found in city
           // SNF - Street not found in city
           // STR - Street name not found
@@ -765,6 +769,28 @@
           end-proc;
 
           // -----------------------------------------------------------------------
+          // Procedure: stripNonNumeric - Remove all non-numeric characters from string
+          // -----------------------------------------------------------------------
+          dcl-proc stripNonNumeric;
+            dcl-pi *n varchar(50);
+              inputString varchar(50) const;
+            end-pi;
+            
+            dcl-s result varchar(50) inz('');
+            dcl-s i int(10);
+            dcl-s currentChar char(1);
+            
+            for i = 1 to %len(%trim(inputString));
+              currentChar = %subst(inputString:i:1);
+              if %check('0123456789':currentChar) = 0;  // Character is numeric
+                result += currentChar;
+              endif;
+            endfor;
+            
+            return result;
+          end-proc;
+
+          // -----------------------------------------------------------------------
           // Procedure: processInboundAddress - Handle inbound address parameters
           // Modernized version of legacy address squishing and field mapping logic
           // -----------------------------------------------------------------------
@@ -777,9 +803,14 @@
             dcl-s pos6 char(1);
             dcl-s pos7to10 char(4);
             dcl-s pos6to9 char(4);
+            dcl-s cleanZip varchar(50);
 
             // Initialize output structure with input values
             processedAddress = inAddressParms;
+
+            // Strip non-numeric characters from ZIP code first
+            cleanZip = stripNonNumeric(%trim(processedAddress.inZip));
+            processedAddress.inZip = cleanZip;
 
             // First check address and squish if separated
             // If ADDR1 has data, ADDR2 is blank, but ADDR3 has data,
@@ -791,7 +822,7 @@
               clear processedAddress.inAddress1;
             endif;
 
-            // Parse ZIP code positions for later use
+            // Parse ZIP code positions for later use (now using cleaned ZIP)
             if %len(%trim(processedAddress.inZip)) >= 6;
               pos6 = %subst(processedAddress.inZip:6:1);
               if %len(%trim(processedAddress.inZip)) >= 10;
@@ -843,29 +874,15 @@
             processedAddress.outCity = processedAddress.inCity;
             processedAddress.outState = processedAddress.inState;
 
-            // Handle ZIP code formatting
+            // Handle ZIP code formatting (now with numeric-only ZIP)
             select;
-              // ZIP has hyphen in position 6 with ZIP+4 data
-              when pos6 = '-' and pos7to10 <> *blanks;
+              // 9-digit ZIP: split into 5-digit + hyphen + 4-digit
+              when %len(%trim(processedAddress.inZip)) = 9;
                 processedAddress.outZip = %subst(processedAddress.inZip:1:5)
                                         + '-'
-                                        + pos7to10;
+                                        + %subst(processedAddress.inZip:6:4);
 
-              // ZIP has hyphen in position 6 but no ZIP+4 data
-              when pos6 = '-' and pos7to10 = *blanks;
-                processedAddress.outZip = %subst(processedAddress.inZip:1:5);
-
-              // ZIP has data in position 6 (not hyphen or space) - treat as ZIP+4
-              when pos6 <> '-' and pos6 <> ' ';
-                processedAddress.outZip = %subst(processedAddress.inZip:1:5)
-                                        + '-'
-                                        + pos6to9;
-
-              // ZIP has space in position 6 and no additional data
-              when pos6 = ' ' and pos7to10 = *blanks;
-                processedAddress.outZip = %subst(processedAddress.inZip:1:5);
-
-              // Default case - use ZIP as-is
+              // 5-digit ZIP or other lengths: use as-is
               other;
                 processedAddress.outZip = processedAddress.inZip;
             endsl;

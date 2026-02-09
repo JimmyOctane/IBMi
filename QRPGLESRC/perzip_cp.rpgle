@@ -64,4 +64,5 @@
              errorMessage       char(80);   // Error message
              maxaddressLength   zoned(2: 0); // Max addr len
              addressType        char(1);    // Addr type M/S
+             runFullAddressCheck char(1);   // Y=full check, N=basic
             end-ds;
