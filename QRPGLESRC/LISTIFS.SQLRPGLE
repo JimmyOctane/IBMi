@@ -32,19 +32,23 @@
         // Tables Used:
         //   QSYS2.IFS_OBJECT_STATISTICS - IBM i system table function for IFS objects
         //
-        // Author: [Your Name]
+        // Author: East Coast Metals Development Team
         // Date: 2026-02-03
-        // Version: 1.0
+        // Version: 1.1
         //
         // Modification History:
         //   Date       Author        Description
         //   ---------- ------------- ----------------------------------------------
-        //   2026-02-03 [Your Name]   Initial implementation
+        //   2026-02-03 ECM Dev Team  Initial implementation
         //                           - IFS directory scanning using IFS_OBJECT_STATISTICS
         //                           - Cursor-based processing for up to 1000 files
         //                           - Stream file filtering (no directories)
         //                           - Error handling for invalid paths
         //                           - Following GETITEM service program patterns
+        //   2026-02-09 ECM Dev Team  Added subtree directory parameter support
+        //                           - Updated procedure signature with inSubtree parameter
+        //                           - Enhanced recursive directory scanning capability
+        //                           - Updated copy member with proper parameter definitions
         //
         //******************************************************************************
 

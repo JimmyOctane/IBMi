@@ -22,7 +22,19 @@
             //
             // Author: East Coast Metals Development Team
             // Date: 2026-02-05
-            // Version: 1.0
+            // Version: 1.1
+            //
+            // Modification History:
+            //   Date       Author        Description
+            //   ---------- ------------- ----------------------------------------------
+            //   2026-02-05 ECM Dev Team  Initial implementation
+            //                           - Test program for LISTIFS service program
+            //                           - Multiple test scenarios for validation
+            //                           - Display results via DSPLY statements
+            //   2026-02-09 ECM Dev Team  Added subtree parameter support
+            //                           - Updated all LISTIFS calls with subtreeOption parameter
+            //                           - Fixed data structure reference (returnListDS -> returnIFSDocumentsDS)
+            //                           - Enhanced test program for new procedure signature
             //
             //******************************************************************************
 
@@ -31,9 +43,10 @@
 
             // Field Definitions - Variables
             dcl-s testPath varchar(50) inz;
+            dcl-s subtreeOption ind inz(*off);
             dcl-s i packed(5:0) inz;
             dcl-s displayMsg varchar(30) inz;
-            dcl-ds returnIFSFolderListDS likeds(returnListDS);
+            dcl-ds returnIFSFolderListDS likeds(returnIFSDocumentsDS);
 
             // Main processing
             dsply 'Starting LISTIFS Test Program';
@@ -43,7 +56,7 @@
             dsply ' ';
             dsply 'Test 1: Testing /tmp directory';
             testPath = '/tmp';
-            returnIFSFolderListDS = LISTIFS(testPath);
+            returnIFSFolderListDS = LISTIFS(testPath:subtreeOption);
 
             if returnIFSFolderListDS.Found;
                 displayMsg = 'SUCCESS: Found=' +
@@ -77,7 +90,7 @@
             dsply ' ';
             dsply 'Test 2: Testing /home directory';
             testPath = '/home';
-            returnIFSFolderListDS = LISTIFS(testPath);
+            returnIFSFolderListDS = LISTIFS(testPath:subtreeOption);
 
             if returnIFSFolderListDS.Found;
                 displayMsg =
@@ -102,7 +115,7 @@
             dsply ' ';
             dsply 'Test 3: Testing invalid directory';
             testPath = '/nonexistent/invalid/path';
-            returnIFSFolderListDS = LISTIFS(testPath);
+            returnIFSFolderListDS = LISTIFS(testPath:subtreeOption);
 
             if returnIFSFolderListDS.Found;
                 displayMsg =
@@ -118,7 +131,7 @@
             dsply ' ';
             dsply 'Test 4: Testing empty path';
             testPath = '';
-            returnIFSFolderListDS = LISTIFS(testPath);
+            returnIFSFolderListDS = LISTIFS(testPath:subtreeOption);
 
             if returnIFSFolderListDS.Found;
                 displayMsg =
@@ -133,7 +146,7 @@
             dsply ' ';
             dsply 'Test 5: Testing /QSYS.LIB directory';
             testPath = '/QSYS.LIB';
-            returnIFSFolderListDS = LISTIFS(testPath);
+            returnIFSFolderListDS = LISTIFS(testPath:subtreeOption);
 
             if returnIFSFolderListDS.Found;
                 displayMsg = 'SUCCESS: Found=' +
