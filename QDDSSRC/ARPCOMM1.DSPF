@@ -1,0 +1,62 @@
+     A*%%TS RD 20260213 192643 JFLANARY REL-V7R5M0 5770-WDS
+     A*%%EC
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CA03(03 'Exit')
+     A                                      CA12(12 'Cancel')
+     A                                      PRINT
+     A          R SFL01                     SFL
+     A*%%TS SD 20260213 192643 JFLANARY REL-V7R5M0 5770-WDS
+     A            SALELO        10Y 2B  8  2VALUES(BLANKS)
+     A            SALEHI        10Y 2B  8 15VALUES(BLANKS)
+     A            PROFLO         5Y 2B  8 28VALUES(BLANKS)
+     A            PROFHI         5Y 2B  8 36VALUES(BLANKS)
+     A            COMMRT         5Y 2B  8 44VALUES(BLANKS)
+     A            OPT            1A  B  8 52VALUES(BLANKS)
+     A          R CTL01                     SFLCTL(SFL01)
+     A*%%TS SD 20260213 192643 JFLANARY REL-V7R5M0 5770-WDS
+     A                                      SFLSIZ(999)
+     A                                      SFLPAG(14)
+     A            SFLDSP
+     A            SFLDSPCTL
+     A            CF05(05 'Refresh')
+     A            CF17(17 'Top')
+     A            CF18(18 'Bottom')
+     A                            1  2'ARPCOMM1'
+     A                            1 32'Commission Matrix Display'
+     A                            1 71DATE
+     A                            2 71TIME
+     A                            4  2'Plan Number . . .'
+     A            PLANNO    R        4 18VALUES(BLANKS)
+     A                            4 25'Division  . . .'
+     A            DIVISN    R        4 39VALUES(BLANKS)
+     A                            4 45'Section . . .'
+     A            SECTN     R        4 59VALUES(BLANKS)
+     A                            6  2'Type options, press Enter.'
+     A                            7  2'   5=Display Details'
+     A                            7 52'Opt'
+     A                            7 56'Sales Low'
+     A                            7 68'Sales High'
+     A                            8  2'Sales Low      Sales High     '
+     A                            8 35'Prof Low'
+     A                            8 44'Prof High'
+     A                            8 54'Comm Rate'
+     A                           22  2'F3=Exit   F5=Refresh   F12=Cancel'
+     A                           23  2'F17=Top   F18=Bottom'
+     A          R MSGSFL                    SFL
+     A*%%TS SD 20260213 192643 JFLANARY REL-V7R5M0 5770-WDS
+     A            MSGKEY        4S 0H
+     A            PGMQ          10A  O  8  2DSPATR(UL)
+     A          R MSGCTL                    SFLCTL(MSGSFL)
+     A*%%TS SD 20260213 192643 JFLANARY REL-V7R5M0 5770-WDS
+     A                                      SFLSIZ(1)
+     A                                      SFLPAG(1)
+     A            SFLDSP
+     A            SFLDSPCTL
+     A            PGMQ          10A  O 24  2DSPATR(UL)
+     A          R SFOOTER
+     A                           24  2'==>'
+     A            CMD           78A  B 24  6DSPATR(UL)
+     A          R NOINPUT                   OVERLAY
+     A*%%TS SD 20260213 192643 JFLANARY REL-V7R5M0 5770-WDS
+     A                           24  2'                                        -
+     A                                                                        '

@@ -1,0 +1,26 @@
+     H NOMAIN TEMPLATE
+     
+     // Commission Matrix Template - Data Structures for ARPCOMMTX
+     
+     DCL-DS CommissionMatrix_T TEMPLATE;
+       PlanNo          PACKED(3: 0);
+       CompanyNo       PACKED(3: 0);
+       Division        CHAR(3);
+       Section         CHAR(3);
+       SalesLow        PACKED(15: 2);
+       SalesHigh       PACKED(15: 2);
+       ProfitLow       PACKED(5: 2);
+       ProfitHigh      PACKED(5: 2);
+       CommissionRate  PACKED(5: 2);
+     END-DS;
+     
+     // Subfile record template
+     DCL-DS SubfileRecord_T TEMPLATE;
+       Option          CHAR(1);
+       SalesLow        PACKED(10: 2);
+       SalesHigh       PACKED(10: 2);
+       ProfitLow       PACKED(5: 2);
+       ProfitHigh      PACKED(5: 2);
+       CommissionRate  PACKED(5: 2);
+       RecordNumber    PACKED(4: 0);
+     END-DS;
