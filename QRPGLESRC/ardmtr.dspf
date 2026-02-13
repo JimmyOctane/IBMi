@@ -1,4 +1,4 @@
-     A*%%TS  SD  20260213  203000  JFLANARY    REL-V7R5M0  5770-WDS
+     A*%%TS  SD  20260213  153415  JFLANARY    REL-V7R5M0  5770-WDS
      A*%%EC
      A                                      DSPSIZ(24 80 *DS3)
      A                                      REF(*LIBL/LBAFREF)
@@ -32,23 +32,26 @@
      A                                      PAGEUP
      A                                      PRINT
      A*=============================================================
-     A*  Commission Matrix Subfile
+     A*  Subfile number one
      A*=============================================================
-     A          R CMMSFL                    SFL
-     A*%%TS  SD  20260213  203000  JFLANARY    REL-V7R5M0  5770-WDS
+     A          R SUB01                     SFL
+     A*%%TS  SD  20260213  153415  JFLANARY    REL-V7R5M0  5770-WDS
      A                                      SFLNXTCHG
-     A            SALELO         7Y 0O  8 15EDTCDE(2)
-     A            SALEHI         7Y 0O  8 26EDTCDE(2)
-     A            PROFLO         3  1O  8 38EDTWRD('  . ')
-     A            PROFHI         3  1O  8 44EDTWRD('  . ')
-     A            COMMRT         4  2O  8 50EDTWRD('  .  ')
+     A            S1PLAN         2  0O  8  3
+     A            S1DIVISION     3   O  8  6
+     A            S1SECTION      3   O  8 10
+     A            S1DOLLARL      7Y 0O  8 15EDTCDE(2)
+     A            S1DOLLARH      7Y 0O  8 26EDTCDE(2)
+     A            S1PRECENTL     3  1O  8 38EDTWRD('  . ')
+     A            S1PERCENTH     3  1O  8 44EDTWRD('  . ')
+     A            S1COMMRATE     4  2O  8 50EDTWRD('  .  ')
      A*=============================================================
-     A*  Control for Commission Matrix Subfile
+     A*  Control for subfile number one
      A*=============================================================
-     A          R CMMCTL                    SFLCTL(CMMSFL)
-     A*%%TS  SD  20260213  203000  JFLANARY    REL-V7R5M0  5770-WDS
-     A                                      SFLSIZ(9999)
-     A                                      SFLPAG(0013)
+     A          R SUB01CTL                  SFLCTL(SUB01)
+     A*%%TS  SD  20260213  153415  JFLANARY    REL-V7R5M0  5770-WDS
+     A                                      SFLSIZ(0011)
+     A                                      SFLPAG(0005)
      A                                      WINDOW(FMT1)
      A                                      RTNCSRLOC(&#REC &#FLD)
      A                                      BLINK
@@ -63,19 +66,22 @@
      A            #FLD          10A  H
      A            WHERE          5S 0H
      A            C1TITLE       50A  O  1  8DSPATR(HI)
-     A                                  2  2'ARPCOMM1'
+     A                                  2  2'SUB01CTL'
      A                                      COLOR(BLU)
      A                                  2 54USER
      A                                      COLOR(BLU)
      A                                  3 54DATE
      A                                      EDTCDE(Y)
      A                                      COLOR(BLU)
-     A                                  4  2'Plan:'
-     A            PLANNO         2  0O  4  8
-     A                                  4 12'Division:'
-     A            DIVISN         3   O  4 22
-     A                                  4 27'Section:'
-     A            SECTN          3   O  4 36
+     A                                  7  3'Pl'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A                                  7  6'Div'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A                                  7 10'Sec'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
      A                                  7 15'Low      '
      A                                      DSPATR(HI)
      A                                      DSPATR(UL)
@@ -99,10 +105,10 @@
      A                                      DSPATR(HI)
      A*=============================================================
      A          R FMT1
-     A*%%TS  SD  20260213  203000  JFLANARY    REL-V7R5M0  5770-WDS
-     A                                      WINDOW(5 10 18 64 *NOMSGLIN)
+     A*%%TS  SD  20250805  105043  JFLANARY    REL-V7R5M0  5770-WDS
+     A                                      WINDOW(5 10 15 64 *NOMSGLIN)
      A                                      RMVWDW
-     A                                 17  2'F3=Exit   F5=Refresh   F12=Cancel'
+     A                                 14  2'F3=Exit'
      A                                      COLOR(BLU)
       *=========================================================================
      A          R MSGSFL                    SFL
@@ -110,10 +116,10 @@
      A            MSGKEY                    SFLMSGKEY
      A            PGMQ                      SFLPGMQ(10)
      A*=========================================================================
-     A* Message subfile control
+     A* Message subfile stuff
      A*=========================================================================
      A          R MSGCTL                    SFLCTL(MSGSFL)
-     A*%%TS  SD  20260213  203000  JFLANARY    REL-V7R5M0  5770-WDS
+     A*%%TS  SD  20140618  143904  XJF90405    REL-V6R1M0  5761-WDS
      A                                      OVERLAY
      A                                      WINDOW(FMT1)
      A                                      SFLDSP

@@ -1,0 +1,59 @@
+     /*==================================================================*/
+     /* Program: ARPCOMM1C                                               */
+     /* Description: Call program to invoke commission matrix display    */
+     /* Usage: CALL ARPCOMM1C PARM(plan division section)                */
+     /* Example: CALL ARPCOMM1C PARM(3 'ECM' 'SUP')                      */
+     /*==================================================================*/
+     
+             PGM        PARM(&PLAN &DIV &SECT)
+             
+             DCL        VAR(&PLAN) TYPE(*DEC) LEN(3 0)
+             DCL        VAR(&DIV) TYPE(*CHAR) LEN(3)
+             DCL        VAR(&SECT) TYPE(*CHAR) LEN(3)
+             DCL        VAR(&MSGID) TYPE(*CHAR) LEN(7)
+             DCL        VAR(&MSGDTA) TYPE(*CHAR) LEN(100)
+             
+             /* Validate parameters */
+             IF         COND(&PLAN *LE 0) THEN(DO)
+                          SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) +
+                                       MSGDTA('Invalid Plan Number - +
+                                       must be greater than 0') +
+                                       TOPGMQ(*PRV (*CTLBDY)) +
+                                       MSGTYPE(*ESCAPE)
+                          GOTO       CMDLBL(ERROREXIT)
+             ENDDO
+             
+             IF         COND(&DIV *EQ ' ') THEN(DO)
+                          SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) +
+                                       MSGDTA('Division cannot be blank') +
+                                       TOPGMQ(*PRV (*CTLBDY)) +
+                                       MSGTYPE(*ESCAPE)
+                          GOTO       CMDLBL(ERROREXIT)
+             ENDDO
+             
+             IF         COND(&SECT *EQ ' ') THEN(DO)
+                          SNDPGMMSG  MSGID(CPF9898) MSGF(QCPFMSG) +
+                                       MSGDTA('Section cannot be blank') +
+                                       TOPGMQ(*PRV (*CTLBDY)) +
+                                       MSGTYPE(*ESCAPE)
+                          GOTO       CMDLBL(ERROREXIT)
+             ENDDO
+             
+             /* Call the display program */
+             CALL       PGM(ARPCOMM1) PARM(&PLAN &DIV &SECT)
+             
+             MONMSG     MSGID(CPF0000) EXEC(DO)
+                          RCVMSG     MSGTYPE(*EXCP) MSGDTA(&MSGDTA) +
+                                       MSGID(&MSGID)
+                          SNDPGMMSG  MSGID(&MSGID) MSGF(QCPFMSG) +
+                                       MSGDTA(&MSGDTA) TOPGMQ(*PRV +
+                                       (*CTLBDY)) MSGTYPE(*ESCAPE)
+             ENDDO
+             
+             GOTO       CMDLBL(NORMALEXIT)
+             
+ ERROREXIT:  /* Error exit */
+             RETURN
+             
+ NORMALEXIT: /* Normal exit */
+             ENDPGM
