@@ -1,0 +1,52 @@
+     A*     XMLORDAUD - XML Order Audit Trail
+     A          R XMLRORDAUD
+     A            AUDITID      10S 0       TEXT('Audit_id')
+     A                                      COLHDG('Audit_id')
+     A                                      ALIAS(AUDIT_ID)
+     A            ORDERNBR      40          TEXT('Order_number')
+     A                                      COLHDG('Order_number')
+     A                                      ALIAS(ORDER_NUMBER)
+     A            AUDACTION    10          TEXT('Audit_action')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Audit_action')
+     A                                      ALIAS(AUDIT_ACTION)
+     A            TABLENAME    20          TEXT('Table_name')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Table_name')
+     A                                      ALIAS(TABLE_NAME)
+     A            FIELDNAME    50          TEXT('Field_name')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Field_name')
+     A                                      ALIAS(FIELD_NAME)
+     A            OLDVALUE    500          TEXT('Old_value')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Old_value')
+     A                                      ALIAS(OLD_VALUE)
+     A            NEWVALUE    500          TEXT('New_value')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('New_value')
+     A                                      ALIAS(NEW_VALUE)
+     A            USERNAME     10          TEXT('User_name')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('User_name')
+     A            AUDTSTAMP     Z         TEXT('Audit_timestamp')
+     A                                      ALWNULL
+     A                                      COLHDG('Audit_timestamp')
+     A                                      ALIAS(AUDIT_TIMESTAMP)
+     A            PROGRAMNM    10          TEXT('Program_name')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Program_name')
+     A                                      ALIAS(PROGRAM_NAME)
+     A            REMARKS     200          TEXT('Remarks')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Remarks')
+     A                                      ALIAS(REMARKS)
+     A          K AUDITID

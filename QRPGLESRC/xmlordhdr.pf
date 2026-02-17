@@ -1,0 +1,220 @@
+     A*     XMLORDHDR
+     A          R XMLFORDHDR
+     A            ORDER00001    40          TEXT('Order_number')
+     A                                      COLHDG('Order_number')
+     A                                      ALIAS(ORDER_NUMBER)
+     A            PO_NUMBER     20          TEXT('Po_number')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Po_number')
+     A            PO_NU00001    20          TEXT('Po_number_2')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Po_number_2')
+     A                                      ALIAS(PO_NUMBER_2)
+     A            JOB_NAME      40          TEXT('Job_name')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Job_name')
+     A            UNIQUE_ID     40          TEXT('Unique_id')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Unique_id')
+     A            FREIG00001    40          TEXT('Freight_method')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Freight_method')
+     A                                      ALIAS(FREIGHT_METHOD)
+     A            VENDO00001    40          TEXT('Vendor_code')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Vendor_code')
+     A                                      ALIAS(VENDOR_CODE)
+     A            VENDO00002    40          TEXT('Vendor_name')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Vendor_name')
+     A                                      ALIAS(VENDOR_NAME)
+     A            PLACE00001    40          TEXT('Placed_date')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Placed_date')
+     A                                      ALIAS(PLACED_DATE)
+     A            REQUE00001    40          TEXT('Requested_pickup_tim E')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Requested_pickup_tim' +
+     A                                      'E')
+     A                                      ALIAS(REQUESTED_PICKUP_TIME)
+     A            BRANC00001    40          TEXT('Branch_sell')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Branch_sell')
+     A                                      ALIAS(BRANCH_SELL)
+     A            BRANC00002    40          TEXT('Branch_ship')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Branch_ship')
+     A                                      ALIAS(BRANCH_SHIP)
+     A            SHIP_CODE     40          TEXT('Ship_code')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Ship_code')
+     A            SHIP_00001    40          TEXT('Ship_subcode')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Ship_subcode')
+     A                                      ALIAS(SHIP_SUBCODE)
+     A            SPECI00001    40          TEXT('Special_instructions')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Special_instructions')
+     A                                      ALIAS(SPECIAL_INSTRUCTIONS)
+     A            ORDER00002    40          TEXT('Order_notes')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Order_notes')
+     A                                      ALIAS(ORDER_NOTES)
+     A            CHARG00001    40          TEXT('Charge_or_cash')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Charge_or_cash')
+     A                                      ALIAS(CHARGE_OR_CASH)
+     A            ORDER00003    40          TEXT('Order_type_code')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Order_type_code')
+     A                                      ALIAS(ORDER_TYPE_CODE)
+     A            ORDER00004    40          TEXT('Order_status_code')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Order_status_code')
+     A                                      ALIAS(ORDER_STATUS_CODE)
+     A            ORDER00005    40          TEXT('Order_status_code_ov Erri')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Order_status_code_ov' +
+     A                                      'Erride')
+     A                                      ALIAS(ORDER_STATUS_CODE_OVERRID)
+     A            AMOUNT        40          TEXT('Amount')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Amount')
+     A            SURCH00001    40          TEXT('Surcharge_amount')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Surcharge_amount')
+     A                                      ALIAS(SURCHARGE_AMOUNT)
+     A            FREIG00002    40          TEXT('Freight_charges')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Freight_charges')
+     A                                      ALIAS(FREIGHT_CHARGES)
+     A            EXTRA00001    40          TEXT('Extra_charge')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Extra_charge')
+     A                                      ALIAS(EXTRA_CHARGE)
+     A            TAX_AMOUNT    40          TEXT('Tax_amount')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Tax_amount')
+     A            PERCENTAGE    40          TEXT('Percentage')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Percentage')
+     A            OVERR00001    40          TEXT('Override_price')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Override_price')
+     A                                      ALIAS(OVERRIDE_PRICE)
+     A            ACCOU00001    40          TEXT('Account_number')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Account_number')
+     A                                      ALIAS(ACCOUNT_NUMBER)
+     A            ACCOU00002    40          TEXT('Account_name')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Account_name')
+     A                                      ALIAS(ACCOUNT_NAME)
+     A            CONTACT       40          TEXT('Contact')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Contact')
+     A            CITY         150          TEXT('City')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('City')
+     A            STATE          2          TEXT('State')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('State')
+     A            ZIP           10          TEXT('Zip')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Zip')
+     A            COUNTRY       40          TEXT('Country')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Country')
+     A            ADDRE00001    40          TEXT('Address_line_1')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Address_line_1')
+     A                                      ALIAS(ADDRESS_LINE_1)
+     A            ADDRE00002    40          TEXT('Address_line_2')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Address_line_2')
+     A                                      ALIAS(ADDRESS_LINE_2)
+     A            ADDRE00003    40          TEXT('Address_line_3')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Address_line_3')
+     A                                      ALIAS(ADDRESS_LINE_3)
+     A            SHIP_00002    40          TEXT('Ship_contact')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Ship_contact')
+     A                                      ALIAS(SHIP_CONTACT)
+     A            BILL_CITY     40          TEXT('Bill_city')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Bill_city')
+     A            BILL_STATE    40          TEXT('Bill_state')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Bill_state')
+     A            BILL_ZIP      40          TEXT('Bill_zip')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Bill_zip')
+     A            BILL_00001    40          TEXT('Bill_country')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Bill_country')
+     A                                      ALIAS(BILL_COUNTRY)
+     A            BILL_00002    40          TEXT('Bill_address_line_1')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Bill_address_line_1')
+     A                                      ALIAS(BILL_ADDRESS_LINE_1)
+     A            BILL_00003    40          TEXT('Bill_address_line_2')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Bill_address_line_2')
+     A                                      ALIAS(BILL_ADDRESS_LINE_2)
+     A            BILL_00004    40          TEXT('Bill_address_line_3')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Bill_address_line_3')
+     A                                      ALIAS(BILL_ADDRESS_LINE_3)
+     A            CARD_INFO     40          TEXT('Card_info')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Card_info')
+     A            CREAT00001      Z         TEXT('Created_date')
+     A                                      ALWNULL
+     A                                      COLHDG('Created_date')
+     A                                      ALIAS(CREATED_DATE)

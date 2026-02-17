@@ -1,0 +1,70 @@
+     A*     XMLORDDTL
+     A          R XMLRORDDTL
+     A            ORDER00001    40          TEXT('Order_number')
+     A                                      COLHDG('Order_number')
+     A                                      ALIAS(ORDER_NUMBER)
+     A            LINE_00001    40          TEXT('Line_number')
+     A                                      COLHDG('Line_number')
+     A                                      ALIAS(LINE_NUMBER)
+     A            TYPE_CODE     40          TEXT('Type_code')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Type_code')
+     A            PRODU00001    40          TEXT('Product_name')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Product_name')
+     A                                      ALIAS(PRODUCT_NAME)
+     A            MINCR00001    40          TEXT('Mincron_item_id')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Mincron_item_id')
+     A                                      ALIAS(MINCRON_ITEM_ID)
+     A            EXTER00001    40          TEXT('External_item_id')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('External_item_id')
+     A                                      ALIAS(EXTERNAL_ITEM_ID)
+     A            PIM_ID        40          TEXT('Pim_id')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Pim_id')
+     A            BUNDLE_ID     40          TEXT('Bundle_id')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Bundle_id')
+     A            QUANTITY      40          TEXT('Quantity')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Quantity')
+     A            AMOUNT        40          TEXT('Amount')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Amount')
+     A            COST          40          TEXT('Cost')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Cost')
+     A            SURCH00001    40          TEXT('Surcharge_amount')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Surcharge_amount')
+     A                                      ALIAS(SURCHARGE_AMOUNT)
+     A            TAX_AMOUNT    40          TEXT('Tax_amount')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Tax_amount')
+     A            TAX_P00001    40          TEXT('Tax_percent')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Tax_percent')
+     A                                      ALIAS(TAX_PERCENT)
+     A            PRICE00001    40          TEXT('Price_override')
+     A                                      VARLEN
+     A                                      ALWNULL
+     A                                      COLHDG('Price_override')
+     A                                      ALIAS(PRICE_OVERRIDE)
+     A            CREAT00001      Z         TEXT('Created_date')
+     A                                      ALWNULL
+     A                                      COLHDG('Created_date')
+     A                                      ALIAS(CREATED_DATE)

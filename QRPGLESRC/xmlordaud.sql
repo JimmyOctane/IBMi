@@ -1,0 +1,38 @@
+-- XMLORDAUD - XML Order Audit Trail Table
+-- Purpose: Track all changes made to XML order data
+-- Author: Roo Code
+-- Date: 2026-02-16
+
+CREATE TABLE JAMIEDEV.XMLORDAUD (
+    AUDITID BIGINT GENERATED ALWAYS AS IDENTITY (
+        START WITH 1
+        INCREMENT BY 1
+        NO CACHE
+    ),
+    ORDERNBR VARCHAR(40),
+    TRANSMSNID VARCHAR(50),
+    AUDACTION VARCHAR(10),
+    TABLENAME VARCHAR(20),
+    FIELDNAME VARCHAR(50),
+    USERNAME VARCHAR(10),
+    AUDTSTAMP TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PROGRAMNM VARCHAR(10),
+    REMARKS VARCHAR(200)
+);
+
+-- Label the table
+LABEL ON TABLE JAMIEDEV.XMLORDAUD IS 'XML Order Audit Trail';
+
+-- Label the columns
+LABEL ON COLUMN JAMIEDEV.XMLORDAUD (
+    AUDITID IS 'Audit ID',
+    ORDERNBR IS 'Order Number',
+    TRANSMSNID IS 'Transmission ID',
+    AUDACTION IS 'Audit Action (INSERT/UPDATE/DELETE)',
+    TABLENAME IS 'Table Name',
+    FIELDNAME IS 'Field Name',
+    USERNAME IS 'User Name',
+    AUDTSTAMP IS 'Audit Timestamp',
+    PROGRAMNM IS 'Program Name',
+    REMARKS IS 'Remarks'
+);
