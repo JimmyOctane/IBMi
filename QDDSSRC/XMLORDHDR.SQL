@@ -1,12 +1,12 @@
-/* ============================================================================
-   Table: XMLORDHDR
-   Purpose: XML Order Header Information
-   Author: Roo Code
-   Date: 2026-02-16
-   Notes: Stores order header data extracted from Neuco XML files
-   ============================================================================ */
+/* ========================================================================== */
+/* Table: XMLORDHDR                                                           */
+/* Purpose: XML Order Header Information                                      */
+/* Author: Roo Code                                                           */
+/* Date: 2026-02-16                                                           */
+/* Notes: Stores order header data extracted from Neuco XML files             */
+/* ========================================================================== */
 
-CREATE OR REPLACE TABLE jamietest.XMLORDHDR (
+CREATE OR REPLACE TABLE XMLORDHDR (
   /* Order Identification */
   orderNumber         CHAR(40)        NOT NULL WITH DEFAULT,
   poNumber            VARCHAR(20),
@@ -73,11 +73,15 @@ CREATE OR REPLACE TABLE jamietest.XMLORDHDR (
   
   /* Audit Fields */
   createdDate         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updatedDate         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  updatedDate         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  
+  /* Processing Status Fields */
+  processedFlag       CHAR(1) NOT NULL WITH DEFAULT,
+  processedStamp      TIMESTAMP
 );
 
 /* Add column comments */
-LABEL ON COLUMN jamietest.XMLORDHDR
+LABEL ON COLUMN XMLORDHDR
   (orderNumber IS 'Order Number',
    poNumber IS 'Purchase Order Number',
    poNumber2 IS 'Secondary PO Number',
@@ -125,6 +129,8 @@ LABEL ON COLUMN jamietest.XMLORDHDR
    billAddressLine3 IS 'Bill To Address Line 3',
    cardInfo IS 'Card Information',
    createdDate IS 'Record Created Date',
-   updatedDate IS 'Record Updated Date');
+   updatedDate IS 'Record Updated Date',
+   processedFlag IS 'Processing Status Flag',
+   processedStamp IS 'Processing Timestamp');
 
-LABEL ON TABLE jamietest.XMLORDHDR IS 'XML Order Header';
+LABEL ON TABLE XMLORDHDR IS 'XML Order Header';

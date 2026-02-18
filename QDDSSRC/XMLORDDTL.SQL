@@ -6,7 +6,7 @@
 /* Notes: Stores order detail data extracted from Neuco XML files */
 /* ============================================================== */
 
-CREATE OR REPLACE TABLE TKTEST.XMLORDDTL (
+CREATE OR REPLACE TABLE XMLORDDTL (
   /* Link to Header */
   orderNumber         CHAR(40)        NOT NULL WITH DEFAULT,
   
@@ -32,24 +32,11 @@ CREATE OR REPLACE TABLE TKTEST.XMLORDDTL (
   
   /* Audit Fields */
   createdDate         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  updatedDate         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  
-  /* Primary Key */
-  CONSTRAINT PK_XMLORDDTL PRIMARY KEY (orderNumber, lineNumber),
-  
-  /* Foreign Key to Header */
-  CONSTRAINT FK_XMLORDDTL_HDR FOREIGN KEY (orderNumber)
-    REFERENCES TKTEST.XMLORDHDR (orderNumber)
-    ON DELETE CASCADE
+  updatedDate         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-/* Create indexes for common queries */
-CREATE INDEX IDX_XMLORDDTL_PROD ON TKTEST.XMLORDDTL (productName);
-CREATE INDEX IDX_XMLORDDTL_EXT ON TKTEST.XMLORDDTL (externalItemId);
-CREATE INDEX IDX_XMLORDDTL_TYPE ON TKTEST.XMLORDDTL (typeCode);
-
 /* Add column comments */
-LABEL ON COLUMN TKTEST.XMLORDDTL
+LABEL ON COLUMN XMLORDDTL
   (orderNumber IS 'Order Number',
    lineNumber IS 'Line Item Number',
    typeCode IS 'Line Item Type Code',
@@ -68,4 +55,4 @@ LABEL ON COLUMN TKTEST.XMLORDDTL
    createdDate IS 'Record Created Date',
    updatedDate IS 'Record Updated Date');
 
-LABEL ON TABLE TKTEST.XMLORDDTL IS 'XML Order Detail';
+LABEL ON TABLE XMLORDDTL IS 'XML Order Detail';

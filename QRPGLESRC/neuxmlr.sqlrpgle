@@ -453,8 +453,8 @@
               :sqlErrState = RETURNED_SQLSTATE,
               :sqlDiagMsg = MESSAGE_TEXT;
         
-            errorMessage = 'Failed to extract header from XML: ' ||
-                           %subst(sqlDiagMsg: 1: 400);
+            errorMessage = 'Failed to extract header from XML: ' +
+                           %trim(sqlDiagMsg);
             errorInd = *on;
             
             // Write single audit record for this error
@@ -479,12 +479,11 @@
             tempDate = %trim(hdrPlacedDate);
             tempDate = %scanrpl('T':'-':tempDate);
             tempDate = %scanrpl('Z':'':tempDate);
-            test(te) tempDate;
-            if %error();
+            monitor;
+              fmtPlacedDate = %timestamp(%trim(tempDate));
+            on-error;
               fmtPlacedDate = *LOVAL;
-            else;
-              fmtPlacedDate = %timestamp(tempDate);
-            endif;
+            endmon;
           else;
             fmtPlacedDate = *LOVAL;
           endif;
@@ -493,12 +492,11 @@
             tempDate = %trim(hdrReqPickupTime);
             tempDate = %scanrpl('T':'-':tempDate);
             tempDate = %scanrpl('Z':'':tempDate);
-            test(te) tempDate;
-            if %error();
+            monitor;
+              fmtReqPickupTime = %timestamp(%trim(tempDate));
+            on-error;
               fmtReqPickupTime = *LOVAL;
-            else;
-              fmtReqPickupTime = %timestamp(tempDate);
-            endif;
+            endmon;
           else;
             fmtReqPickupTime = *LOVAL;
           endif;
@@ -561,8 +559,8 @@
               :sqlErrState = RETURNED_SQLSTATE,
               :sqlDiagMsg = MESSAGE_TEXT;
         
-            errorMessage = 'Failed to insert header record: ' ||
-                           %subst(sqlDiagMsg: 1: 400);
+            errorMessage = 'Failed to insert header record: ' +
+                           %trim(sqlDiagMsg);
             errorInd = *on;
             
             // Write single audit record for this error
@@ -653,8 +651,8 @@
               :sqlErrState = RETURNED_SQLSTATE,
               :sqlDiagMsg = MESSAGE_TEXT;
         
-            errorMessage = 'Failed to open line item cursor: ' ||
-                           %subst(sqlDiagMsg: 1: 400);
+            errorMessage = 'Failed to open line item cursor: ' +
+                           %trim(sqlDiagMsg);
             exec sql close lineItemCursor;
             errorInd = *on;
             
@@ -706,8 +704,8 @@
                 :sqlErrState = RETURNED_SQLSTATE,
                 :sqlDiagMsg = MESSAGE_TEXT;
 
-              errorMessage = 'Failed to fetch line item: ' ||
-                             %subst(sqlDiagMsg: 1: 400);
+              errorMessage = 'Failed to fetch line item: ' +
+                             %trim(sqlDiagMsg);
               leave;
             endif;
 
@@ -746,8 +744,8 @@
 
               // Store first error message if not already set
               if %len(%trim(errorMessage)) = 0;
-                errorMessage = 'Failed to insert line ' || %trim(dtlLineNumber) ||
-                               ': ' || %subst(sqlDiagMsg: 1: 400);
+                errorMessage = 'Failed to insert line ' + %trim(dtlLineNumber) +
+                               ': ' + %trim(sqlDiagMsg);
               endif;
             else;
               // Successfully inserted line item
@@ -762,9 +760,9 @@
           // Write single audit record summarizing entire transaction
           // Build message based on status
           if processStatus = 'S';
-            errorMessage = 'Successfully processed order ' ||
-                          %trim(hdrOrderNumber) || ' with ' ||
-                          %trim(%char(itemCount)) || ' line items';
+            errorMessage = 'Successfully processed order ' +
+                          %trim(hdrOrderNumber) + ' with ' +
+                          %trim(%char(itemCount)) + ' line items';
           endif;
 
           exec sql
