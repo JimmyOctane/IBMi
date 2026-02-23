@@ -3,42 +3,55 @@
                 Ctl-Opt ExtBinInt(*Yes);                // Use binary integers
                 Ctl-Opt bnddir('ECBIND');
                 Ctl-Opt DecEdit('0,');                  // Decimal editing with comma
-                Ctl-Opt Copyright('East Coast Metals - PROCNEUCO Program');
-
-            //******************************************************************************
-            // PROCNEUCO - Process Neuco XML Documents
-            //
-            // Purpose: Lists all XML documents in /home/neuco/ folder and processes
-            //          them one at a time using the NEUCOXML service program
-            //
-            // Processing Flow:
-            //   1. Call LISTIFS to get all files in /home/neuco/ directory
-            //   2. Loop through each file found
-            //   3. Build full IFS path for each file
-            //   4. Call NEUCOXML to process the XML document
-            //   5. Track success/failure counts
-            //   6. Display processing summary
-            //
-            // Dependencies:
-            //   - LISTIFS service program (for listing IFS files)
-            //   - NEUCOXML service program (for processing XML documents)
-            //
-            // Usage: CALL PROCNEUCO
-            //        Results are displayed via DSPLY statements
-            //
-            // Author: Roo Code
-            // Date: 2026-02-17
-            // Version: 1.0
-            //
-            // Modification History:
-            //   Date       Author        Description
-            //   ---------- ------------- ----------------------------------------------
-            //   2026-02-17 Roo Code      Initial implementation
-            //                           - List files in /home/neuco/
-            //                           - Process each XML document
-            //                           - Track and display results
-            //
-            //******************************************************************************
+                Ctl-Opt Copyright('East Coast Metals - NEUORDPRC Program');
+    
+                //******************************************************************************
+                // NEUORDPRC - Neuco Order Processing Batch Program
+                //
+                // Purpose: Automated batch processor for Neuco XML order documents stored in
+                //          the IFS. Scans the /home/neuco/ directory, processes each XML file
+                //          to extract order data into database tables, and archives successfully
+                //          processed files with comprehensive error tracking and reporting.
+                //
+                // Processing Flow:
+                //   1. Scan /home/neuco/ directory using LISTIFS service program
+                //   2. Validate directory accessibility and file count
+                //   3. For each XML file found:
+                //      a. Build full IFS path
+                //      b. Process XML using NEUCOXML service program
+                //      c. Parse order header, detail, and line item data
+                //      d. Insert records into XMLORDHDR, XMLORDDTL, XMLORDAUD tables
+                //      e. Archive successfully processed files using ARCHIVEIFS
+                //   4. Display comprehensive processing summary with statistics
+                //
+                // Dependencies:
+                //   - LISTIFS service program (IFS directory listing)
+                //   - NEUCOXML service program (XML parsing and database insertion)
+                //   - ARCHIVEIFS service program (file archival with timestamp)
+                //
+                // Database Tables:
+                //   - XMLORDHDR (Order header data)
+                //   - XMLORDDTL (Order detail/line items)
+                //   - XMLORDAUD (Processing audit trail)
+                //
+                // Usage: CALL NEUORDPRC
+                //        Processing status and results displayed via DSPLY statements
+                //        Check XMLORDAUD table for detailed audit logs and error messages
+                //
+                // Author: Roo Code
+                // Date: 2026-02-17
+                // Version: 1.0
+                //
+                // Modification History:
+                //   Date       Author        Description
+                //   ---------- ------------- ----------------------------------------------
+                //   2026-02-17 Roo Code      Initial implementation
+                //                           - IFS directory scanning
+                //                           - XML order document processing
+                //                           - Automatic file archival
+                //                           - Processing statistics tracking
+                //
+                //******************************************************************************
 
             // Copy members for service program prototypes
             /copy qcpysrc,LISTIFS_CP

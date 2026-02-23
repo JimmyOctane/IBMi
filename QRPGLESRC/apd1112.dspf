@@ -1,0 +1,2388 @@
+     A*------------------------------------------------------------------------*
+     A*N FILE NAME - APD1112                                                   *
+     A*------------------------------------------------------------------------*
+     A*P COPYRIGHT MINCRON SBC CORP. 1983,1990,2006.                           *
+     A*------------------------------------------------------------------------*
+     A*D UPDATE A/P INVOICES                                                   *
+BD   A*S ----------------------------------------------------------------------*
+BD   A*S SPECIAL NOTES:                                                        *
+BD   A*S   Important: When modifying APF1112C Format you need to            *
+BD   A*S               modify format APF1112CW.(MYHD)                        *
+BD   A*S                                                                       *
+BJ   A*S  IMPORTANT:                                                         *
+BJ   A*S                                                                       *
+BJ   A*S   FORMATS APF1112C AND APF1112CW HAVE A FUNCTION KEY TO DISPLAY       *
+BJ   A*S   AND/OR SAVE IMAGE FOR INTELLICHIEF. IF ROW AND COLUMN OF ANY        *
+BJ   A*S   FIELD ON THESE FORMATS IS CHANGED, IT MAY IMPACT INTELLICHEIF       *
+BJ   A*S   INTERFACE.                                                          *
+BJ   A*S                                                                       *
+BJ   A*S   PLEASE REVIEW CHANGES WITH INTELLICHIEF APPLICATION SPECIALIST.     *
+BJ   A*S                                                                       *
+     A*M ----------------------------------------------------------------------*
+     A*M TASK       DATE   ID  DESCRIPTION                                     *
+     A*M ---------- ------ --- ------------------------------------------------*
+     A*V 8000011000 013006 000 MINCRON MSS/HD RELEASE 11.0                     *
+A1   A*E 8000009828 031406 020 WEBFACING CHANGES                               *
+A2   A*E 8000009886 082206 248 VENDOR CONSIGNED INVENTORY                      *
+A3   A*U 1650000358 121007 914 INCREASE AP SALES TAX FIELD                     *
+A4   A*E 8000010294 011808 915 EXPAND FREIGHT AMOUNT FIELDS                    *
+A5   A*E 8000010289 031108 019 3RD PARTY FREIGHT
+BA   A*E 8000010433 071408 070 ADJUST HEADINGS ON MULTI PMT SCREEN
+BB   A*U 1430000407 092308 094 INTELLCHIEF CHANGES
+BC   A*U 8000010772 092909 019 RMV UNUSED CF/CA KEYWORDS - MYHD RELATED        *
+BD   A*E 9000000141 072110 183 WW DESIGN ENH - COMPLEX OVERLAYS                *
+BE   A*E 9000000144 122210 183 MYHD CHANGES- FREIGHT OUT NOT DISPLAYING        *
+BF   A*E 9000000139 011711 078 MYHD CHANGES - INVOICE PROMPT                   *
+BG   A*E 9000000150 011911 078 MYHD CHANGES - FOLD SCREEN APC1112P             *
+BH   A*E 8000011267 030712 271 MYHD CHANGES - ADDING F17 TO APF112CW           *
+BI   A*E 1290000340 120913 248 MATCH A/P CREDIT MEMOS TO REBATES               *
+BJ   A*E 8000011676 021114 915 SPECIAL NOTES FOR INTELLICHIEF                  *
+BK   A*E 1290000356 071614 070 CORRECTIONS TO REBATE ENHANCEMENTS              *
+BL   A*U 8000011798 080614 171 ISSUE WITH INTELLICHIEF BUTTON IN SD            *
+BM   A*E 1290000481 011718 248 INCREASE SIZE OF A/P FIELDS                     *
+BN   A*U 8000012805 022118 070 CHECK FOR DISCOUNT EXCEEDED                     *
+BO   A*E 8000013267 041919 915 EZ AP Interface to A/P System                   *
+BP   A*E 1400000425 090820 007 1099 FLAG ON AP INVOICE                         *
+BQ   A*C 1290000713 110320 097 increase g/l accounts to 2000                   *
+BR   A*E 1290000663 120821 070 A/P PAYMENT RUN CHANGES                         *
+BS   A*U 8000014166 050223 271 COMPLEX OVERLAYS                                *
+¢A   A*E KSB   4954 021907 KSB PROTECT SALES TAX FIELD                         *
+¢B   A*E VLG   2069 021224 VLG ADD PF21 KEY TO DISPLAY ACH BANK SCREEN APF1111U*
+¢C   A*E CLP   5133 021725 CLP Display vendor master disc% for reference       *
+¢D   A*E JJF   3187 021825 JJF Reverse image F10 key when RCV to A/P notes present *
+     A*M ----------------------------------------------------------------------*
+   BMA*                                     DSPSIZ(24 80 *DS3)
+BM   A                                      DSPSIZ(*DS4 *DS3)
+     A                                      REF(*LIBL/DBFREF)
+   %AA*                                     CF01(25 'Help Text')
+%A   A                                      CF01(25 'HELP')
+     A                                      CF03(03 'Exit')
+   %AA*                                     HELP(25)
+     A                                      PRINT
+     A          R APF1112A
+BM   A                                      DSPMOD(*DS3)
+     A                                  1  2'APF1112A'
+     A                                      COLOR(BLU)
+     A                                  1 30'Invoice Number Prompt'
+     A                                      DSPATR(HI)
+     A                                  9 25'Invoice number'
+     A            NO11A     R        B  9 42REFFLD(APNO11)
+     A                                      CHECK(RB)
+     A  80                                  DSPATR(RI)
+     A  80                                  DSPATR(PC)
+     A                                 23  2'F3=Exit'
+     A                                      COLOR(BLU)
+     A            MSGFLD        78A  O 24  2DSPATR(HI)
+BF    * DISPLAYS FOR MYHD JOBS ONLY
+BF   A  34        ALNLFT         1A  B 10 42
+     A          R APS1112B                  SFL
+     A                                      SFLNXTCHG
+     A            HCTL      R        H      REFFLD(APNO20)
+     A            SELB           1A  B  8  3
+     A            APNM01    R        O  8  7
+A1    *
+A1   A*%%WB 12 FLD 4 fld=&{SELB.REF}|value=1|func=ENTER
+A1    *
+   BMA*           INVDAT         6Y 0O  8 41EDTCDE(Y)
+   BMA*           APAM04    R        O  8 52EDTCDE(J)
+   BMA*           APAM06    R        O  8 67EDTCDE(J)
+BM   A            INVDAT         6Y 0O  8 38EDTCDE(Y)
+BM   A            APAM04    R        O  8 48EDTCDE(J)
+BM   A            APAM06    R        O  8 65EDTCDE(J)
+     A          R APC1112B                  SFLCTL(APS1112B)
+BM   A                                      DSPMOD(*DS3)
+     A                                      SFLSIZ(0028)
+     A                                      SFLPAG(0014)
+     A                                      OVERLAY
+     A                                      CF12(12 'Cancel')
+     A  73                                  SFLCLR
+     A  74                                  SFLEND(*MORE)
+     A  75                                  SFLDSP
+     A  76                                  SFLDSPCTL
+     A  79                                  SFLDLT
+     A            RNB            4S 0H      SFLRCDNBR
+     A                                  1  2'APC1112B'
+     A                                      COLOR(BLU)
+     A                                  1 29'Invoice Selection Prompt'
+     A                                      DSPATR(HI)
+     A                                  4  2'Invoice number'
+     A            NO11A     R        O  4 17REFFLD(APNO11)
+   BMA*                                 5 41'Invoice'
+BM   A                                  5 38'Invoice'
+     A                                      DSPATR(HI)
+     A                                  6  2'Sel'
+     A                                      DSPATR(HI)
+     A                                  6 12'Vendor'
+     A                                      DSPATR(HI)
+   BMA*                                 6 43'Date'
+BM   A                                  6 40'Date'
+     A                                      DSPATR(HI)
+   BMA*                                 6 52'Gross Amount'
+BM   A                                  6 50'Gross Amount'
+     A                                      DSPATR(HI)
+   BMA*                                 6 69'Net Amount'
+BM   A                                  6 67'Net Amount'
+     A                                      DSPATR(HI)
+     A          R APF1112B
+BM   A                                      DSPMOD(*DS3)
+     A                                 23  2'F3=Exit'
+     A                                      COLOR(BLU)
+     A                                 23 12'F12=Cancel'
+     A                                      COLOR(BLU)
+     A            MSGFLD        78A  O 24  2DSPATR(HI)
+     A          R APF1112C
+     A                                      CHANGE(51 'A Field Was Changed')
+     A                                      CF04(04 'Prompt')
+     A                                      CF06(06 'Invoice Notes')
+     A  61                                  CF07(07 'P/O - A/P notes')
+     A N35                                  CF08(08 'Remit to address')
+   BIA*N33                                  CF09(09 'Change P/O  Vendor #')
+BI   A N33N77                               CF09(09 'Change P/O  Vendor #')
+     A  58                                  CF10(10 'Notes-Rcv to A/P')
+     A N33                                  CF11(11 'Delete')
+     A                                      CF12(12 'Cancel')
+     A                                      CF13(13 'Vendor information')
+   BIA*N33                                  CF14(14 'Match information')
+BI   A N33N77                               CF14(14 'Match information')
+     A N33                                  CF15(15 'Variance Program')
+     A N33                                  CF16(16 'Select match lines')
+     A                                      CF17(17 'Protect/Unprotect')
+     A                                      CF18(18 'Check Notes')
+¢B   A                                      CF21(21 'Bank Info')
+BB   A  55                                  CF23(23 'Image')
+BB   A  64                                  CF19(19 'Image Index')
+     A                                      CF24(24 'More keys')
+     A                                      BLINK
+     A                                      RTNCSRLOC(&CRCD &CFLD &CPOS)
+     A                                      CSRLOC(CROW       CCOL)
+     A            CROW           3S 0H
+     A            CCOL           3S 0H
+     A            CRCD          10A  H
+     A            CFLD          10A  H
+     A            CPOS           4S 0H
+     A            REFCTL    R        H      REFFLD(APNO39)
+     A            HO25C     R        H      REFFLD(APNO25)
+     A                                  1  2'APF1112C'
+     A                                      COLOR(BLU)
+   BMA*                                 1 25'Invoice Header Information Entry'
+BM   A                                  1 51'Invoice Header Information Entry'
+     A                                      DSPATR(HI)
+BB BMA*           APNO20    R           1 60
+BM   A            APNO20    R           1112
+BB   A                                      DSPATR(ND)
+     A            APNT01        77   O  2  2
+     A  33                              3  2'Approved'
+     A                                      DSPATR(RI)
+   BMA* 29                              3 16'Reference Hold'
+BM   A  29                              3 18'Reference Hold'
+     A  29                                  DSPATR(RI)
+   BMA*                                 3 35'Company'
+   BMA*           APCO#F    R        O  3 43REFFLD(APNO15)
+   BMA*                                 3 66'Batch '
+   BMA*           BATCH#    R        O  3 73REFFLD(APNO17)
+   BMA*           VNDNOT        14      4  1
+   BMA* 66        HLDSTS        17A  O  4 16DSPATR(RI)
+   BMA*           EDIM           5A  O  4 37
+   BMA* 36                              4 50'Draft Vendor'
+BM   A                                  3 61'Company'
+BM   A            APCO#F    R        O  3 69REFFLD(APNO15)
+BM   A                                  3118'Batch '
+BM   A            BATCH#    R        O  3125REFFLD(APNO17)
+BM   A            VNDNOT        14      4  2
+BM   A  66        HLDSTS        17A  O  4 18DSPATR(RI)
+BM   A            EDIM           5A  O  4 39
+BM   A  36                              5 82'Draft Vendor'
+     A                                      DSPATR(BL)
+     A                                      DSPATR(HI)
+     A                                  5  2'Phone #'
+     A            NO02C     R        O  5 10REFFLD(APNO02)
+     A            NO03C     R        O  5 14REFFLD(APNO03)
+     A            NO04C     R        O  5 18REFFLD(APNO04)
+     A                                  5 27'Name'
+     A            NM01C     R        O  5 32REFFLD(APNM01)
+     A                                  5 65'Vendor #'
+     A            NO01C     R        O  5 74REFFLD(APNO01)
+     A                                  7  2'Invoice Number'
+   BMA*                                 7 18'Voucher'
+   BMA*                                 7 28'Inv Date'
+   BMA*                                 7 40'Date Rcvd'
+   BMA*                                 7 52'Due Date'
+   BMA*                                 7 63'Ship Date'
+BM   A                                  7 27'Voucher'
+BM   A                                  7 37'Inv Date'
+BM   A                                  7 49'Date Rcvd'
+BM   A                                  7 61'Due Date'
+BM   A                                  7 72'Ship Date'
+     A N78                                  DSPATR(ND)
+   BMA*                                 7 74'Bank#'
+   BMA*           NO11C     R        B  8  3REFFLD(APNO11)
+BM   A                                  7 83'Bank#'
+BM   A            NO11C     R        B  8  2REFFLD(APNO11)
+     A                                      CHECK(RB)
+     A  33                                  DSPATR(PR)
+     A  80                                  DSPATR(RI)
+     A  80                                  DSPATR(PC)
+   BMA*           NO21C     R        B  8 18REFFLD(APNO21)
+BM   A            NO21C     R        B  8 27REFFLD(APNO21)
+     A                                      EDTCDE(3)
+     A  33                                  DSPATR(PR)
+   BMA*           INVDTC         6Y 0B  8 28EDTCDE(Y)
+BM   A            INVDTC         6Y 0B  8 37EDTCDE(Y)
+A1    *
+A1   A*%%WB 8 FLD <input type="hidden" id="calendar0"></input><img id='calendar+
+A1   A*%%WB +0'src="images/CalendarImg/calendar.gif" onClick="javascript:proce+
+A1   A*%%WB +ssCalendarControl(getPreviousElement(eval('document.WebFacingForm.+
+A1   A*%%WB +'+this.id)).id,'1','Y','','mm/dd/yy');"></img>
+A1    *
+     A  33                                  DSPATR(PR)
+     A  81                                  DSPATR(RI)
+     A  81                                  DSPATR(PC)
+   BMA*           RECDTC         6Y 0B  8 40EDTCDE(Y)
+BM   A            RECDTC         6Y 0B  8 49EDTCDE(Y)
+A1    *
+A1   A*%%WB 8 FLD <input type="hidden" id="calendar1"></input><img id='calendar+
+A1   A*%%WB +1'src="images/CalendarImg/calendar.gif" onClick="javascript:proce+
+A1   A*%%WB +ssCalendarControl(getPreviousElement(eval('document.WebFacingForm.+
+A1   A*%%WB +'+this.id)).id,'1','Y','','mm/dd/yy');"></img>
+A1    *
+     A  33                                  DSPATR(PR)
+     A  82                                  DSPATR(RI)
+     A  82                                  DSPATR(PC)
+   BMA*           DUEDTC         6Y 0B  8 52EDTCDE(Y)
+BM   A            DUEDTC         6Y 0B  8 61EDTCDE(Y)
+A1    *
+A1   A*%%WB 8 FLD <input type="hidden" id="calendar2"></input><img id='calendar+
+A1   A*%%WB +2'src="images/CalendarImg/calendar.gif" onClick="javascript:proce+
+A1   A*%%WB +ssCalendarControl(getPreviousElement(eval('document.WebFacingForm.+
+A1   A*%%WB +'+this.id)).id,'1','Y','','mm/dd/yy');"></img>
+A1    *
+     A  83                                  DSPATR(RI)
+     A  83                                  DSPATR(PC)
+     A  35                                  DSPATR(PR)
+   BMA*           DSHDTC         6Y 0B  8 63EDTCDE(Y)
+BM   A            DSHDTC         6Y 0B  8 72EDTCDE(Y)
+A1    *
+A1   A*%%WB 8 FLD <input type="hidden" id="calendar3"></input><img id='calendar+
+A1   A*%%WB +3'src="images/CalendarImg/calendar.gif" onClick="javascript:proce+
+A1   A*%%WB +ssCalendarControl(getPreviousElement(eval('document.WebFacingForm.+
+A1   A*%%WB +'+this.id)).id,'1','Y','','mm/dd/yy');"></img>
+A1    *
+     A  79                                  DSPATR(RI)
+     A  79                                  DSPATR(PC)
+     A N78                                  DSPATR(ND)
+     A N78
+     AO 33                                  DSPATR(PR)
+   BMA*           NO38C     R     N  B  8 75REFFLD(APNO38)
+BM   A            NO38C     R     N  B  8 84REFFLD(APNO38)
+     A  91                                  DSPATR(RI)
+     A  91                                  DSPATR(PC)
+     A  33
+     AO 35                                  DSPATR(PR)
+     A                                 10  2'Gross Purchase'
+   BMA*           APAM04    R        B 10 18EDTCDE(J)
+BM   A            APAM04    R        B 10 17EDTCDE(J)
+     A                                      CHECK(RB)
+     A  84                                  DSPATR(RI)
+     A  84                                  DSPATR(PC)
+     A  30
+     AO 33                                  DSPATR(PR)
+     A                                 10 35'Sales Tax'
+     A            APAM14    R        B 10 47EDTCDE(J)
+     A                                      CHECK(RB)
+   ¢AA* 33                                  DSPATR(PR)
+¢A   A                                      DSPATR(PR)
+   A5A*                                10 60'Discount'
+A5 BMA*                                10 59'Discount'
+   BMA*           APAM05    R        B 10 70EDTCDE(J)
+BM   A                                 10 63'Discount'
+BM   A            APAM05    R        B 10 74EDTCDE(J)
+     A                                      CHECK(RB)
+     A  86                                  DSPATR(RI)
+     A  86
+     AO 54                                  DSPATR(PC)
+     A  53                                  DSPATR(PR)
+     A                                 11  2'Freight In'
+   A5A*           APAM13    R        B 11 18EDTCDE(J)
+A5 BMA*           APAM13    R        B 11 20EDTCDE(J)
+BM   A            APAM13    R        B 11 19EDTCDE(J)
+     A                                      CHECK(RB)
+   A5A* 33                                  DSPATR(PR)
+A5   A  33
+A5   AO 30                                  DSPATR(PR)
+     A  85                                  DSPATR(RI)
+     A  85                                  DSPATR(PC)
+     A                                 11 35'Freight Out'
+   A5A*           APAM26    R        B 11 47EDTCDE(J)
+A5 BMA*           APAM26    R        B 11 48EDTCDE(J)
+BM   A            APAM26    R        B 11 47EDTCDE(J)
+     A                                      CHECK(RB)
+     A  92                                  DSPATR(RI)
+     A  92                                  DSPATR(PC)
+     A  33                                  DSPATR(PR)
+   A5A*                                12  2'Other Charges'
+   A5A*           APTL03    R        O 12 18
+   A5A*                                     EDTCDE(J)
+A5 BMA*                                11 59'Oth Chg'
+A5 BMA*           APTL03    R        O 11 67
+A5 BMA*                                     EDTCDE(J)
+A5 BIA*                                12  2'Match Freight'
+A5 BIA*           MATCH_FRT R        B 12 18REFFLD(APFL13)
+BM   A                                 11 63'Oth Chg'
+BM   A            APTL03    R        O 11 72EDTCDE(J)
+BI   A N77                             12  2'Match Freight'
+BI BMA*N77        MATCH_FRT R        B 12 18REFFLD(APFL13)
+BM   A N77        MATCH_FRT R        B 12 17REFFLD(APFL13)
+A5   A                                      VALUES(' ' 'N' 'Y')
+A5   A  33
+A5   AO 30                                  DSPATR(PR)
+BI BMA* 77                             12 35'Rebate Credit'
+BI BMA* 77        REB_CR         1   O 12 49
+   A5A*                                12 60'Net'
+A5 BMA*                                12 59'Net'
+   BMA*           APAM06    R        O 12 67EDTCDE(J)
+BM   A  77                              8100'Rebate Credit'
+BM   A  77        REB_CR         1   O  8114
+BM   A                                 12 63'Net'
+BM   A            APAM06    R        O 12 72EDTCDE(J)
+     A  87                                  DSPATR(RI)
+   BMA* 32        FRTMSG        17     13 17
+BM   A  32        FRTMSG        17     13  2
+     A  32                                  DSPATR(RI)
+A2 BMA*                                13 49'Consigned Invoice'
+A2 BMA*           CONINV    R        O 13 68REFFLD(APFL09)
+BM   A                                  7100'Consigned Invoice'
+BM   A            CONINV    R        O  7119REFFLD(APFL09)
+BP   A                                 13 73'1099'
+BP   A            CD81C     R        B 13 78REFFLD(APCD81)
+BP   A  73                                  DSPATR(RI)
+BP   A  73                                  DSPATR(PC)
+BP   A  52                                  DSPATR(PR)
+     A                                 14  2'Multiple G/L Accounts'
+     A            CD16C     R        B 14 24REFFLD(APCD16)
+     A                                      VALUES(' ' 'Y' 'N')
+     A  33
+     AO 68                                  DSPATR(PR)
+     A                                 14 27'G/L#'
+     A            GNO06C    R        B 14 32REFFLD(GLNO06)
+     A                                      EDTCDE(3)
+     A  88                                  DSPATR(RI)
+     A  88                                  DSPATR(PC)
+     A  33
+     AO 35
+     AO 68                                  DSPATR(PR)
+     A            GNO02C    R        B 14 36REFFLD(GLNO02)
+     A                                      EDTCDE(3)
+     A  88
+     AO 89                                  DSPATR(RI)
+     A  89                                  DSPATR(PC)
+     A  33
+     AO 35
+     AO 68                                  DSPATR(PR)
+     A            GNO03C    R        B 14 39REFFLD(GLNO03)
+     A                                      EDTCDE(3)
+     A  88                                  DSPATR(RI)
+     A  33
+     AO 35
+     AO 68                                  DSPATR(PR)
+     A            GNO04C    R        B 14 44REFFLD(GLNO04)
+     A                                      EDTCDE(3)
+     A  88                                  DSPATR(RI)
+     A  33
+     AO 35
+     AO 68                                  DSPATR(PR)
+     A                                 14 49'Desc'
+     A            GDN03C    R        B 14 54REFFLD(GLDN03)
+     A  90                                  DSPATR(RI)
+     A  90                                  DSPATR(PC)
+     A  33
+     AO 35
+     AO 68                                  DSPATR(PR)
+   BIA*N59                             15  2'Purchase Order'
+   BIA*N59        PO#       R        B 15 18REFFLD(PONO01)
+BI BMA*N59N77                          15  2'Purchase Order'
+BI BMA*N59N77     PO#       R        B 15 18REFFLD(PONO01)
+BM   A N59N77                          16  2'Purchase Order'
+BM   A N59N77     PO#       R        B 16 18REFFLD(PONO01)
+     A  93                                  DSPATR(RI)
+     A  93                                  DSPATR(PC)
+     A  30
+     AO 33                                  DSPATR(PR)
+     A                                      EDTCDE(4)
+   BIA* 59                             15  2'Vendor Return'
+   BIA* 59        VNDRTN    R        B 15 18REFFLD(PONO27)
+BI BMA* 59N77                          15  2'Vendor Return'
+BI BMA* 59N77     VNDRTN    R        B 15 18REFFLD(PONO27)
+BM   A  59N77                          16  2'Vendor Return'
+BM   A  59N77     VNDRTN    R        B 16 18REFFLD(PONO27)
+     A  57                                  DSPATR(RI)
+     A  57                                  DSPATR(PC)
+     A                                      EDTCDE(4)
+     A  33                                  DSPATR(PR)
+   BIA*N59                             15 27'Receiver'
+   BIA*N59        RCV#      R        B 15 40REFFLD(PONO19)
+BI BMA*N59N77                          15 27'Receiver'
+BI BMA*N59N77     RCV#      R        B 15 40REFFLD(PONO19)
+BM   A N59N77                          16 31'Receiver'
+BM   A N59N77     RCV#      R        B 16 44REFFLD(PONO19)
+     A  94                                  DSPATR(RI)
+     A  94                                  DSPATR(PC)
+     A  30
+     AO 33                                  DSPATR(PR)
+     A                                      EDTCDE(4)
+     A                                      CHECK(RB)
+   BIA*N59                             15 49'Direct'
+   BIA*N59        DIRECT         1A  B 15 56
+BI BMA*N59N77                          15 49'Direct'
+BI BMA*N59N77     DIRECT         1A  B 15 56
+BM   A N59N77                          16 61'Direct'
+BM   A N59N77     DIRECT         1A  B 16 68
+     A  98                                  DSPATR(RI)
+     A  98                                  DSPATR(PC)
+     A  33                                  DSPATR(PR)
+   BMA*                                15 64'Other Charges'
+   BMA*           OTHCHG    R        B 15 78REFFLD(APCD53)
+BM   A                                 16 89'Other Charges'
+BM   A            OTHCHG    R        B 16103REFFLD(APCD53)
+     A                                      VALUES(' ' 'N' 'Y')
+     A  33                                  DSPATR(PR)
+   BMA*                                16  2'Discount'
+   BMA*                                16 14'%'
+   BMA*           PC01C     R        B 16 21REFFLD(APPC01)
+BM ¢CA*                                17  2'Discount'
+BM ¢CA*                                17 14'%'
+¢C   A                                 17  2'Discount%'
+¢C   A            PC01M     R        O 17 13REFFLD(APPC01)
+¢C   A                                      EDTCDE(3)
+BM   A            PC01C     R        B 17 21REFFLD(APPC01)
+     A                                      EDTCDE(3)
+     A  53                                  DSPATR(PR)
+   BMA*                                16 27'Date'
+   BMA*           DSCDTC         6Y 0B 16 39EDTCDE(Y)
+BM   A                                 17 31'Date'
+BM   A            DSCDTC         6Y 0B 17 43EDTCDE(Y)
+A1    *
+A1   A*%%WB 8 FLD <input type="hidden" id="calendar4"></input><img id='calendar+
+A1   A*%%WB +4'src="images/CalendarImg/calendar.gif" onClick="javascript:proce+
+A1   A*%%WB +ssCalendarControl(getPreviousElement(eval('document.WebFacingForm.+
+A1   A*%%WB +'+this.id)).id,'1','Y','','mm/dd/yy');"></img>
+A1    *
+     A  33
+     AO 35                                  DSPATR(PR)
+     A  95                                  DSPATR(RI)
+     A  95                                  DSPATR(PC)
+   BMA*                                16 49'Branch'
+   BMA*           APBR#C    R        B 16 56REFFLD(APNO16)
+BM   A                                 17 61'Branch'
+BM   A            APBR#C    R        B 17 68REFFLD(APNO16)
+     A                                      EDTCDE(4)
+     A  67                                  DSPATR(RI)
+     A  67                                  DSPATR(PC)
+     A  33
+     AO 35
+     AO 34                                  DSPATR(PR)
+   BKA*                                17  2'Skip Match'
+   BKA*           SKIPPO    R        B 17 24REFFLD(APFL01)
+BK BMA*N77                             17  2'Skip Match'
+BK BMA*N77        SKIPPO    R        B 17 24REFFLD(APFL01)
+BM   A N77                             18  2'Skip Match'
+BM   A N77        SKIPPO    R        B 18 24REFFLD(APFL01)
+     A  99                                  DSPATR(RI)
+     A  99                                  DSPATR(PC)
+     A  30
+     AO 33                                  DSPATR(PR)
+   BMA*                                17 27'Type'
+   BMA*           APCD23    R        B 17 45
+BM   A                                 18 31'Type'
+BM   A            APCD23    R        B 18 49
+     A  33                                  DSPATR(PR)
+   BMA*                                17 49'Payment Type'
+   BMA*           CD67      R        B 17 62REFFLD(APCD67)
+BM   A                                 18 89'Payment Type'
+BM   A            CD67      R        B 18103REFFLD(APCD67)
+A1    *
+A1   A*%%WB 7 FLD ondblclick="showList(this)"
+A1    *
+     A                                      VALUES('A' 'D' 'E' 'M' -
+     A                                      'P' 'R' ' ')
+     A  31                                  DSPATR(RI PC)
+     A  35                                  DSPATR(PR)
+   BMA*                                18  2'Multiple Payments'
+   BMA*           APCD12    R        B 18 24VALUES(' ' 'Y')
+BM   A                                 19  2'Multiple Payments'
+BM   A            APCD12    R        B 19 24VALUES(' ' 'Y')
+BR   A  01                                  DSPATR(PR)
+   BMA*                                18 27'No Charge'
+   BMA*           APCD29    R        B 18 46
+BM   A                                 19 89'No Charge'
+BM   A            APCD29    R        B 19103
+     A  30
+     AO 33                                  DSPATR(PR)
+     A                                      VALUES(' ' 'Y')
+     A  62                                  DSPATR(RI)
+     A  62                                  DSPATR(PC)
+   BMA*                                18 49'Inherent Frght'
+BM   A                                 20 61'Inherent Frght'
+   BMA*                                19  2'Alternate Vendor'
+   BMA*           NO25C     R        B 19 19REFFLD(APNO25)
+BM   A                                 20  2'Alternate Vendor'
+BM   A            NO25C     R        B 20 19REFFLD(APNO25)
+     A  63                                  DSPATR(RI)
+     A  63                                  DSPATR(PC)
+     A  35                                  DSPATR(PR)
+     A                                      EDTCDE(3)
+   BMA*                                19 27'Acct MM/YY'
+   BMA*           ACTDTC         4Y 0B 19 42EDTCDE(Y)
+BM   A                                 20 31'Acct MM/YY'
+BM   A            ACTDTC         4Y 0B 20 46EDTCDE(Y)
+A1    *
+A1   A*%%WB 8 FLD <input type="hidden" id="calendar5"></input><img id='calendar+
+A1   A*%%WB +5'src="images/CalendarImg/calendar.gif" onClick="javascript:proce+
+A1   A*%%WB +ssCalendarControl(getPreviousElement(eval('document.WebFacingForm.+
+A1   A*%%WB +'+this.id)).id,'2','Y','','mm/yy');"></img>
+A1    *
+     A  33                                  DSPATR(PR)
+     A  96                                  DSPATR(RI)
+     A  96                                  DSPATR(PC)
+   BMA*                                19 49'Dsc% / Dsc Amt'
+   BMA*                                20  2'Invoice Type'
+   BMA*           CD26K     R        O 20 24REFFLD(APCD26)
+   BMA*                                20 27'Ref #'
+   BMA*           NO26K     R        B 20 35REFFLD(APNO26)
+BM   A                                 21 61'Dsc% / Dsc Amt'
+BM   A                                 22  2'Invoice Type'
+BM   A            CD26K     R        O 22 24REFFLD(APCD26)
+BM   A                                 22 27'Ref #'
+BM   A            NO26K     R        B 22 35REFFLD(APNO26)
+     A                                      CHECK(RB)
+     A  30
+     AO 37
+     AO 33                                  DSPATR(PR)
+     A  65                                  DSPATR(RI)
+     A  65                                  DSPATR(PC)
+   BMA*           PC40C     R        B 20 49REFFLD(APPC40)
+BM   A            PC40C     R        B 22 61REFFLD(APPC40)
+     A                                      EDTCDE(3)
+   BMA*           APAM40    R        B 20 54REFFLD(APAM40)
+BM   A            APAM40    R        B 22 66REFFLD(APAM40)
+BN   A  02                                  DSPATR(RI PC)
+     A                                      EDTCDE(J)
+     A                                      CHECK(RB)
+   BMA*                                20 49'Manual Hold'
+   BMA*                                20 65'Manual Hold'
+   BMA*           CD43K     R        B 20 79REFFLD(APCD43)
+BM   A                                 22 89'Manual Hold'
+BM   A            CD43K     R        B 22103REFFLD(APCD43)
+     A  33                                  DSPATR(PR)
+   BMA*                                21  2'Reason Code'
+BM   A                                 23  2'Reason Code'
+     A N39                                  DSPATR(ND)
+   BMA*           CD57C     R        B 21 23REFFLD(APCD57)
+BM   A            CD57C     R        B 23 23REFFLD(APCD57)
+     A N39                                  DSPATR(ND)
+     A  33
+     AON39                                  DSPATR(PR)
+     A  38                                  DSPATR(RI PC)
+   BMA*           CD57DS    R        O 21 27REFFLD(APDN07)
+BM   A            CD57DS    R        O 23 27REFFLD(APDN07)
+     A N39                                  DSPATR(ND)
+   BMA*                                21 60'Image Cntl'
+BM   A                                 23113'Image Cntl'
+     A N72                                  DSPATR(ND)
+   BMA*           NO47      R        B 21 72REFFLD(APNO47)
+BM   A            NO47      R        B 23124REFFLD(APNO47)
+     A N72                                  DSPATR(ND PR)
+     A  71                                  DSPATR(RI PC)
+BM   A N69                             25  2'F3=Exit'
+BM   A                                      COLOR(BLU)
+BM   A N69                             25 12'F4=Prompt'
+BM   A                                      COLOR(BLU)
+BM   A N69                             25 24'F6=Notes-invoice'
+BM   A                                      COLOR(BLU)
+BM   A N69 61                          25 43'F7=Notes-P/O to A/P'
+BM   A                                      COLOR(BLU)
+BM   A N69N35                          25 65'F8=Remit to address'
+BM   A                                      COLOR(BLU)
+BM   A N69N77N33                       25 87'F9=Change vendor'
+BM   A                                      COLOR(BLU)
+BM   A N69 58                          25106'F10=Notes-RCV to A/P'
+¢D   A  58                                  DSPATR(RI)
+BM   A                                      COLOR(BLU)
+BM   A N69N33                          26  2'F11=Delete'
+BM   A                                      COLOR(BLU)
+BM   A N69                             26 14'F12=Cancel'
+BM   A                                      COLOR(BLU)
+BM   A N69                             26 27'F13=Vendor info'
+BM   A                                      COLOR(BLU)
+BM   A N69N33
+BM   AAN77                             26 45'F14=Match info'
+BM   A                                      COLOR(BLU)
+BM   A N69N33                          26 62'F15=Variance'
+BM   A                                      COLOR(BLU)
+BM   A N69N33                          26 77'F16=Select match lines'
+BM   A                                      COLOR(BLU)
+BM   A N69N53                          26102'F17=Protect'
+BM   A                                      COLOR(BLU)
+BM   A N69 53                          26102'F17=Unprotect'
+BM   A                                      COLOR(BLU)
+BM   A                                 26120'F24=More keys'
+BM   A                                      COLOR(BLU)
+BM   A  69                             25  2'F18=Notes-check'
+BM   A                                      COLOR(BLU)
+BM   A  69 26 64                          +3'F19=Save image'
+BM   A                                      COLOR(BLU)
+¢B   A  69                                +3'F21=Bank Info'
+¢B   A                                      COLOR(BLU)
+BM   A  69 26                             +3'F23=Image'
+BM   A                                      COLOR(BLU)
+BM   A            MSGFLD        78A  O 27  2DSPATR(HI)
+   BMA*N69                             22  2'F3=Exit'
+   BMA*                                     COLOR(BLU)
+   BMA*N69                             22 12'F4=Prompt'
+   BMA*                                     COLOR(BLU)
+   BMA*N69                             22 24'F6=Notes-invoice'
+   BMA*                                     COLOR(BLU)
+   BMA*N69 61                          22 43'F7=Notes-P/O to A/P'
+   BMA*                                     COLOR(BLU)
+   BMA*N69N35                          23  2'F8=Remit to address'
+   BMA*                                     COLOR(BLU)
+   BIA*N69N33                          23 24'F9=Change vendor'
+BI BMA*N69N77N33                       23 24'F9=Change vendor'
+   BMA*                                     COLOR(BLU)
+   BMA*N69 58                          23 43'F10=Notes-RCV to A/P'
+   BMA*                                     COLOR(BLU)
+   BMA*N69                             23 66'F24=More keys'
+   BMA*                                     COLOR(BLU)
+   BBA* 69N33                          22  2'F11=Delete'
+   BBA*                                     COLOR(BLU)
+   BBA* 69                             22 15'F12=Cancel'
+   BBA*                                     COLOR(BLU)
+   BBA* 69                             22 28'F13=Vendor info'
+   BBA*                                     COLOR(BLU)
+   BIA* 69N33                          22 46'F14=Match info'
+BI BBA* 69N77N33                       22 48'F14=Match info'
+   BBA*                                     COLOR(BLU)
+   BBA* 69N33                          22 65'F15=Variance'
+   BBA*                                     COLOR(BLU)
+   BBA* 69N33                          23  2'F16=Select match lines'
+   BBA*                                     COLOR(BLU)
+   BBA* 69N53                          23 28'F17=Protect'
+   BBA*                                     COLOR(BLU)
+   BBA* 69 53                          23 28'F17=Unprotect'
+   BBA*                                     COLOR(BLU)
+   BBA* 69                             23 46'F18=Notes-check'
+   BBA*                                     COLOR(BLU)
+   BBA* 69                             23 65'F24=More keys'
+   BBA*                                     COLOR(BLU)
+   BMA*           MSGFLD        78A  O 24  2DSPATR(HI)
+BB BMA* 69N33N26                       22  2'F11=Delete'
+BB BMA*                                     COLOR(BLU)
+BB BMA* 69N26                          22 15'F12=Cancel'
+BB BMA*                                     COLOR(BLU)
+BB BMA* 69N26                          22 28'F13=Vendor info'
+BB BMA*                                     COLOR(BLU)
+BB BMA* 69N33N26
+BB BMA*AN77                             22 46'F14=Match info'
+BB BMA*                                     COLOR(BLU)
+BB BMA* 69N33N26                       22 65'F15=Variance'
+BB BMA*                                     COLOR(BLU)
+BB BMA* 69N33N26                       23  2'F16=Select match lines'
+BB BMA*                                     COLOR(BLU)
+BB BMA* 69N53N26                       23 28'F17=Protect'
+BB BMA*                                     COLOR(BLU)
+BB BMA* 69 53N26                       23 28'F17=Unprotect'
+BB BMA*                                     COLOR(BLU)
+BB BMA* 69N26                          23 46'F18=Notes-check'
+BB BMA*                                     COLOR(BLU)
+BB BMA* 69N26                          23 65'F24=More keys'
+BB BMA*                                     COLOR(BLU)
+BB BOA* 69 26                          23  2'F19=Save image'
+BO BMA* 69 26 64                       23  2'F19=Save image'
+BB BMA*                                     COLOR(BLU)
+BB BMA* 69 26                             +3'F23=Image'
+BB BMA*                                     COLOR(BLU)
+BB BMA* 69 26                            + 3'F24=More keys'
+BB BMA*                                     COLOR(BLU)
+BD   A          R APF1112CW
+BD   A                                      CHANGE(51 'A Field Was Changed')
+BD   A                                      CF04(04 'Prompt')
+BD   A                                      CF06(06 'Invoice Notes')
+BD   A  61                                  CF07(07 'P/O - A/P notes')
+BD   A N35                                  CF08(08 'Remit to address')
+BD BIA*N33                                  CF09(09 'Change P/O  Vendor #')
+BI   A N77N33                               CF09(09 'Change P/O  Vendor #')
+BD   A  58                                  CF10(10 'Notes-Rcv to A/P')
+BD   A N33                                  CF11(11 'Delete')
+BD   A                                      CF12(12 'Cancel')
+BD   A                                      CF13(13 'Vendor information')
+BD BIA*N33                                  CF14(14 'Match information')
+BI   A N77N33                               CF14(14 'Match information')
+BD   A N33                                  CF15(15 'Variance Program')
+BD   A N33                                  CF16(16 'Select match lines')
+BD   A                                      CF17(17 'Protect/Unprotect')
+BD   A                                      CF18(18 'Check Notes')
+¢B   A                                      CF21(21 'Bank Info')
+BB   A  55                                  CF23(23 'Image')
+BB   A  64                                  CF19(19 'Image Index')
+BD   A                                      CF24(24 'More keys')
+BD   A                                      BLINK
+BD   A                                      RTNCSRLOC(&CRCD &CFLD &CPOS)
+BD   A                                      CSRLOC(CROW       CCOL)
+BD   A            CROW           3S 0H
+BD   A            CCOL           3S 0H
+BD   A            CRCD          10A  H
+BD   A            CFLD          10A  H
+BD   A            CPOS           4S 0H
+BD   A            REFCTL    R        H      REFFLD(APNO39)
+BD   A            HO25C     R        H      REFFLD(APNO25)
+BD   A                                  1  2'APF1112CW'
+BD   A                                      COLOR(BLU)
+BD   A                                  1 25'Invoice Header Information Entry'
+BD   A                                      DSPATR(HI)
+BL   A            APNO20    R           1 60
+BL   A                                      DSPATR(ND)
+BD   A            APNT01        77   O  2  2
+BD   A  33                              3  2'Approved'
+BD   A                                      DSPATR(RI)
+BD   A  29                              3 16'Reference Hold'
+BD   A  29                                  DSPATR(RI)
+BD   A                                  3 35'Company'
+BD   A            APCO#F    R        O  3 43REFFLD(APNO15)
+BD   A                                  3 66'Batch '
+BD   A            BATCH#    R        O  3 73REFFLD(APNO17)
+BD   A            VNDNOT        14      4  1
+BD   A  66        HLDSTS        17A  O  4 16DSPATR(RI)
+BD   A            EDIM           5A  O  4 37
+BD   A  36                              4 50'Draft Vendor'
+BD   A                                      DSPATR(BL)
+BD   A                                      DSPATR(HI)
+BD   A                                  5  2'Phone #'
+BD   A            NO02C     R        O  5 10REFFLD(APNO02)
+BD   A            NO03C     R        O  5 14REFFLD(APNO03)
+BD   A            NO04C     R        O  5 18REFFLD(APNO04)
+BD   A                                  5 27'Name'
+BD   A            NM01C     R        O  5 32REFFLD(APNM01)
+BD   A                                  5 65'Vendor #'
+BD   A            NO01C     R        O  5 74REFFLD(APNO01)
+BD    * DISPLAYS FOR MYHD JOBS ONLY
+BD   A            ALNLFT         1A  B  6  2
+BD    * Left align reference number
+BD   A            ALNLFTRF#      1A  B  6  5
+BD   A                                  7  2'Invoice Number'
+BD BMA*                                 7 18'Voucher'
+BD BMA*                                 7 28'Inv Date'
+BD BMA*                                 7 40'Date Rcvd'
+BD BMA*                                 7 52'Due Date'
+BD BMA*                                 7 63'Ship Date'
+BM   A                                  7 27'Voucher'
+BM   A                                  7 37'Inv Date'
+BM   A                                  7 49'Date Rcvd'
+BM   A                                  7 61'Due Date'
+BM   A                                  7 72'Ship Date'
+BD   A N78                                  DSPATR(ND)
+BD BMA*                                 7 74'Bank#'
+BD BMA*           NO11C     R        B  8  3REFFLD(APNO11)
+BM   A                                  7 83'Bank#'
+BM   A            NO11C     R        B  8  2REFFLD(APNO11)
+BD   A                                      CHECK(RB)
+BD   A  33                                  DSPATR(PR)
+BD   A  80                                  DSPATR(RI)
+BD   A  80                                  DSPATR(PC)
+BD BMA*           NO21C     R        B  8 18REFFLD(APNO21)
+BM   A            NO21C     R        B  8 27REFFLD(APNO21)
+BD   A                                      EDTCDE(3)
+BD   A  33                                  DSPATR(PR)
+BD BMA*           INVDTC         6Y 0B  8 28EDTCDE(Y)
+BM   A            INVDTC         6Y 0B  8 37EDTCDE(Y)
+BD    *
+BD   A*%%WB 8 FLD <input type="hidden" id="calendar0"></input><img id='calendar+
+BD   A*%%WB +0'src="images/CalendarImg/calendar.gif" onClick="javascript:proce+
+BD   A*%%WB +ssCalendarControl(getPreviousElement(eval('document.WebFacingForm.+
+BD   A*%%WB +'+this.id)).id,'1','Y','','mm/dd/yy');"></img>
+BD    *
+BD   A  33                                  DSPATR(PR)
+BD   A  81                                  DSPATR(RI)
+BD   A  81                                  DSPATR(PC)
+BD BMA*           RECDTC         6Y 0B  8 40EDTCDE(Y)
+BM   A            RECDTC         6Y 0B  8 49EDTCDE(Y)
+BD    *
+BD   A*%%WB 8 FLD <input type="hidden" id="calendar1"></input><img id='calendar+
+BD   A*%%WB +1'src="images/CalendarImg/calendar.gif" onClick="javascript:proce+
+BD   A*%%WB +ssCalendarControl(getPreviousElement(eval('document.WebFacingForm.+
+BD   A*%%WB +'+this.id)).id,'1','Y','','mm/dd/yy');"></img>
+BD    *
+BD   A  33                                  DSPATR(PR)
+BD   A  82                                  DSPATR(RI)
+BD   A  82                                  DSPATR(PC)
+BD BMA*           DUEDTC         6Y 0B  8 52EDTCDE(Y)
+BM   A            DUEDTC         6Y 0B  8 61EDTCDE(Y)
+BD    *
+BD   A*%%WB 8 FLD <input type="hidden" id="calendar2"></input><img id='calendar+
+BD   A*%%WB +2'src="images/CalendarImg/calendar.gif" onClick="javascript:proce+
+BD   A*%%WB +ssCalendarControl(getPreviousElement(eval('document.WebFacingForm.+
+BD   A*%%WB +'+this.id)).id,'1','Y','','mm/dd/yy');"></img>
+BD    *
+BD   A  83                                  DSPATR(RI)
+BD   A  83                                  DSPATR(PC)
+BD   A  35                                  DSPATR(PR)
+BD BMA*           DSHDTC         6Y 0B  8 63EDTCDE(Y)
+BM   A            DSHDTC         6Y 0B  8 72EDTCDE(Y)
+BD    *
+BD   A*%%WB 8 FLD <input type="hidden" id="calendar3"></input><img id='calendar+
+BD   A*%%WB +3'src="images/CalendarImg/calendar.gif" onClick="javascript:proce+
+BD   A*%%WB +ssCalendarControl(getPreviousElement(eval('document.WebFacingForm.+
+BD   A*%%WB +'+this.id)).id,'1','Y','','mm/dd/yy');"></img>
+BD    *
+BD   A  79                                  DSPATR(RI)
+BD   A  79                                  DSPATR(PC)
+BD   A N78                                  DSPATR(ND)
+BD   A N78
+BD   AO 33                                  DSPATR(PR)
+BD BMA*           NO38C     R     N  B  8 75REFFLD(APNO38)
+BM   A            NO38C     R     N  B  8 84REFFLD(APNO38)
+BD   A  91                                  DSPATR(RI)
+BD   A  91                                  DSPATR(PC)
+BD   A  33
+BD   AO 35                                  DSPATR(PR)
+BD   A                                 10  2'Gross Purchase'
+BD BMA*           APAM04    R        B 10 18EDTCDE(J)
+BM   A            APAM04    R        B 10 17EDTCDE(J)
+BD   A                                      CHECK(RB)
+BD   A  84                                  DSPATR(RI)
+BD   A  84                                  DSPATR(PC)
+BD   A  30
+BD   AO 33                                  DSPATR(PR)
+BD   A                                 10 35'Sales Tax'
+BD   A            APAM14    R        B 10 47EDTCDE(J)
+BD   A                                      CHECK(RB)
+BD   A  33                                  DSPATR(PR)
+BD BMA*                                10 59'Discount'
+BD BMA*           APAM05    R        B 10 70EDTCDE(J)
+BM   A                                 10 63'Discount'
+BM   A            APAM05    R        B 10 74EDTCDE(J)
+BD   A                                      CHECK(RB)
+BD   A  86                                  DSPATR(RI)
+BD   A  86
+BD   AO 54                                  DSPATR(PC)
+BD   A  53                                  DSPATR(PR)
+BD   A                                 11  2'Freight In'
+BD BMA*           APAM13    R        B 11 20EDTCDE(J)
+BM   A            APAM13    R        B 11 19EDTCDE(J)
+BD   A                                      CHECK(RB)
+BD   A  33
+BD   AO 30                                  DSPATR(PR)
+BD   A  85                                  DSPATR(RI)
+BD   A  85                                  DSPATR(PC)
+BD   A                                 11 35'Freight Out'
+BD BMA*           APAM26    R        B 11 48EDTCDE(J)
+BM   A            APAM26    R        B 11 47EDTCDE(J)
+BD   A                                      CHECK(RB)
+BD   A  92                                  DSPATR(RI)
+BD   A  92                                  DSPATR(PC)
+BD   A  33                                  DSPATR(PR)
+BD BMA*                                11 59'Oth Chg'
+BD BMA*           APTL03    R        O 11 67
+BD BMA*                                     EDTCDE(J)
+BD BIA*                                12  2'Match Freight'
+BD BIA*           MATCH_FRT R        B 12 18REFFLD(APFL13)
+BM   A                                 11 63'Oth Chg'
+BM   A            APTL03    R        O 11 72EDTCDE(J)
+BI   A N77                             12  2'Match Freight'
+BI BMA*N77        MATCH_FRT R        B 12 18REFFLD(APFL13)
+BM   A N77        MATCH_FRT R        B 12 17REFFLD(APFL13)
+BD   A                                      VALUES(' ' 'N' 'Y')
+BD   A  33
+BD   AO 30                                  DSPATR(PR)
+BI   A  77                             12 35'Rebate Credit'
+BI   A  77        REB_CR         1   O 12 49
+BD BMA*                                12 59'Net'
+BD BMA*           APAM06    R        O 12 67EDTCDE(J)
+BM   A                                 12 63'Net'
+BM   A            APAM06    R        O 12 72EDTCDE(J)
+BD   A  87                                  DSPATR(RI)
+BD BMA* 32        FRTMSG        17     13 17
+BM   A  32        FRTMSG        17     13  2
+BD   A  32                                  DSPATR(RI)
+BD   A                                 13 49'Consigned Invoice'
+BD   A            CONINV    R        O 13 68REFFLD(APFL09)
+BP   A                                 13 73'1099'
+BP   A            CD81C     R        B 13 78REFFLD(APCD81)
+BP   A  73                                  DSPATR(RI)
+BP   A  73                                  DSPATR(PC)
+BP   A  52                                  DSPATR(PR)
+BD   A                                 14  2'Multiple G/L Accounts'
+BD   A            CD16C     R        B 14 24REFFLD(APCD16)
+BD   A                                      VALUES(' ' 'Y' 'N')
+BD   A  33
+BD   AO 68                                  DSPATR(PR)
+BD   A                                 14 27'G/L#'
+BD   A            GNO06C    R        B 14 32REFFLD(GLNO06)
+BD   A                                      EDTCDE(3)
+BD   A  88                                  DSPATR(RI)
+BD   A  88                                  DSPATR(PC)
+BD   A  33
+BD   AO 35
+BD   AO 68                                  DSPATR(PR)
+BD   A            GNO02C    R        B 14 36REFFLD(GLNO02)
+BD   A                                      EDTCDE(3)
+BD   A  88
+BD   AO 89                                  DSPATR(RI)
+BD   A  89                                  DSPATR(PC)
+BD   A  33
+BD   AO 35
+BD   AO 68                                  DSPATR(PR)
+BD   A            GNO03C    R        B 14 39REFFLD(GLNO03)
+BD   A                                      EDTCDE(3)
+BD   A  88                                  DSPATR(RI)
+BD   A  33
+BD   AO 35
+BD   AO 68                                  DSPATR(PR)
+BD   A            GNO04C    R        B 14 44REFFLD(GLNO04)
+BD   A                                      EDTCDE(3)
+BD   A  88                                  DSPATR(RI)
+BD   A  33
+BD   AO 35
+BD   AO 68                                  DSPATR(PR)
+BD   A                                 14 49'Desc'
+BD   A            GDN03C    R        B 14 54REFFLD(GLDN03)
+BD   A  90                                  DSPATR(RI)
+BD   A  90                                  DSPATR(PC)
+BD   A  33
+BD   AO 35
+BD   AO 68                                  DSPATR(PR)
+BD BIA*N59                             15  2'Purchase Order'
+BD BIA*N59        PO#       R        B 15 18REFFLD(PONO01)
+BI   A N59N77                          15  2'Purchase Order'
+BI   A N59N77     PO#       R        B 15 18REFFLD(PONO01)
+BD   A  93                                  DSPATR(RI)
+BD   A  93                                  DSPATR(PC)
+BD   A  30
+BD   AO 33                                  DSPATR(PR)
+BD   A                                      EDTCDE(4)
+BD BIA* 59                             15  2'Vendor Return'
+BD BIA* 59        VNDRTN    R        B 15 18REFFLD(PONO27)
+BI   A  59N77                          15  2'Vendor Return'
+BI   A  59N77     VNDRTN    R        B 15 18REFFLD(PONO27)
+BD   A  57                                  DSPATR(RI)
+BD   A  57                                  DSPATR(PC)
+BD   A                                      EDTCDE(4)
+BD   A  33                                  DSPATR(PR)
+BD BIA*N59                             15 27'Receiver'
+BD BIA*N59        RCV#      R        B 15 40REFFLD(PONO19)
+BI   A N59N77                          15 27'Receiver'
+BI   A N59N77     RCV#      R        B 15 40REFFLD(PONO19)
+BD   A  94                                  DSPATR(RI)
+BD   A  94                                  DSPATR(PC)
+BD   A  30
+BD   AO 33                                  DSPATR(PR)
+BD   A                                      EDTCDE(4)
+BD   A                                      CHECK(RB)
+BD BIA*N59                             15 49'Direct'
+BD BIA*N59        DIRECT         1A  B 15 56
+BI   A N59N77                          15 49'Direct'
+BI   A N59N77     DIRECT         1A  B 15 56
+BD   A  98                                  DSPATR(RI)
+BD   A  98                                  DSPATR(PC)
+BD   A  33                                  DSPATR(PR)
+BD   A                                 15 64'Other Charges'
+BD   A            OTHCHG    R        B 15 78REFFLD(APCD53)
+BD   A                                      VALUES(' ' 'N' 'Y')
+BD   A  33                                  DSPATR(PR)
+BD   A                                 16  2'Discount'
+BD   A                                 16 14'%'
+BD   A            PC01C     R        B 16 21REFFLD(APPC01)
+BD   A                                      EDTCDE(3)
+BD   A  53                                  DSPATR(PR)
+BD   A                                 16 27'Date'
+BD   A            DSCDTC         6Y 0B 16 39EDTCDE(Y)
+BD    *
+BD   A*%%WB 8 FLD <input type="hidden" id="calendar4"></input><img id='calendar+
+BD   A*%%WB +4'src="images/CalendarImg/calendar.gif" onClick="javascript:proce+
+BD   A*%%WB +ssCalendarControl(getPreviousElement(eval('document.WebFacingForm.+
+BD   A*%%WB +'+this.id)).id,'1','Y','','mm/dd/yy');"></img>
+BD    *
+BD   A  33
+BD   AO 35                                  DSPATR(PR)
+BD   A  95                                  DSPATR(RI)
+BD   A  95                                  DSPATR(PC)
+BD   A                                 16 49'Branch'
+BD   A            APBR#C    R        B 16 56REFFLD(APNO16)
+BD   A                                      EDTCDE(4)
+BD   A  67                                  DSPATR(RI)
+BD   A  67                                  DSPATR(PC)
+BD   A  33
+BD   AO 35
+BD   AO 34                                  DSPATR(PR)
+BD BKA*                                17  2'Skip Match'
+BD BKA*           SKIPPO    R        B 17 24REFFLD(APFL01)
+BK   A N77                             17  2'Skip Match'
+BK   A N77        SKIPPO    R        B 17 24REFFLD(APFL01)
+BD   A  99                                  DSPATR(RI)
+BD   A  99                                  DSPATR(PC)
+BD   A  30
+BD   AO 33                                  DSPATR(PR)
+BD   A                                 17 27'Type'
+BD   A            APCD23    R        B 17 45
+BD   A  33                                  DSPATR(PR)
+BD   A                                 17 49'Payment Type'
+BD   A            CD67      R        B 17 62REFFLD(APCD67)
+BD    *
+BD   A*%%WB 7 FLD ondblclick="showList(this)"
+BD    *
+BD   A                                      VALUES('A' 'D' 'E' 'M' -
+BD   A                                      'P' 'R' ' ')
+BD   A  31                                  DSPATR(RI PC)
+BD   A  35                                  DSPATR(PR)
+BD   A                                 18  2'Multiple Payments'
+BD   A            APCD12    R        B 18 24VALUES(' ' 'Y')
+BR   A  01                                  DSPATR(PR)
+BD   A                                 18 27'No Charge'
+BD   A            APCD29    R        B 18 46
+BD   A  30
+BD   AO 33                                  DSPATR(PR)
+BD   A                                      VALUES(' ' 'Y')
+BD   A  62                                  DSPATR(RI)
+BD   A  62                                  DSPATR(PC)
+BD BMA*                                18 49'Inherent Frght'
+BD BMA*                                19  2'Alternate Vendor'
+BD BMA*           NO25C     R        B 19 19REFFLD(APNO25)
+BM   A                                 20 61'Inherent Frght'
+BM   A                                 20  2'Alternate Vendor'
+BM   A            NO25C     R        B 20 19REFFLD(APNO25)
+BD   A  63                                  DSPATR(RI)
+BD   A  63                                  DSPATR(PC)
+BD   A  35                                  DSPATR(PR)
+BD   A                                      EDTCDE(3)
+BD BMA*                                19 27'Acct MM/YY'
+BD BMA*           ACTDTC         4Y 0B 19 42EDTCDE(Y)
+BM   A                                 20 31'Acct MM/YY'
+BM   A            ACTDTC         4Y 0B 20 46EDTCDE(Y)
+BD    *
+BD   A*%%WB 8 FLD <input type="hidden" id="calendar5"></input><img id='calendar+
+BD   A*%%WB +5'src="images/CalendarImg/calendar.gif" onClick="javascript:proce+
+BD   A*%%WB +ssCalendarControl(getPreviousElement(eval('document.WebFacingForm.+
+BD   A*%%WB +'+this.id)).id,'2','Y','','mm/yy');"></img>
+BD    *
+BD   A  33                                  DSPATR(PR)
+BD   A  96                                  DSPATR(RI)
+BD   A  96                                  DSPATR(PC)
+BD BMA*                                19 49'Dsc% / Dsc Amt'
+BD BMA*                                20  2'Invoice Type'
+BD BMA*           CD26K     R        O 20 24REFFLD(APCD26)
+BD BMA*                                20 27'Ref #'
+BD BMA*           NO26K     R        B 20 35REFFLD(APNO26)
+BM   A                                 21 61'Dsc% / Dsc Amt'
+BM   A                                 22  2'Invoice Type'
+BM   A            CD26K     R        O 22 24REFFLD(APCD26)
+BM   A                                 22 27'Ref #'
+BM   A            NO26K     R        B 22 35REFFLD(APNO26)
+BD   A                                      CHECK(RB)
+BD   A  30
+BD   AO 37
+BD   AO 33                                  DSPATR(PR)
+BD   A  65                                  DSPATR(RI)
+BD   A  65                                  DSPATR(PC)
+BD BMA*           PC40C     R        B 20 49REFFLD(APPC40)
+BM   A            PC40C     R        B 22 61REFFLD(APPC40)
+BD   A                                      EDTCDE(3)
+BD BMA*           APAM40    R        B 20 54REFFLD(APAM40)
+BM   A            APAM40    R        B 22 66REFFLD(APAM40)
+BD   A                                      EDTCDE(J)
+BD   A                                      CHECK(RB)
+BN   A  02                                  DSPATR(RI PC)
+BD BMA*                                20 65'Manual Hold'
+BD BMA*           CD43K     R        B 20 79REFFLD(APCD43)
+BM   A                                 20 81'Manual Hold'
+BM   A            CD43K     R        B 20 94REFFLD(APCD43)
+BD   A  33                                  DSPATR(PR)
+BD BMA*                                21  2'Reason Code'
+BM   A                                 23  2'Reason Code'
+BD   A N39                                  DSPATR(ND)
+BD BMA*           CD57C     R        B 21 23REFFLD(APCD57)
+BM   A            CD57C     R        B 23 23REFFLD(APCD57)
+BD   A N39                                  DSPATR(ND)
+BD   A  33
+BD   AON39                                  DSPATR(PR)
+BD   A  38                                  DSPATR(RI PC)
+BD BMA*           CD57DS    R        O 21 27REFFLD(APDN07)
+BM   A            CD57DS    R        O 23 27REFFLD(APDN07)
+BD   A N39                                  DSPATR(ND)
+BD BMA*                                21 60'Image Cntl'
+BM   A                                 23113'Image Cntl'
+BD   A N72                                  DSPATR(ND)
+BD BMA*           NO47      R        B 21 72REFFLD(APNO47)
+BM   A            NO47      R        B 23124REFFLD(APNO47)
+BD   A N72                                  DSPATR(ND PR)
+BD   A  71                                  DSPATR(RI PC)
+BD BMA*                                22  2'F3'
+BM   A                                 25  2'F3'
+BD   A                                      COLOR(BLU)
+BD   A                                    +1'F4'
+BD   A                                      COLOR(BLU)
+BD   A                                    +1'F6'
+BD   A                                      COLOR(BLU)
+BD   A     61                             +1'F7'
+BD   A                                      COLOR(BLU)
+BD   A    N35                             +1'F8'
+BD   A                                      COLOR(BLU)
+BD BIA*   N33                             +1'F9'
+BI   A N69N77                             +1'F9'
+BD   A                                      COLOR(BLU)
+BD   A     58                             +1'F10'
+BD   A                                      COLOR(BLU)
+BD BMA*   N33N26                          +1'F11'
+BM   A    N33                             +1'F11'
+BD   A                                      COLOR(BLU)
+BD BMA*   N26                             +1'F12'
+BM   A                                    +1'F12'
+BD   A                                      COLOR(BLU)
+BD BMA*   N26                             +1'F13'
+BM   A                                    +1'F13'
+BD   A                                      COLOR(BLU)
+BD BIA*   N33N26                          +1'F14'
+BI BMA*N69N26N77                          +1'F14'
+BM   A N69N77                             +1'F14'
+BD   A                                      COLOR(BLU)
+BD BMA*   N33N26                          +1'F15'
+BM   A N33                                +1'F15'
+BD   A                                      COLOR(BLU)
+BD BMA*   N33N26                          +1'F16'
+BM   A N33                                +1'F16'
+BD   A                                      COLOR(BLU)
+BD BMA*   N26                             +1'F18'
+BM   A                                    +1'F18'
+BD   A                                      COLOR(BLU)
+BB BLA*    26                             +1'F19'
+BL BOA*   N26                             +1'F19'
+BO   A    N26 64                          +1'F19'
+BB   A                                      COLOR(BLU)
+¢B   A                                    +1'F21'
+¢B   A                                      COLOR(BLU)
+BB BLA*    26                             +1'F23'
+BL   A    N26                             +1'F23'
+BB   A                                      COLOR(BLU)
+BH BMA*      N26  F17TEXT        9        +1
+BM   A            F17TEXT        9        +1
+BH   A                                      COLOR(BLU)
+BD BMA*           MSGFLD        78A  O 24  2DSPATR(HI)
+BM   A            MSGFLD        78A  O 27  2DSPATR(HI)
+A1    *
+A1   A*%%WB 11 REC CF01 CF03 CF04 CF06 CF07 CF08 CF09 CF10 CF11 CF12 CF13 CF14 +
+A1   A*%%WB +CF15 CF16 CF17 CF18 PRINT
+A1    *
+     A          R APS1112E                  SFL
+     A            SELE           1A  B  9  4
+     A                                  9  8'Address '
+     A            APAD04    R        O  9 18
+A1    *
+A1   A*%%WB 12 FLD 4 fld=&{SELE.REF}|value=1|func=ENTER
+A1    *
+     A                                  9 53'Phone #'
+     A            APNO22    R        O  9 62
+     A            APNO23    R        O  9 66
+     A            APNO24    R        O  9 70
+     A            APAD05    R        O 10 18
+     A            APAD06    R        O 11 18
+     A            APCY02    R        O 12 18
+     A            APST02    R        O 12 46
+     A            APZP08    R        O 13 38
+     A          R APC1112E                  SFLCTL(APS1112E)
+BM   A                                      DSPMOD(*DS3)
+     A                                      SFLSIZ(0024)
+     A                                      SFLPAG(0002)
+     A                                      OVERLAY
+     A                                      CF12(12 'Cancel')
+     A  73                                  SFLCLR
+     A  74                                  SFLEND(*MORE)
+     A  75                                  SFLDSP
+     A  76                                  SFLDSPCTL
+     A  79                                  SFLDLT
+     A            RNE            4S 0H      SFLRCDNBR
+     A                                  1  2'APC1112E'
+     A                                      COLOR(BLU)
+     A                                  1 27'Remittance Address Selection'
+     A                                      DSPATR(HI)
+     A            APNT01        77   O  2  2
+     A                                  3 35'Company'
+     A            APCO#F    R        O  3 43REFFLD(APNO15)
+     A                                  5  2'Phone #'
+     A            NO02C     R     Y  O  5 11REFFLD(APNO02)
+     A            NO03C     R     Y  O  5 15REFFLD(APNO03)
+     A            NO04C     R     Y  O  5 19REFFLD(APNO04)
+     A                                  5 26'Name'
+     A            NM01C     R        O  5 32REFFLD(APNM01)
+     A                                  5 63'Vendor #'
+     A            NO01C     R        O  5 73REFFLD(APNO01)
+     A  50                              6 63'Alt Vnd #'
+     A  50        NO25C     R        O  6 73REFFLD(APNO25)
+     A                                  7  2'Select'
+     A          R APF1112E
+BM   A                                      DSPMOD(*DS3)
+     A                                 23  2'F3=Exit'
+     A                                      COLOR(BLU)
+     A                                 23 12'F12=Cancel'
+     A                                      COLOR(BLU)
+     A            MSGFLD        78A  O 24  2DSPATR(HI)
+     A          R APS1112H                  SFL
+     A                                      SFLNXTCHG
+     A            APTX01    R        B 10  3
+     A          R APC1112H                  SFLCTL(APS1112H)
+BM   A                                      DSPMOD(*DS3)
+     A                                      SFLSIZ(0020)
+     A                                      SFLPAG(0010)
+     A                                      CF12(12 'Cancel')
+     A                                      OVERLAY
+     A  73                                  SFLCLR
+     A  74                                  SFLEND(*MORE)
+     A  75                                  SFLDSP
+     A  76                                  SFLDSPCTL
+     A  79                                  SFLDLT
+     A            RNH            4S 0H      SFLRCDNBR
+     A                                  1  2'APC1112H'
+     A                                      COLOR(BLU)
+     A                                  1 31'Update Invoice Notes'
+     A                                      DSPATR(HI)
+     A            APNT01        77   O  2  2
+     A                                  3  2'Invoice'
+     A            NO11C     R        O  3 11REFFLD(APNO11)
+   BMA*                                 3 30'Company'
+   BMA*           APCO#F    R        O  3 38REFFLD(APNO15)
+   BMA*                                 3 42'Branch'
+   BMA*           APBR#C    R        O  3 49REFFLD(APNO16)
+BM   A                                  3 36'Company'
+BM   A            APCO#F    R        O  3 44REFFLD(APNO15)
+BM   A                                  3 48'Branch'
+BM   A            APBR#C    R        O  3 55REFFLD(APNO16)
+     A                                  5  2'Phone #'
+     A            NO02C     R        O  5 11REFFLD(APNO02)
+     A            NO03C     R        O  5 15REFFLD(APNO03)
+     A            NO04C     R        O  5 19REFFLD(APNO04)
+     A                                  5 26'Name'
+     A            NM01C     R        O  5 31REFFLD(APNM01)
+     A                                  5 64'Vendor #'
+     A            NO01C     R        O  5 73REFFLD(APNO01)
+     A                                  8  3'Invoice Notes '
+     A                                      DSPATR(HI)
+     A          R APF1112H
+BM   A                                      DSPMOD(*DS3)
+     A                                 23  2'F3=Exit'
+     A                                      COLOR(BLU)
+     A                                 23 12'F12=Cancel'
+     A                                      COLOR(BLU)
+     A            MSGFLD        78A  O 24  2DSPATR(HI)
+     A          R APS1112I                  SFL
+     A                                      SFLNXTCHG
+     A            PAYCC          2  0H
+     A            PAYDTI         6Y 0B 12  2EDTCDE(Y)
+A1    *
+A1   A*%%WB 8 FLD <input type="hidden" id="calendar6"></input><img id='calendar+
+A1   A*%%WB +6'src="images/CalendarImg/calendar.gif" onClick="javascript:proce+
+A1   A*%%WB +ssCalendarControl(getPreviousElement(eval('document.WebFacingForm.+
+A1   A*%%WB +'+this.id)).id,'1','Y','','mm/dd/yy');"></img>
+A1    *
+     A  91                                  DSPATR(RI)
+     A  91                                  DSPATR(PC)
+     A            AM16I     R        B 12 11REFFLD(APAM16)
+   BMA*                                     EDTCDE(L)
+BM   A                                      EDTCDE(J)
+     A                                      CHECK(RB)
+   BMA*           AM18I     R        B 12 23REFFLD(APAM18)
+BM   A            AM18I     R        B 12 28REFFLD(APAM18)
+   BMA*                                     EDTCDE(L)
+BM   A                                      EDTCDE(J)
+     A                                      CHECK(RB)
+   BEA*           AM27I     R        B 12 32REFFLD(APAM27)
+BE BMA*           AM27I     R        B 12 34REFFLD(APAM27)
+BM   A            AM27I     R        B 12 43REFFLD(APAM27)
+   BMA*                                     EDTCDE(L)
+BM   A                                      EDTCDE(J)
+     A                                      CHECK(RB)
+   BEA*           AM17I     R        B 12 41REFFLD(APAM17)
+BE BMA*           AM17I     R        B 12 43REFFLD(APAM17)
+BM   A            AM17I     R        B 12 58REFFLD(APAM17)
+   BMA*                                     EDTCDE(L)
+BM   A                                      EDTCDE(J)
+     A                                      CHECK(RB)
+   A3A*           AM19I     R        B 12 50REFFLD(APAM19)
+A3 BEA*           AM19I     R        B 12 51REFFLD(APAM19)
+BE BMA*           AM19I     R        B 12 53REFFLD(APAM19)
+BM   A            AM19I     R        B 12 73REFFLD(APAM19)
+   BMA*                                     EDTCDE(L)
+BM   A                                      EDTCDE(J)
+     A                                      CHECK(RB)
+   A3A*           AM37I     R        B 12 60REFFLD(APAM37)
+A3 BEA*           AM37I     R        B 12 61REFFLD(APAM37)
+BE BMA*           AM37I     R        B 12 63REFFLD(APAM37)
+BM   A            AM37I     R        B 12 88REFFLD(APAM37)
+   BMA*                                     EDTCDE(L)
+BM   A                                      EDTCDE(J)
+     A                                      CHECK(RB)
+   A3A*           AM12I     R        B 12 69REFFLD(APAM12)
+A3 BEA*           AM12I     R        B 12 70REFFLD(APAM12)
+BE BMA*           AM12I     R        B 13 70REFFLD(APAM12)
+BM   A            AM12I     R        B 12105REFFLD(APAM12)
+   BMA*                                     EDTCDE(L)
+BM   A                                      EDTCDE(J)
+     A                                      CHECK(RB)
+     A          R APC1112I                  SFLCTL(APS1112I)
+     A                                      SFLSIZ(0020)
+   BEA*                                     SFLPAG(0010)
+BE BMA*                                     SFLPAG(0005)
+BM   A  *DS3                                SFLPAG(0001)
+BM   A  *DS4                                SFLPAG(0010)
+     A                                      CF12(12 'Cancel')
+     A                                      OVERLAY
+     A                                      CHANGE(51 'A Field Was Changed')
+     A  70                                  SFLINZ
+     A  73                                  SFLCLR
+     A  74                                  SFLEND(*MORE)
+     A  75                                  SFLDSP
+     A  76                                  SFLDSPCTL
+     A  79                                  SFLDLT
+     A            RNI            4S 0H      SFLRCDNBR
+     A                                  1  2'APC1112I'
+     A                                      COLOR(BLU)
+   BMA*                                 1 30'Multiple Payment Entry'
+BM   A                                  1 50'Multiple Payment Entry'
+     A                                      DSPATR(HI)
+     A            APNT01        77   O  2  2
+BM   A                                  3 50'Company'
+BM   A            APCO#F    R        O  3 58REFFLD(APNO15)
+BM   A                                  3 63'Branch'
+BM   A            APBR#C    R        O  3 70REFFLD(APNO16)
+   BMA*                                 3 30'Company'
+   BMA*           APCO#F    R        O  3 38REFFLD(APNO15)
+   BMA*                                 3 43'Branch'
+   BMA*           APBR#C    R        O  3 50REFFLD(APNO16)
+     A                                  5  2'Invoice Info-'
+     A                                  5 16'Inv #'
+     A            NO11C     R        O  5 22REFFLD(APNO11)
+   BMA*                                 5 39'Date'
+   BMA*           INVDTC         6Y 0O  5 44EDTCDE(Y)
+   BMA*                                 5 55'Due Date'
+   BMA*           DUEDTC         6Y 0O  5 64EDTCDE(Y)
+BM   A                                  5 47'Date'
+BM   A            INVDTC         6Y 0O  5 52EDTCDE(Y)
+BM   A                                  5 63'Due Date'
+BM   A            DUEDTC         6Y 0O  5 72EDTCDE(Y)
+     A                                  6  2'Phone #'
+     A            NO02C     R        O  6 11REFFLD(APNO02)
+     A            NO03C     R        O  6 15REFFLD(APNO03)
+     A            NO04C     R        O  6 19REFFLD(APNO04)
+     A                                  6 26'Name'
+     A            NM01C     R        O  6 32REFFLD(APNM01)
+     A                                  6 63'Vendor #'
+     A            NO01C     R        O  6 73REFFLD(APNO01)
+   BAA*                                 8  2'Pymts'
+BA   A                                  8  2'Pmts'
+   A4A*                                 8  9'Gross Purch'
+   A4A*                                 8 22'Frt In'
+   A4A*                                 8 30'Frt Out'
+A4 BAA*                                 8  8'Gross Purch'
+BA BMA*                                 8  7'Gross Pur'
+BM   A                                  8  9'Gross Pur'
+A4 BAA*                                 8 20'Frt In'
+BA BMA*                                 8 21'Frt In'
+BM   A                                  8 26'Frt In'
+A4 BMA*                                 8 29'Frt Out'
+BM   A                                  8 41'Frt Out'
+   BMA*                                 8 39'Sls tax'
+BM   A                                  8 56'Sls tax'
+   BMA*                                 8 48'Discount'
+BM   A                                  8 71'Discount'
+   BAA*                                 8 60'Oth Chg'
+BA BMA*                                 8 61'Oth Chg'
+BM   A                                  8 87'Oth Chg'
+   BMA*                                 8 70'Net Amount'
+BM   A                                  8102'Net Amount'
+   A4A*           NUMPAY         2Y 0B  9  3EDTCDE(3)
+A4   A            NUMPAY         2Y 0B  9  2EDTCDE(3)
+     A                                      RANGE(2 20)
+   A3A*           APAM04    R        O  9  9EDTCDE(L)
+   A3A*           APAM13    R        O  9 21EDTCDE(L)
+   A3A*           APAM26    R        O  9 30EDTCDE(L)
+   A3A*           APAM14    R        O  9 39EDTCDE(L)
+A3 A4A*           APAM04    R        O  9  8EDTCDE(L)
+A3 A4A*           APAM13    R        O  9 20EDTCDE(L)
+A4 BMA*           APAM04    R        O  9  6EDTCDE(L)
+BM   A            APAM04    R        O  9  6EDTCDE(J)
+A4 BMA*           APAM13    R        O  9 18EDTCDE(L)
+BM   A            APAM13    R        O  9 23EDTCDE(J)
+A3 BMA*           APAM26    R        O  9 29EDTCDE(L)
+BM   A            APAM26    R        O  9 38EDTCDE(J)
+A3 BMA*           APAM14    R        O  9 38EDTCDE(L)
+BM   A            APAM14    R        O  9 53EDTCDE(J)
+   BMA*           APAM05    R        O  9 48EDTCDE(L)
+BM   A            APAM05    R        O  9 68EDTCDE(J)
+   BMA*           APTL03    R        O  9 58EDTCDE(L)
+BM   A            APTL03    R        O  9 83REFFLD(APTL03)
+BM   A                                      EDTCDE(J)
+   BMA*           APAM06    R        O  9 70EDTCDE(L)
+BM   A            APAM06    R        O  9100EDTCDE(J)
+     A                                 11  2'Payment Date'
+     A                                      DSPATR(HI)
+     A          R APF1112I
+   BMA*                                23  2'F3=Exit'
+BM   A                                 25  2'F3=Exit'
+     A                                      COLOR(BLU)
+   BMA*                                23 12'F12=Cancel'
+BM   A                                 25 12'F12=Cancel'
+     A                                      COLOR(BLU)
+   BMA*           MSGFLD        78   O 24  2DSPATR(HI)
+BM   A            MSGFLD        78   O 27  2DSPATR(HI)
+     A          R APS1112J                  SFL
+     A                                      SFLNXTCHG
+     A            SVNOJ         12S 0H
+     A            SVAMJ     R        H      REFFLD(APAM15)
+   BMA*           AM15J     R        B 11  9REFFLD(APAM15)
+BM   A            AM15J     R        B 11  7REFFLD(APAM15)
+     A                                      EDTCDE(J)
+     A                                      CHECK(RB)
+     A  93                                  DSPATR(RI)
+     A  93                                  DSPATR(PC)
+     A            GNO06J    R        B 11 25REFFLD(GLNO06)
+     A                                      EDTCDE(3)
+     A  91                                  DSPATR(RI)
+     A  91                                  DSPATR(PC)
+     A            GNO02J    R        B 11 29REFFLD(GLNO02)
+     A                                      EDTCDE(3)
+     A  91
+     AO 92                                  DSPATR(RI)
+     A  91
+     AO 92                                  DSPATR(PC)
+     A            GNO03J    R        B 11 32REFFLD(GLNO03)
+     A                                      EDTCDE(3)
+     A  91                                  DSPATR(RI)
+     A  91                                  DSPATR(PC)
+     A            GNO04J    R        B 11 37REFFLD(GLNO04)
+     A                                      EDTCDE(3)
+     A  91                                  DSPATR(RI)
+     A  91                                  DSPATR(PC)
+     A            GDN03J    R        B 11 43REFFLD(GLDN03)
+     A  94                                  DSPATR(RI)
+     A  94                                  DSPATR(PC)
+     A          R APC1112J                  SFLCTL(APS1112J)
+BM   A                                      DSPMOD(*DS3)
+   BQA*                                     SFLSIZ(0500)
+BQ   A                                      SFLSIZ(2000)
+     A                                      SFLPAG(0010)
+     A                                      CF04(04 'Prompt')
+     A                                      CF12(12 'Cancel')
+     A                                      OVERLAY
+     A  70                                  SFLINZ
+     A  73                                  SFLCLR
+     A  74                                  SFLEND(*MORE)
+     A  75                                  SFLDSP
+     A  76                                  SFLDSPCTL
+     A  79                                  SFLDLT
+     A                                      SFLCSRRRN(&CRRN)
+     A                                      RTNCSRLOC(&CRCD &CFLD &CPOS)
+     A                                      CSRLOC(CROW       CCOL)
+     A            CROW           3S 0H
+     A            CCOL           3S 0H
+     A            CRRN           5S 0H
+     A            CRCD          10A  H
+     A            CFLD          10A  H
+     A            CPOS           4S 0H
+     A            RNJ            4S 0H      SFLRCDNBR
+     A                                  1  2'APC1112J'
+     A                                      COLOR(BLU)
+     A                                  1 20'Multiple General Ledger Account En-
+     A                                      try'
+     A                                      DSPATR(HI)
+     A            APNT01        77   O  2  2
+     A                                  3  2'Invoice'
+     A            NO11C     R        O  3 11REFFLD(APNO11)
+   BMA*                                 3 30'Company'
+   BMA*           APCO#F    R        O  3 38REFFLD(APNO15)
+   BMA*                                 3 42'Branch'
+   BMA*           APBR#C    R        O  3 49REFFLD(APNO16)
+BM   A                                  3 36'Company'
+BM   A            APCO#F    R        O  3 44REFFLD(APNO15)
+BM   A                                  3 48'Branch'
+BM   A            APBR#C    R        O  3 55REFFLD(APNO16)
+     A                                  5  2'Phone #'
+     A            NO02C     R        O  5 11REFFLD(APNO02)
+     A            NO03C     R        O  5 15REFFLD(APNO03)
+     A            NO04C     R        O  5 19REFFLD(APNO04)
+     A                                  5 26'Name'
+     A            NM01C     R        O  5 32REFFLD(APNM01)
+     A                                  5 63'Vendor #'
+     A            NO01C     R        O  5 73REFFLD(APNO01)
+     A                                  7  2'Entered'
+     A            AM04J     R        O  7 10REFFLD(APAM04)
+     A                                      EDTCDE(J)
+   BMA*                                 7 26'Gross Purchase'
+   BMA*           APAM04    R        O  7 41EDTCDE(J)
+BM   A                                  7 28'Gross Purchase'
+BM   A            APAM04    R        O  7 43EDTCDE(J)
+     A                                  9 15'Amount      G/L Accounts    Descri-
+     A                                      ption'
+     A                                      DSPATR(HI)
+     A          R APF1112J
+BM   A                                      DSPMOD(*DS3)
+     A                                 23  2'F3=Exit'
+     A                                      COLOR(BLU)
+     A                                   + 3'F4=Prompt'
+     A                                      COLOR(BLU)
+     A                                   + 3'F12=Cancel'
+     A                                      COLOR(BLU)
+     A            MSGFLD        78   O 24  2DSPATR(HI)
+     A          R APF1112K
+BM   A                                      DSPMOD(*DS3)
+     A N35                                  CF18(18 'Remit To Addresses')
+     A                                      CF12(12 'Cancel')
+     A                                  1  2'APF1112K'
+     A                                      COLOR(BLU)
+     A                                  1 29'Remittance Address Entry'
+     A                                      DSPATR(HI)
+     A            APNT01        77   O  2  2
+     A                                  3 66'Batch'
+     A            BATCH#    R        O  3 72REFFLD(APNO17)
+     A                                  5  2'Phone # '
+     A            NO02C     R        O  5 11REFFLD(APNO02)
+     A            NO03C     R        O  5 15REFFLD(APNO03)
+     A            NO04C     R        O  5 19REFFLD(APNO04)
+     A                                  5 26'Name'
+     A            NM01C     R        O  5 32REFFLD(APNM01)
+     A                                  5 63'Vendor #'
+     A            NO01C     R        O  5 73REFFLD(APNO01)
+     A  50                              6 63'Alt Vnd #'
+     A  50        NO25C     R        O  6 73REFFLD(APNO25)
+     A                                 10  6'Remittance Address '
+     A            AD04C     R        B 10 27REFFLD(APAD04)
+     A  90                                  DSPATR(RI)
+     A  91                                  DSPATR(PC)
+     A  35                                  DSPATR(PR)
+     A            AD05C     R        B 11 27REFFLD(APAD05)
+     A  90                                  DSPATR(RI)
+     A  35                                  DSPATR(PR)
+     A            AD06C     R        B 12 27REFFLD(APAD06)
+     A  90                                  DSPATR(RI)
+     A  35                                  DSPATR(PR)
+     A                                 13 27'City'
+     A            CY02C     R        B 13 32REFFLD(APCY02)
+     A  90                                  DSPATR(RI)
+     A  92                                  DSPATR(PC)
+     A  35                                  DSPATR(PR)
+     A                                 14 27'State'
+     A            ST02C     R        B 14 33REFFLD(APST02)
+     A  90                                  DSPATR(RI)
+     A  93                                  DSPATR(PC)
+     A  35                                  DSPATR(PR)
+     A                                 14 43'Zip'
+     A            ZP08C     R        B 14 47REFFLD(APZP08)
+     A  90                                  DSPATR(RI)
+     A  94                                  DSPATR(PC)
+     A  35                                  DSPATR(PR)
+     A                                 23  2'F3=Exit'
+     A                                      COLOR(BLU)
+     A                                 23 12'F12=Cancel'
+     A                                      COLOR(BLU)
+     A N35                             23 25'F18=Additional remittance addresse-
+     A                                      s'
+     A                                      COLOR(BLU)
+     A            MSGFLD        78A  O 24  2DSPATR(HI)
+     A          R APF1112M
+BM   A                                      DSPMOD(*DS3)
+     A                                      CHANGE(51 'A Field Was Changed')
+     A                                      CF12(12 'Cancel')
+   BCA*                                     CF14(14 'Vendor info')
+     A                                      BLINK
+     A                                  1  2'APF1112M'
+     A                                      COLOR(BLU)
+     A                                  1 25'Discount And Freight Information'
+     A                                      DSPATR(HI)
+     A            APNT01        77   O  2  2
+     A                                  3  2'Company'
+     A            APCO#F    R        O  3 11REFFLD(APNO15)
+     A                                  3 66'Batch'
+     A            BATCH#    R        O  3 73REFFLD(APNO17)
+   BMA*                                 5  5'Invoice #'
+BM   A                                  4  2'Invoice#'
+   BMA*                                 5 20'Gross $$'
+   BMA*                                 5 33'P/O #'
+   BMA*                                 5 40'Vendor / Name'
+BM   A                                  5 07'Gross $$'
+BM   A                                  5 22'P/O #'
+BM   A                                  5 31'Vendor / Name'
+   BMA*           NO11C     R        O  6  2REFFLD(APNO11)
+   BMA*           APAM04    R        O  6 16EDTCDE(J)
+   BMA*           PONO01    R        O  6 31
+   BMA*           NO01C     R        O  6 40REFFLD(APNO01)
+   BMA*           APNM01    R        O  6 48
+BM   A            NO11C     R        O  4 11REFFLD(APNO11)
+BM   A            APAM04    R        O  6  2EDTCDE(J)
+BM   A            PONO01    R        O  6 20
+BM   A            NO01C     R        O  6 31REFFLD(APNO01)
+BM   A            APNM01    R        O  6 40
+     A                                  7  2'-----------------------------------
+     A                                      ------------------------------------
+     A                                      -------'
+     A                                  8 60'Frght'
+     A                                  8 69'Frt/Hdlg'
+   BMA*                                 9 14'Day'
+   BMA*                                 9 18'OR'
+   BMA*                                 9 21'Days'
+   BMA*                                 9 27'Dscnt %'
+   BMA*                                 9 38'Dscnt $$'
+   BMA*                                 9 50'Due Date'
+   BMA*                                 9 61'Code'
+BM   A                                  9 13'Day'
+BM   A                                  9 17'OR'
+BM   A                                  9 20'Days'
+BM   A                                  9 26'Dscnt %'
+BM   A                                  9 35'Dscnt $$'
+BM   A                                  9 49'Due Date'
+BM   A                                  9 60'Code'
+     A                                  9 70'Amount'
+   BMA*                                10 14'---'
+   BMA*                                10 21'----'
+   BMA*                                10 27'-------'
+   BMA*                                10 37'---------'
+BM   A                                 10 13'---'
+BM   A                                 10 20'----'
+BM   A                                 10 26'-------'
+BM   A                                 10 35'---------'
+     A                                 10 50'--------'
+     A                                 10 60'-----'
+     A                                 10 68'---------'
+     A                                 11  2'P/O Info-'
+   BMA*           PODY05    R        O 11 14
+   BMA*           PONO04    R        O 11 21
+   BMA*           POPC01    R        O 11 30EDTCDE(3)
+   BMA*           PODSC     R        O 11 38EDTCDE(J) REFFLD(APAM05)
+   BMA*           PDUDTE         6Y 0O 11 50EDTCDE(Y)
+BM   A            PODY05    R        O 11 13
+BM   A            PONO04    R        O 11 20
+BM   A            POPC01    R        O 11 29EDTCDE(3)
+BM   A            PODSC     R        O 11 35EDTCDE(J) REFFLD(APAM05)
+BM   A            PDUDTE         6Y 0O 11 49EDTCDE(Y)
+     A            POCD04    R        O 11 64
+     A            POAM03    R        O 11 68EDTCDE(J)
+     A  32        FRTMSG        17     13 17
+     A  32                                  DSPATR(RI)
+     A                                 14  2'Entered -'
+   BMA*           PC01C     R        O 14 30REFFLD(APPC01)
+BM   A            PC01C     R        O 14 29REFFLD(APPC01)
+     A                                      EDTCDE(3)
+   BMA*           APAM05    R        O 14 38EDTCDE(J)
+   BMA*           DUEDTC         6Y 0O 14 50EDTCDE(Y)
+BM   A            APAM05    R        O 14 35EDTCDE(J)
+BM   A            DUEDTC         6Y 0O 14 49EDTCDE(Y)
+   A4A*                                14 60'Frt In '
+   A4A*           APAM13    R        O 14 69EDTCDE(J)
+   A4A*                                15 60'Frt Out '
+A4 BMA*                                14 59'Frt In '
+A4 BMA*           APAM13    R        O 14 67EDTCDE(J)
+BM   A                                 14 58'Frt In '
+BM   A            APAM13    R        O 14 66EDTCDE(J)
+A4 BMA*                                15 59'Frt Out '
+   BMA*           APAM26    R        O 15 69EDTCDE(J)
+BM   A                                 15 58'Frt Out'
+BM   A            APAM26    R        O 15 66EDTCDE(J)
+     A                                 16  2'-----------------------------------
+     A                                      ------------------------------------
+     A                                      -------'
+     A                                 17  2'Desired -'
+   BMA*           PCTC      R        B 17 30EDTCDE(3) REFFLD(APPC01)
+   BMA*           DSCC      R        B 17 38EDTCDE(J) REFFLD(APAM05)
+   BMA*           DUEDTM         6Y 0B 17 50EDTCDE(Y)
+BM   A            PCTC      R        B 17 29EDTCDE(3) REFFLD(APPC01)
+BM   A            DSCC      R        B 17 35EDTCDE(J) REFFLD(APAM05)
+BM   A            DUEDTM         6Y 0B 17 49EDTCDE(Y)
+A1    *
+A1   A*%%WB 8 FLD <input type="hidden" id="calendar7"></input><img id='calendar+
+A1   A*%%WB +7'src="images/CalendarImg/calendar.gif" onClick="javascript:proce+
+A1   A*%%WB +ssCalendarControl(getPreviousElement(eval('document.WebFacingForm.+
+A1   A*%%WB +'+this.id)).id,'1','Y','','mm/dd/yy');"></img>
+A1    *
+     A  91                                  DSPATR(RI)
+     A  91                                  DSPATR(PC)
+   A4A*                                17 60'Frt In '
+   A4A*           FGHTC     R        B 17 69EDTCDE(J) REFFLD(APAM13)
+   A4A*                                18 60'Frt Out '
+A4 BMA*                                17 59'Frt In '
+A4 BMA*           FGHTC     R        B 17 67EDTCDE(J) REFFLD(APAM13)
+A4 BMA*                                18 59'Frt Out '
+   BMA*           FGHTX     R        B 18 69EDTCDE(J) REFFLD(APAM26)
+BM   A                                 17 58'Frt In '
+BM   A            FGHTC     R        B 17 66EDTCDE(J) REFFLD(APAM13)
+BM   A                                 18 58'Frt Out'
+BM   A            FGHTX     R        B 18 66EDTCDE(J) REFFLD(APAM26)
+     A                                 23  2'F3=Exit'
+     A                                      COLOR(BLU)
+     A                                 23 12'F12=Cancel'
+     A                                      COLOR(BLU)
+     A            MSGFLD        78A  O 24  2DSPATR(HI)
+     A          R APS1112N                  SFL
+     A                                      SFLNXTCHG
+     A            HCTL      R        H      REFFLD(APNO20)
+     A            AXAD04    R        H      REFFLD(APAD04)
+     A            AXAD05    R        H      REFFLD(APAD05)
+     A            AXAD06    R        H      REFFLD(APAD06)
+     A            AXCY02    R        H      REFFLD(APCY02)
+     A            AXST02    R        H      REFFLD(APST02)
+     A            AXZP08    R        H      REFFLD(APZP08)
+     A            AXNO25    R        H      REFFLD(APNO25)
+     A            AXNO38    R        H      REFFLD(APNO38)
+     A            AXMO06    R        H      REFFLD(APMO06)
+     A            AXDY06    R        H      REFFLD(APDY06)
+     A            AXCC06    R        H      REFFLD(APCC06)
+     A            AXYR06    R        H      REFFLD(APYR06)
+     A            AXMO11    R        H      REFFLD(APMO11)
+     A            AXDY11    R        H      REFFLD(APDY11)
+     A            AXCC11    R        H      REFFLD(APCC11)
+     A            AXYR11    R        H      REFFLD(APYR11)
+     A            SELN           1A  B  8  3
+   BMA*           STSN           1A  O  8  8
+   BMA*           APBR#N    R        O  8 12REFFLD(APNO16)
+   BMA*           INVDTN         6Y 0O  8 17EDTCDE(Y)
+BM   A            STSN           1A  O  8  6
+BM   A            APBR#N    R        O  8  9REFFLD(APNO16)
+BM   A            INVDTN         6Y 0O  8 14EDTCDE(Y)
+A1    *
+A1   A*%%WB 12 FLD 4 fld=&{SELN.REF}|value=1|func=ENTER
+A1    *
+   BMA*           DUEDTN         6Y 0O  8 27EDTCDE(Y)
+   BMA*           GRSINV    R        O  8 37REFFLD(APAM04) EDTCDE(J)
+   BMA*           DSCAMT    R        O  8 52REFFLD(APAM05) EDTCDE(J)
+BM   A            DUEDTN         6Y 0O  8 24EDTCDE(Y)
+BM   A            GRSINV    R        O  8 34REFFLD(APAM04) EDTCDE(J)
+BM   A            DSCAMT    R        O  8 50REFFLD(APAM05) EDTCDE(J)
+     A            NETAMT    R        O  8 64REFFLD(APAM06) EDTCDE(J)
+     A          R APC1112N                  SFLCTL(APS1112N)
+BM   A                                      DSPMOD(*DS3)
+     A                                      SFLSIZ(0028)
+     A                                      SFLPAG(0014)
+     A                                      OVERLAY
+     A                                      CF12(12 'Cancel')
+     A  73                                  SFLCLR
+     A  74                                  SFLEND(*MORE)
+     A  75                                  SFLDSP
+     A  76                                  SFLDSPCTL
+     A            RNN            4S 0H      SFLRCDNBR
+     A                                  1  2'APC1112N'
+     A                                      COLOR(BLU)
+     A                                  1 25'Reference Invoice Selection List'
+     A                                      DSPATR(HI)
+     A            APNT01        77   O  2  2
+     A                                  4  2'Reference Invoice Number'
+     A            NO26K     R        O  4 27REFFLD(APNO26)
+     A                                  6  2'Sel'
+     A                                      DSPATR(HI)
+   BMA*                                 6  7'Sts'
+BM   A                                  6  6'Sts'
+     A                                      DSPATR(HI)
+   BMA*                                 6 12'Br'
+BM   A                                  6 10'Br'
+     A                                      DSPATR(HI)
+   BMA*                                 6 17'Inv Date'
+BM   A                                  6 14'Inv Date'
+     A                                      DSPATR(HI)
+   BMA*                                 6 27'Due Date'
+BM   A                                  6 24'Due Date'
+     A                                      DSPATR(HI)
+   BMA*                                 6 37'Gross Invoice'
+BM   A                                  6 35'Gross Invoice'
+     A                                      DSPATR(HI)
+   BMA*                                 6 53'Discount'
+BM   A                                  6 54'Discount'
+     A                                      DSPATR(HI)
+     A                                  6 64'Total Invoice'
+     A                                      DSPATR(HI)
+     A          R APF1112N
+BM   A                                      DSPMOD(*DS3)
+     A                                      OVERLAY
+     A                                 23  2'F3=Exit'
+     A                                      COLOR(BLU)
+     A                                 23 12'F12=Cancel'
+     A                                      COLOR(BLU)
+     A            MSGFLD        78   O 24  2DSPATR(HI)
+     A          R APS1112O                  SFL
+     A                                      SFLNXTCHG
+     A            POAM03    R        H
+     A            POMO06    R        H
+     A            PODY06    R        H
+     A            POCC06    R        H
+     A            POYR06    R        H
+     A            SELO           1A  B  8  2
+A1    *
+A1   A*%%WB 7 FLD ondblclick="invokeOptions( this, 'l1_APS1112O_SELO' );"+
+A1   A*%%WB +\r\nonmouseover="showHighlight( this );"+
+A1   A*%%WB +\r\nonmouseout="removeHighlight( this );"
+A1    *
+     A            NOTECD    R        O  8  5REFFLD(POCD18)
+     A            PONO01    R        O  8  8
+     A            PONO19    R        O  8 17
+     A            POPC01    R        O  8 26EDTCDE(3)
+     A            PODY05    R        O  8 32
+     A            PONO04    R        O  8 36
+   BMA*           PODSAM    R        O  8 41REFFLD(APAM05)
+BM   A            PODSAM    R        O  8 40REFFLD(APAM05)
+     A                                      EDTCDE(1)
+   BMA*           PODUDT         6Y 0O  8 52EDTCDE(Y)
+BM   A            PODUDT         6Y 0O  8 55EDTCDE(Y)
+A5 BMA*           TEXT15        15   O  8 61
+BM   A            TEXT15        15   O  8 64
+     A          R APC1112O                  SFLCTL(APS1112O)
+BM   A                                      DSPMOD(*DS3)
+     A                                      SFLSIZ(0140)
+     A                                      SFLPAG(0014)
+     A                                      CF04(04 'Prompt')
+     A                                      CF12(12 'Cancel')
+     A                                      BLINK
+     A                                      OVERLAY
+     A  73                                  SFLCLR
+     A  74                                  SFLEND(*MORE)
+     A  75                                  SFLDSP
+     A  76                                  SFLDSPCTL
+     A                                      SFLCSRRRN(&CRRN)
+     A                                      RTNCSRLOC(&CRCD &CFLD &CPOS)
+     A                                      CSRLOC(CROW       CCOL)
+     A            CROW           3S 0H
+     A            CCOL           3S 0H
+     A            CRRN           5S 0H
+     A            CRCD          10A  H
+     A            CFLD          10A  H
+     A            CPOS           4S 0H
+     A            RNO            4S 0H      SFLRCDNBR
+     A                                  1  2'APC1112O'
+     A                                      COLOR(BLU)
+     A            TITLEO        32      1 25
+     A                                      DSPATR(HI)
+     A            APNT01        77   O  2  2
+     A                                  4  2'Phone#'
+     A            NO02C     R        O  4  9REFFLD(APNO02)
+     A            NO03C     R        O  4 13REFFLD(APNO03)
+     A            NO04C     R        O  4 17REFFLD(APNO04)
+     A                                  4 23'Name'
+     A            NM01C     R        O  4 28REFFLD(APNM01)
+     A                                  4 59'Vendor #'
+     A            NO01C     R        O  4 68REFFLD(APNO01)
+     A                                  6  5'N'
+     A                                      DSPATR(HI)
+     A                                  6  9'P/O'
+     A                                      DSPATR(HI)
+     A                                  6 17'Recv`r'
+     A                                      DSPATR(HI)
+     A                                  6 26'--------Discount--------'
+     A                                      DSPATR(HI)
+     A                                  7  1'Sel'
+     A                                      DSPATR(HI)
+     A                                  7  5'T'
+     A                                      DSPATR(HI)
+     A                                  7  8'Number'
+     A                                      DSPATR(HI)
+     A                                  7 17'Number'
+     A                                      DSPATR(HI)
+     A                                  7 26'Pct'
+     A                                      DSPATR(HI)
+     A                                  7 31'Day'
+     A                                      DSPATR(HI)
+     A                                  7 36'Days'
+     A                                      DSPATR(HI)
+   BMA*                                 7 42'Amount'
+BM   A                                  7 45'Amount'
+     A                                      DSPATR(HI)
+   BMA*                                 7 52'Due Date'
+BM   A                                  7 55'Due Date'
+     A                                      DSPATR(HI)
+     A          R APF1112O
+BM   A                                      DSPMOD(*DS3)
+     A                                      OVERLAY
+     A                                 23  2'F3=Exit'
+     A                                      COLOR(BLU)
+     A                                 23 12'F4=Prompt'
+     A                                      COLOR(BLU)
+     A                                 23 24'F12=Cancel'
+     A                                      COLOR(BLU)
+     A            MSGFLD        78   O 24  2DSPATR(HI)
+     A          R APS1112P                  SFL
+     A                                      SFLNXTCHG
+     A            SVIN28         1   H
+     A            SVIN55         1   H
+     A            WRNFLG         1   H
+     A            SVNOP         12S 0H
+     A            SVAMP     R        H      REFFLD(APAM35)
+     A            SVCD49    R        H      REFFLD(APCD49)
+     A            SVCD50    R        H      REFFLD(APCD50)
+     A            SVCD53    R        H      REFFLD(POCD53)
+     A            SVDN06    R        H      REFFLD(APDN06)
+     A            ORAM52    R        H      REFFLD(APAM32)
+     A            ORCD51    R        H      REFFLD(APCD51)
+     A            AM35P     R        B 11  2REFFLD(APAM35)
+     A                                      EDTCDE(J)
+     A  93                                  DSPATR(RI)
+     A  93                                  DSPATR(PC)
+   BMA*           NO06P     R        B 11 13REFFLD(GLNO06)
+BM   A            NO06P     R        B 11 18REFFLD(GLNO06)
+     A                                      EDTCDE(4)
+     A  91                                  DSPATR(RI)
+     A  91                                  DSPATR(PC)
+   BMA*           NO02P     R        B 11 17REFFLD(GLNO02)
+BM   A            NO02P     R        B 11 22REFFLD(GLNO02)
+     A                                      EDTCDE(4)
+     A  91
+     AO 92                                  DSPATR(RI)
+     A  91
+     AO 92                                  DSPATR(PC)
+   BMA*           NO03P     R        B 11 20REFFLD(GLNO03)
+BM   A            NO03P     R        B 11 25REFFLD(GLNO03)
+     A                                      EDTCDE(4)
+     A  91                                  DSPATR(RI)
+     A  91                                  DSPATR(PC)
+   BMA*           NO04P     R        B 11 25REFFLD(GLNO04)
+BM   A            NO04P     R        B 11 30REFFLD(GLNO04)
+     A                                      EDTCDE(4)
+     A  91                                  DSPATR(RI)
+     A  91                                  DSPATR(PC)
+   BMA*           DN03P     R        B 11 29REFFLD(GLDN03)
+BM   A            DN03P     R        B 11 34REFFLD(GLDN03)
+     A  55                                  DSPATR(PR)
+     A  94                                  DSPATR(RI)
+     A  94                                  DSPATR(PC)
+   BMA*           CD53P     R        B 11 55REFFLD(POCD53)
+BM   A            CD53P     R        B 11 61REFFLD(POCD53)
+     A  28                                  DSPATR(ND)
+     A  28
+     AO 55                                  DSPATR(PR)
+   BMA*           DN06P     R        B 11 59REFFLD(APDN06)
+BM   A            DN06P     R        B 11 65REFFLD(APDN06)
+     A  55                                  DSPATR(PR)
+   BGA*                                12  2'Return Amt'
+BG BMA*                                12  3'Return Amt'
+   BMA* 28                                  DSPATR(ND)
+   BGA*           AM52P     R        O 12 13REFFLD(POAM52)
+BG BMA*           AM52P     R        O 12 14REFFLD(POAM52)
+BM   A            AM52P     R        O 11 86REFFLD(POAM52)
+     A                                      EDTCDE(K)
+     A  28                                  DSPATR(ND)
+     A  93                                  DSPATR(RI)
+   BGA*                                12 25'Spl'
+BG BMA*                                12 26'Spl'
+   BMA* 28                                  DSPATR(ND)
+   BGA*           CD50P     R        B 12 29REFFLD(APCD50)
+BG BMA*           CD50P     R        B 12 30REFFLD(APCD50)
+BM   A            CD50P     R        B 11 98REFFLD(APCD50)
+     A  28                                  DSPATR(ND)
+     A  28                                  DSPATR(PR)
+     A  95                                  DSPATR(RI)
+     A  95                                  DSPATR(PC)
+   BGA*                                12 31'Variance'
+BG BMA*                                12 32'Variance'
+   BMA* 28                                  DSPATR(ND)
+   BGA*           AMVRP     R        O 12 40REFFLD(APAM35)
+BG BMA*           AMVRP     R        O 12 41REFFLD(APAM35)
+BM   A            AMVRP     R        O 11100REFFLD(APAM35)
+     A                                      EDTCDE(K)
+     A  28                                  DSPATR(ND)
+     A  97                                  DSPATR(RI)
+   BGA*                                12 51'Rsn'
+BG BMA*                                12 52'Rsn'
+   BMA* 28                                  DSPATR(ND)
+   BGA*           CD49P     R        B 12 55REFFLD(APCD49)
+BG BMA*           CD49P     R        B 12 56REFFLD(APCD49)
+BM   A            CD49P     R        B 11118REFFLD(APCD49)
+     A  28                                  DSPATR(ND)
+     A  28                                  DSPATR(PR)
+     A  96                                  DSPATR(RI)
+     A  96                                  DSPATR(PC)
+   BGA*                                12 59'Vnd Return->'
+BG BMA*                                12 60'Vnd Return->'
+   BMA* 28                                  DSPATR(ND)
+   BGA*           NO27P     R        O 12 72REFFLD(PONO27)
+BG BMA*           NO27P     R        O 12 73REFFLD(PONO27)
+BM   A            NO27P     R        O 11120REFFLD(PONO27)
+     A                                      EDTCDE(4)
+     A  28                                  DSPATR(ND)
+     A          R APC1112P                  SFLCTL(APS1112P)
+     A                                      SFLSIZ(0500)
+   BMA*                                     SFLPAG(0005)
+BM   A  *DS3                                SFLPAG(0001)
+BM   A  *DS4                                SFLPAG(0013)
+     A                                      CF04(04 'Prompt')
+     A N28                                  CF07(07 'Select Charges')
+     A                                      CF12(12 'Cancel')
+     A                                      OVERLAY
+     A  70                                  SFLINZ
+     A  73                                  SFLCLR
+     A  74                                  SFLEND(*MORE)
+     A  75                                  SFLDSP
+     A  76                                  SFLDSPCTL
+     A  79                                  SFLDLT
+   BMA* 28                                  SFLDROP(CF20)
+   BMA*N28                                  SFLFOLD(CF20)
+   BMA*                                     SFLMODE(&MODE)
+     A                                      SFLCSRRRN(&CRRN)
+     A                                      RTNCSRLOC(&CRCD &CFLD &CPOS)
+     A                                      CSRLOC(CROW       CCOL)
+   BMA*           MODE           1A  H
+     A            CROW           3S 0H
+     A            CCOL           3S 0H
+     A            CRRN           5S 0H
+     A            CRCD          10A  H
+     A            CFLD          10A  H
+     A            CPOS           4S 0H
+     A            RNP            4S 0H      SFLRCDNBR
+     A                                  1  2'APC1112P'
+     A                                      COLOR(BLU)
+     A                                  1 30'Other Charges Entry'
+     A                                      DSPATR(HI)
+     A                                  3  2'Invoice'
+     A            NO11C     R        O  3 10REFFLD(APNO11)
+   BSA*                                 3 29'Company'
+   BSA*           APCO#F    R        O  3 37REFFLD(APNO15)
+   BSA*                                 3 41'Branch'
+   BSA*           APBR#C    R        O  3 48REFFLD(APNO16)
+BS   A                                  3 33'Company'
+BS   A            APCO#F    R        O  3 41REFFLD(APNO15)
+BS   A                                  3 45'Branch'
+BS   A            APBR#C    R        O  3 53REFFLD(APNO16)
+     A                                  5  2'Phone#'
+     A            NO02C     R        O  5 10REFFLD(APNO02)
+     A            NO03C     R        O  5 14REFFLD(APNO03)
+     A            NO04C     R        O  5 18REFFLD(APNO04)
+     A                                  5 26'Name'
+     A            NM01C     R        O  5 31REFFLD(APNM01)
+     A                                  5 65'Vendor#'
+     A            NO01C     R        O  5 74REFFLD(APNO01)
+     A                                  7  2'Entered Amount'
+     A            TL03P     R        O  7 17REFFLD(APTL03)
+     A                                      EDTCDE(J)
+     A                                  9  3'Amount'
+     A                                      DSPATR(HI)
+   BMA*                                 9 16'G/L Account'
+BM   A                                  9 21'G/L Account'
+     A                                      DSPATR(HI)
+   BMA*                                 9 30'G/L Description'
+BM   A                                  9 34'G/L Description'
+     A                                      DSPATR(HI)
+   BMA*N28                              9 55'Typ'
+BM   A N28                              9 61'Typ'
+     A                                      DSPATR(HI)
+   BMA*                                 9 59'Charge Description'
+BM   A                                  9 65'Charge Description'
+     A                                      DSPATR(HI)
+BM   A                                  9 86'Return Amt'
+BM   A  28                                  DSPATR(ND)
+BM   A  28                                  DSPATR(HI)
+BM   A                                  9 97'Spl'
+BM   A  28                                  DSPATR(ND)
+BM   A  28                                  DSPATR(HI)
+BM   A                                  9104'Variance'
+BM   A  28                                  DSPATR(ND)
+BM   A  28                                  DSPATR(HI)
+BM   A                                  9117'Rsn'
+BM   A  28                                  DSPATR(ND)
+BM   A  28                                  DSPATR(HI)
+BM BSA*                                 9120'Vnd Return->'
+BS   A                                  9121'Vnd Return->'
+BM   A  28                                  DSPATR(ND)
+BM   A  28                                  DSPATR(HI)
+     A          R APF1112P
+   BMA*                                23  2'F3=Exit'
+BM   A                                 25  2'F3=Exit'
+     A                                      COLOR(BLU)
+   BMA*                                23 12'F4=Prompt'
+BM   A                                 25 12'F4=Prompt'
+     A                                      COLOR(BLU)
+   BMA*N28                             23 24'F7=Select charges'
+BM   A N28                             25 24'F7=Select charges'
+     A                                      COLOR(BLU)
+   BGA*N28                             23 44'F12=Cancel'
+   BGA*                                     COLOR(BLU)
+   BGA* 28                             23 24'F12=Cancel'
+BG BMA* 28                             23 44'F12=Cancel'
+BM   A  28                             25 44'F12=Cancel'
+     A                                      COLOR(BLU)
+   BMA*           MSGFLD        78A  O 24  2DSPATR(HI)
+BM   A            MSGFLD        78A  O 27  2DSPATR(HI)
+     A          R APS1112Q                  SFL
+     A                                      SFLNXTCHG
+     A            SELQ           1A  B  8  3
+A1    *
+A1   A*%%WB 7 FLD ondblclick="invokeOptions( this, 'l1_APS1112Q_SELQ' );"+
+A1   A*%%WB +\r\nonmouseover="showHighlight( this );"+
+A1   A*%%WB +\r\nonmouseout="removeHighlight( this );"
+A1    *
+     A            PONO27    R        O  8  6
+     A            AM18Q     R        O  8 14REFFLD(POAM18) EDTCDE(2)
+     A            AM521     R        O  8 27REFFLD(POAM52) EDTCDE(4)
+     A            AM522     R        O  8 36REFFLD(POAM52) EDTCDE(4)
+     A            AM523     R        O  8 45REFFLD(POAM52) EDTCDE(4)
+     A            AM524     R        O  8 54REFFLD(POAM52) EDTCDE(4)
+     A            AM525     R        O  8 63REFFLD(POAM52) EDTCDE(4)
+     A            AM526     R        O  8 72REFFLD(POAM52) EDTCDE(4)
+     A          R APC1112Q                  SFLCTL(APS1112Q)
+BM   A                                      DSPMOD(*DS3)
+     A                                      SFLSIZ(0140)
+     A                                      SFLPAG(0014)
+     A                                      CF04(04 'Prompt')
+     A                                      CF12(12 'Cancel')
+     A                                      BLINK
+     A                                      OVERLAY
+     A  73                                  SFLCLR
+     A  74                                  SFLEND(*MORE)
+     A  75                                  SFLDSP
+     A  76                                  SFLDSPCTL
+     A                                      SFLCSRRRN(&CRRN)
+     A                                      RTNCSRLOC(&CRCD &CFLD &CPOS)
+     A                                      CSRLOC(CROW       CCOL)
+     A            CROW           3S 0H
+     A            CCOL           3S 0H
+     A            CRRN           5S 0H
+     A            CRCD          10A  H
+     A            CFLD          10A  H
+     A            CPOS           4S 0H
+     A            RNQ            4S 0H      SFLRCDNBR
+     A                                  1  2'APC1112Q'
+     A                                      COLOR(BLU)
+     A            TITLEQ        32A  O  1 25DSPATR(HI)
+     A                                  4  2'Phone #'
+     A            NO02C     R        O  4 10REFFLD(APNO02)
+     A            NO03C     R        O  4 14REFFLD(APNO03)
+     A            NO04C     R        O  4 18REFFLD(APNO04)
+     A                                  4 27'Name'
+     A            NM01C     R        O  4 32REFFLD(APNM01)
+     A                                  4 65'Vendor #'
+     A            NO01C     R        O  4 74REFFLD(APNO01)
+     A                                  6  6'Return'
+     A                                      DSPATR(HI)
+     A                                  6 15'Inventory'
+     A                                      DSPATR(HI)
+     A                                  6 28'Other'
+     A                                      DSPATR(HI)
+     A                                  6 37'Other'
+     A                                      DSPATR(HI)
+     A                                  6 46'Other'
+     A                                      DSPATR(HI)
+     A                                  6 55'Other'
+     A                                      DSPATR(HI)
+     A                                  6 64'Other'
+     A                                      DSPATR(HI)
+     A                                  6 73'Other'
+     A                                      DSPATR(HI)
+     A                                  7  2'Sel'
+     A                                      DSPATR(HI)
+     A                                  7  6'Number'
+     A                                      DSPATR(HI)
+     A                                  7 16'Amount'
+     A                                      DSPATR(HI)
+     A                                  7 28'Chg 1'
+     A                                      DSPATR(HI)
+     A                                  7 37'Chg 2'
+     A                                      DSPATR(HI)
+     A                                  7 46'Chg 3'
+     A                                      DSPATR(HI)
+     A                                  7 55'Chg 4'
+     A                                      DSPATR(HI)
+     A                                  7 64'Chg 5'
+     A                                      DSPATR(HI)
+     A                                  7 73'Chg 6'
+     A                                      DSPATR(HI)
+     A          R APF1112Q
+BM   A                                      DSPMOD(*DS3)
+     A                                      OVERLAY
+     A                                 23  2'F3=Exit'
+     A                                      COLOR(BLU)
+     A                                 23 12'F4=Prompt'
+     A                                      COLOR(BLU)
+     A                                 23 24'F12=Cancel'
+     A                                      COLOR(BLU)
+     A            MSGFLD        78   O 24  2DSPATR(HI)
+     A          R APF1112R
+BM   A                                      DSPMOD(*DS3)
+     A                                      CF10(10 'Update')
+     A                                      CF12(12 'Cancel')
+     A                                  1  2'APF1112R'
+     A                                      COLOR(BLU)
+     A                                  1 28'Invoice G/L Posting Edit'
+     A                                      DSPATR(HI)
+     A                                  4  3'G/L posting errors found.'
+     A                                      COLOR(RED)
+     A                                  6  3'Press F10=Update to continue.'
+     A                                  7  4'The invoice will be put on manual -
+     A                                      hold.'
+     A                                  8  4'See Post Transactions Edit Message-
+     A                                      s report(s) for errors.'
+     A                                 11  3'Press F12=Cancel to return to invo-
+     A                                      ice maintenance.'
+     A                                 23  2'F10=Update'
+     A                                      COLOR(BLU)
+     A                                 23 15'F12=Cancel'
+     A                                      COLOR(BLU)
+     A            MSGFLD        78A  O 24  2DSPATR(HI)
+     A          R APS1112S                  SFL
+     A                                      SFLNXTCHG
+     A            AM15S     R        H      REFFLD(APAM15)
+     A            GNO06S    R        H      REFFLD(GLNO06)
+     A            GNO02S    R        H      REFFLD(GLNO02)
+     A            GNO03S    R        H      REFFLD(GLNO03)
+     A            GNO04S    R        H      REFFLD(GLNO04)
+     A            GDN03S    R        H      REFFLD(GLDN03)
+     A                                  1  2' '
+     A          R APC1112S                  SFLCTL(APS1112S)
+BM   A                                      DSPMOD(*DS3)
+   BQA*                                     SFLSIZ(0500)
+BQ   A                                      SFLSIZ(2000)
+     A                                      SFLPAG(0010)
+     A  70                                  SFLINZ
+     A  73                                  SFLCLR
+     A  75                                  SFLDSP
+     A  76                                  SFLDSPCTL
+     A            RNS            4S 0H      SFLRCDNBR
+     A          R APS112S2                  SFL
+     A                                      SFLNXTCHG
+     A            AM35S2    R        H      REFFLD(APAM35)
+     A            NO06S2    R        H      REFFLD(GLNO06)
+     A            NO02S2    R        H      REFFLD(GLNO02)
+     A            NO03S2    R        H      REFFLD(GLNO03)
+     A            NO04S2    R        H      REFFLD(GLNO04)
+     A            DN06S2    R        H      REFFLD(APDN06)
+     A                                  1  2' '
+     A          R APC112S2                  SFLCTL(APS112S2)
+BM   A                                      DSPMOD(*DS3)
+     A                                      SFLSIZ(0500)
+     A                                      SFLPAG(0010)
+     A  70                                  SFLINZ
+     A  73                                  SFLCLR
+     A  75                                  SFLDSP
+     A  76                                  SFLDSPCTL
+     A            RNS2           4S 0H      SFLRCDNBR
+     A          R APS112S3                  SFL
+     A                                      SFLNXTCHG
+     A            NO27S3    R        H      REFFLD(PONO27)
+     A            CD53S3    R        H      REFFLD(POCD53)
+     A            AM35S3    R        H      REFFLD(APAM35)
+     A            NO06S3    R        H      REFFLD(GLNO06)
+     A            NO02S3    R        H      REFFLD(GLNO02)
+     A            NO03S3    R        H      REFFLD(GLNO03)
+     A            NO04S3    R        H      REFFLD(GLNO04)
+     A            DN06S3    R        H      REFFLD(APDN06)
+     A            AM52S3    R        H      REFFLD(POAM52)
+     A            AMVRS3    R        H      REFFLD(APAM35)
+     A            CD49S3    R        H      REFFLD(APCD49)
+     A            CD50S3    R        H      REFFLD(APCD50)
+     A            ORAMS3    R        H      REFFLD(POAM52)
+     A            CD51S3    R        H      REFFLD(APCD51)
+     A                                  1  2' '
+     A          R APC112S3                  SFLCTL(APS112S3)
+BM   A                                      DSPMOD(*DS3)
+     A                                      SFLSIZ(0500)
+     A                                      SFLPAG(0010)
+     A  70                                  SFLINZ
+     A  73                                  SFLCLR
+     A  75                                  SFLDSP
+     A  76                                  SFLDSPCTL
+     A            RNS3           4S 0H      SFLRCDNBR
+     A          R APS1112T                  SFL
+     A                                      SFLNXTCHG
+     A            APTX01    R        B 10  3
+     A          R APC1112T                  SFLCTL(APS1112T)
+BM   A                                      DSPMOD(*DS3)
+     A                                      SFLSIZ(0020)
+     A                                      SFLPAG(0010)
+     A                                      CF12(12 'Cancel')
+     A                                      OVERLAY
+     A  73                                  SFLCLR
+     A  74                                  SFLEND(*MORE)
+     A  75                                  SFLDSP
+     A  76                                  SFLDSPCTL
+     A  79                                  SFLDLT
+     A            RRNT           4S 0H      SFLRCDNBR
+     A                                  1  2'APC1112T'
+     A                                      COLOR(BLU)
+     A                                  1 24'Invoice Notes To Print On Checks'
+     A                                      DSPATR(HI)
+     A            APNT01        77   O  2  2
+     A                                  3  2'Invoice'
+     A            NO11C     R        O  3 11REFFLD(APNO11)
+   BMA*                                 3 30'Company'
+   BMA*           APCO#F    R        O  3 38REFFLD(APNO15)
+   BMA*                                 3 42'Branch'
+   BMA*           APBR#C    R        O  3 49REFFLD(APNO16)
+BM   A                                  3 36'Company'
+BM   A            APCO#F    R        O  3 44REFFLD(APNO15)
+BM   A                                  3 48'Branch'
+BM   A            APBR#C    R        O  3 55REFFLD(APNO16)
+     A                                  5  2'Phone #'
+     A            NO02C     R        O  5 11REFFLD(APNO02)
+     A            NO03C     R        O  5 15REFFLD(APNO03)
+     A            NO04C     R        O  5 19REFFLD(APNO04)
+     A                                  5 26'Name'
+     A            NM01C     R        O  5 31REFFLD(APNM01)
+     A                                  5 64'Vendor #'
+     A            NO01C     R        O  5 73REFFLD(APNO01)
+     A                                  8  3'Check Notes'
+     A                                      DSPATR(HI)
+     A          R APF1112T
+BM   A                                      DSPMOD(*DS3)
+     A                                 23  2'F3=Exit'
+     A                                      COLOR(BLU)
+     A                                 23 12'F12=Cancel'
+     A                                      COLOR(BLU)
+     A            MSGFLD        78A  O 24  2DSPATR(HI)
+     A          R APF1112U
+BM   A                                      DSPMOD(*DS3)
+     A                                      CHANGE(51 'A Field Was Changed')
+     A                                      CF04(04 'Prompt')
+     A                                      CF12(12 'Cancel')
+     A                                      BLINK
+     A                                      RTNCSRLOC(&CRCD &CFLD &CPOS)
+     A                                      CSRLOC(CROW       CCOL)
+     A            CROW           3S 0H
+     A            CCOL           3S 0H
+     A            CRCD          10A  H
+     A            CFLD          10A  H
+     A            CPOS           4S 0H
+     A                                  1  2'APF1112U'
+     A                                      COLOR(BLU)
+     A                                  1 25'Invoice Header Information Entry'
+     A                                      DSPATR(HI)
+     A            REFNOT        16      3 16
+     A                                  3 35'Company'
+     A            APCO#F    R        O  3 43REFFLD(APNO15)
+     A                                  3 66'Batch '
+     A            BATCH#    R        O  3 73REFFLD(APNO17)
+     A            VNDNOT        14      4  1
+     A            STSNOT        19      4 16
+     A            EDIM           5A  O  4 37
+     A                                  5  2'Phone #'
+     A            NO02C     R        O  5 10REFFLD(APNO02)
+     A            NO03C     R        O  5 14REFFLD(APNO03)
+     A            NO04C     R        O  5 18REFFLD(APNO04)
+     A                                  5 27'Name'
+     A            NM01C     R        O  5 32REFFLD(APNM01)
+     A                                  5 65'Vendor #'
+     A            NO01C     R        O  5 74REFFLD(APNO01)
+     A                                  8  2'Transaction Code'
+     A            CD68      R        B  8 24REFFLD(APCD68)
+     A  55                                  DSPATR(RI PC)
+     A            CD68DS    R        O  8 34REFFLD(TBNO03)
+     A                                  9  2'Vendor Bank'
+     A            NO53      R        B  9 24REFFLD(APNO53)
+     A  56                                  DSPATR(RI PC)
+     A                                      EDTCDE(Z)
+     A            NO53DS    R        O  9 34REFFLD(TBNO03)
+     A                                 10  2'Payment Code'
+     A            CD60      R        B 10 24REFFLD(APCD60)
+     A  57                                  DSPATR(RI PC)
+     A            CD60DS    R        O 10 34REFFLD(TBNO03)
+     A                                 11  2'Payment Period Date'
+     A  59                                  DSPATR(ND)
+     A            PPDAT          6Y 0B 11 24EDTCDE(Y)
+A1    *
+A1   A*%%WB 8 FLD <input type="hidden" id="calendar8"></input><img id='calendar+
+A1   A*%%WB +8'src="images/CalendarImg/calendar.gif" onClick="javascript:proce+
+A1   A*%%WB +ssCalendarControl(getPreviousElement(eval('document.WebFacingForm.+
+A1   A*%%WB +'+this.id)).id,'1','Y','','mm/dd/yy');"></img>
+A1    *
+     A  58                                  DSPATR(RI PC)
+     A  59                                  DSPATR(ND PR)
+     A                                 22  2'F3=Exit'
+     A                                      COLOR(BLU)
+     A                                 22 12'F4=Prompt'
+     A                                      COLOR(BLU)
+     A                                 22 24'F12=Cancel'
+     A                                      COLOR(BLU)
+     A            MSGFLD        78A  O 24  2DSPATR(HI)
