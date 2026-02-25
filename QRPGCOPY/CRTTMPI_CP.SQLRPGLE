@@ -28,7 +28,7 @@
         ErrorMessage      char(50);              // Error message
       end-ds;
 
-      // Procedure prototype for CRTTMPI
-      dcl-pr CRTTMPI likeds(crttmpiReturn_t);
+      // Procedure prototype for CreateTemporaryItem
+      dcl-pr CreateTemporaryItem likeds(crttmpiReturn_t);
         input likeds(crttmpiInput_t) const;
       end-pr;

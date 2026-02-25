@@ -18,7 +18,7 @@
        Ctl-Opt BndDir('ECBIND');
 
       // Copy member for data structures and prototypes
-       /copy QRPGLESRC,gentmpp_cp
+       /copy QCPYSRC,gentmpp_cp
 
       // Test variables
        dcl-ds input likeds(GENTMPPInput_t);
@@ -42,7 +42,7 @@
        clear input;
        input.Category = 'EQP';
 
-       result = GENTMPP(input);
+       result = generateTemporaryProduct(input);
 
        if result.Success;
          msg = 'PASSED - Product ID: ' + result.ProductID;

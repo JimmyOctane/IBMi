@@ -30,17 +30,16 @@
       // Input parameters structure for generating temporary product ID
       dcl-ds GENTMPPInput_t qualified template;
         Category          char(3);               // Category code
-        Company           char(5);               // Company code
       end-ds;
 
       // Return data structure for GENTMPP
       dcl-ds GENTMPPReturn_t qualified template;
-        ProductID         char(16);              // Generated product ID
+        ProductID         char(15);              // Generated product ID
         Success           ind;                   // Success indicator
         ErrorMessage      char(50);              // Error message
       end-ds;
 
-      // Procedure prototype for GENTMPP
-      dcl-pr GENTMPP likeds(GENTMPPReturn_t) extproc(*DCLCASE);
+      // Procedure prototype for generateTemporaryProduct
+      dcl-pr generateTemporaryProduct likeds(GENTMPPReturn_t);
         pInput likeds(GENTMPPInput_t) const;
       end-pr;

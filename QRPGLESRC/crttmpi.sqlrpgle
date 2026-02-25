@@ -46,6 +46,7 @@
 
       // Copy members for data structures and prototypes
       /copy qcpysrc,CRTTMPI_CP
+      /copy qcpysrc,GENTMPP_CP
 
 
        // Program Status Data Structure (PSDS)
@@ -63,9 +64,11 @@
       //*********************************************************
       // CRTTMPI - External Procedure
       //*********************************************************
-       dcl-proc CRTTMPI export;
+      // CreateTemporaryItem - External Procedure
+      //*********************************************************
+       dcl-proc CreateTemporaryItem export;
 
-       dcl-pi CRTTMPI likeds(crttmpiReturn_t);
+       dcl-pi CreateTemporaryItem likeds(crttmpiReturn_t);
          input likeds(crttmpiInput_t) const;
        end-pi;
 
@@ -74,10 +77,6 @@
          itemNum packed(6:0);
        end-pr;
 
-       dcl-pr SendWM extpgm('WXR5956');
-         formType char(3);
-         data char(256);
-       end-pr;
 
        // Named constants
        dcl-c DFT_UOM 'EA';
@@ -87,12 +86,11 @@
        dcl-s itemNumber packed(6:0);
        dcl-s myItemNumber packed(6:0);
        dcl-s w_ivcd08 char(1);
-       dcl-s wmfrm char(3);
        dcl-s myMonth packed(2:0);
        dcl-s myDay packed(2:0);
        dcl-s myYear packed(2:0);
        dcl-s myCentury packed(2:0);
-       dcl-s sqlItemNumber char(17);
+       dcl-s sqlProductNumber char(17);
        dcl-s sqlDescription char(48);
        dcl-s sqlVendorNumber packed(6:0);
        dcl-s sqlShipBranch packed(3:0);
@@ -105,6 +103,8 @@
        dcl-s sqlPgmName char(10);
        dcl-s wrhsExists ind;
        dcl-ds returnData likeds(crttmpiReturn_t);
+       dcl-ds gentmppInput likeds(GENTMPPInput_t);
+       dcl-ds gentmppResult likeds(GENTMPPReturn_t);
        dcl-ds pdata2_ds;
          pdata2 char(256) pos(1);
          itm# packed(6:0) pos(1);
@@ -123,8 +123,14 @@
        myCentury = 20;
 
        // Validate input
-       if input.ItemNumber = '' or input.Description = '';
-         returnData.ErrorMessage = 'Item number and description required';
+       if input.Description = '';
+         returnData.ErrorMessage = 'Description required';
+         return returnData;
+       endif;
+       
+       // Validate Category if ItemNumber is blank (needed for generation)
+       if input.ItemNumber = '' and input.Category = '';
+         returnData.ErrorMessage = 'Category required when ItemNumber is blank';
          return returnData;
        endif;
 
@@ -135,8 +141,25 @@
        enddo;
 
        if itemNumber <> 0;
+         // Generate temporary product ID if not provided
+         if input.ItemNumber = '';
+           clear gentmppInput;
+           gentmppInput.Category = input.Category;
+           
+           gentmppResult = generateTemporaryProduct(gentmppInput);
+           
+           if gentmppResult.Success;
+             sqlProductNumber = gentmppResult.ProductID;
+           else;
+             returnData.Success = *off;
+             returnData.ErrorMessage = 'Error generating product ID';
+             return returnData;
+           endif;
+         else;
+           sqlProductNumber = input.ItemNumber;
+         endif;
+         
          // Copy input to SQL variables
-         sqlItemNumber = input.ItemNumber;
          sqlDescription = input.Description;
          sqlVendorNumber = input.VendorNumber;
          sqlShipBranch = input.ShipBranch;
@@ -165,7 +188,7 @@
               IVCD18, IVCD19, IVCD36, IVCD56, IVDN01, IVDN20,
               IVCDIN, IVNM01, IVMO01, IVDY01, IVCC01, IVYR01)
            VALUES
-             (:itemNumber, :sqlItemNumber, :sqlVendorNumber,
+             (:itemNumber, :sqlProductNumber, :sqlVendorNumber,
               'V', 'Y', 'N', 'N', 'N', 'N', 'N', :sqlPurchCode,
               :sqlSection, :sqlGroup, :sqlCategory, 'N', 'N',
               :sqlDescription, :sqlUOM, 'Y',
@@ -208,12 +231,10 @@
              AND IVCD08 = 'S'
            FETCH FIRST 1 ROW ONLY;
 
-         // If warehouse record doesn't exist, send WM message
-         if SQLCODE = 100 or not wrhsExists;
-           wmfrm = 'ITM';
-           myItemNumber = itemNumber;
-           callp SendWM(wmfrm:pdata2);
-         endif;
+         // Warehouse record check (SendWM call removed)
+         // if SQLCODE = 100 or not wrhsExists;
+         //   // Previously sent WM message here
+         // endif;
 
          // Insert into IVPMRNS (Item RNS)
          exec sql
@@ -236,5 +257,5 @@
 
        return returnData;
 
-       end-proc CRTTMPI;
+       end-proc CreateTemporaryItem;
 
