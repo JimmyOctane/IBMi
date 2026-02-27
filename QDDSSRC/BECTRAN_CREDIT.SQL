@@ -1,0 +1,161 @@
+-- =====================================================================
+-- Bectran Credit Decision Table
+-- =====================================================================
+-- This table stores credit decision and approval information from the
+-- Bectran credit management system.
+-- =====================================================================
+
+-- Drop table if it exists
+DROP TABLE IF EXISTS BECCREDP;
+
+-- Create the credit decision table
+CREATE TABLE BECCREDP (
+    -- Primary Key
+    GUID CHAR(26) NOT NULL,
+    
+    -- Business Keys
+    ACCTID VARCHAR(50) NOT NULL,
+    TRANID VARCHAR(50) NOT NULL,
+    
+    -- Credit Decision Information
+    AMTREQ DECIMAL(15,2),
+    APPRLMT DECIMAL(15,2),
+    CLIACCTID VARCHAR(50),
+    CRDTERM VARCHAR(100),
+    CRDTRMCD VARCHAR(50),
+    RSKRATE VARCHAR(20),
+    RSKCLASS VARCHAR(20),
+    RAWSCORE DECIMAL(10,2),
+    CRDDEC VARCHAR(50),
+    DECDATE DATE,
+    NXTREVDT DATE,
+    
+    -- Credit Request Information
+    REQID VARCHAR(50),
+    REQSRC VARCHAR(50),
+    REQAMTREQ DECIMAL(15,2),
+    TERMREQCD VARCHAR(50),
+    TERMREQDS VARCHAR(100),
+    PLANPURCH VARCHAR(50),
+    REQDATE DATE,
+    REQFRMTYP VARCHAR(50),
+    POREQ VARCHAR(10),
+    ACNUMEXST VARCHAR(10),
+    REQCLIACCT VARCHAR(50),
+    ORDPEND VARCHAR(10),
+    ORDPNDAMT DECIMAL(15,2),
+    
+    -- Customer Basic Information
+    ADDR1 VARCHAR(100),
+    ADDR2 VARCHAR(100),
+    ANSALRNG VARCHAR(50),
+    BECCUSTID VARCHAR(50),
+    CITY VARCHAR(50),
+    CNTFNAME VARCHAR(50),
+    CNTLNAME VARCHAR(50),
+    CNTPHONE VARCHAR(30),
+    CNTTITLE VARCHAR(100),
+    COUNTRYID VARCHAR(10),
+    CUSTDBA VARCHAR(100),
+    CUSTLEGAL VARCHAR(100),
+    BECCRTDT DATE,
+    DUNSNUMBER VARCHAR(20),
+    FAX VARCHAR(30),
+    FEDTAXID VARCHAR(20),
+    NUMEMP VARCHAR(50),
+    PHONE VARCHAR(30),
+    STATE VARCHAR(10),
+    STINCORP VARCHAR(10),
+    STYLEBIZ VARCHAR(100),
+    TYPEBIZ VARCHAR(50),
+    YRESTAB INTEGER,
+    ZIPCODE VARCHAR(20),
+    CNTEMAIL VARCHAR(100),
+    
+    -- Additional Information (Personal Guarantee)
+    PGUARCD VARCHAR(50),
+    PGUARDSC VARCHAR(200),
+    PGUARVAL VARCHAR(10),
+    PGUARTYPE VARCHAR(50),
+    
+    -- Processing Status
+    STATUS CHAR(1) DEFAULT ' ',
+    
+    -- Customer Creation Tracking
+    CUSTCRTBY VARCHAR(10),
+    CUSTCRTTS TIMESTAMP,
+    
+    -- Audit Fields
+    CRTTS TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UPDTS TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    -- Primary Key Constraint
+    PRIMARY KEY (GUID)
+);
+
+-- Add comments to the table
+LABEL ON TABLE BECCREDP IS 'Bectran Credit Decision Data';
+
+LABEL ON COLUMN BECCREDP (
+    GUID IS 'Unique Record Identifier (26-char GUID)',
+    ACCTID IS 'Bectran Account ID',
+    TRANID IS 'Transaction ID',
+    AMTREQ IS 'Amount Requested',
+    APPRLMT IS 'Approved Credit Limit',
+    CLIACCTID IS 'Client Account ID',
+    CRDTERM IS 'Credit Term Description',
+    CRDTRMCD IS 'Credit Term Code',
+    RSKRATE IS 'Risk Rating',
+    RSKCLASS IS 'Risk Rating Class',
+    RAWSCORE IS 'Raw Credit Score',
+    CRDDEC IS 'Credit Decision',
+    DECDATE IS 'Decision Date',
+    NXTREVDT IS 'Next Review Date',
+    REQID IS 'Request ID',
+    REQSRC IS 'Request Source',
+    REQAMTREQ IS 'Request Amount Requested',
+    TERMREQCD IS 'Term Requested Code',
+    TERMREQDS IS 'Term Requested Description',
+    PLANPURCH IS 'Planned Purchase Amount',
+    REQDATE IS 'Request Date',
+    REQFRMTYP IS 'Request Form Type',
+    POREQ IS 'Purchase Order Required',
+    ACNUMEXST IS 'Account Number Exists',
+    REQCLIACCT IS 'Request Client Account ID',
+    ORDPEND IS 'Order Pending',
+    ORDPNDAMT IS 'Order Pending Amount',
+    ADDR1 IS 'Address Line 1',
+    ADDR2 IS 'Address Line 2',
+    ANSALRNG IS 'Annual Sales Range',
+    BECCUSTID IS 'Bectran Customer ID',
+    CITY IS 'City',
+    CNTFNAME IS 'Contact First Name',
+    CNTLNAME IS 'Contact Last Name',
+    CNTPHONE IS 'Contact Phone',
+    CNTTITLE IS 'Contact Title',
+    COUNTRYID IS 'Country Code',
+    CUSTDBA IS 'Customer DBA Name',
+    CUSTLEGAL IS 'Customer Legal Name',
+    BECCRTDT IS 'Date Created in Bectran',
+    DUNSNUMBER IS 'DUNS Number',
+    FAX IS 'Fax Number',
+    FEDTAXID IS 'Federal Tax ID',
+    NUMEMP IS 'Number of Employees',
+    PHONE IS 'Business Phone',
+    STATE IS 'State Code',
+    STINCORP IS 'State of Incorporation',
+    STYLEBIZ IS 'Style of Business',
+    TYPEBIZ IS 'Type of Business',
+    YRESTAB IS 'Year Established',
+    ZIPCODE IS 'ZIP/Postal Code',
+    CNTEMAIL IS 'Contact Email',
+    PGUARCD IS 'Personal Guarantee Code',
+    PGUARDSC IS 'Personal Guarantee Description',
+    PGUARVAL IS 'Personal Guarantee Value',
+    PGUARTYPE IS 'Personal Guarantee Data Type',
+    STATUS IS 'Status: '' ''=Pending E=Error X=Exclude C=Created',
+    CUSTCRTBY IS 'Customer Created By User',
+    CUSTCRTTS IS 'Customer Created Timestamp',
+    CRTTS IS 'Created Timestamp',
+    UPDTS IS 'Updated Timestamp'
+);
