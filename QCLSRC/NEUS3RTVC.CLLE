@@ -1,0 +1,202 @@
+/******************************************************************************/
+/*                                                                            */
+/* NEUS3RTVC                                                                  */
+/*                                                                            */
+/* This program will retrieve all files from AWS S3 bucket                    */
+/* and sync them to the /home/neuco IFS directory.                            */
+/*                                                                            */
+/*       Important                                                          */
+/* This program requires that the job runs under AWSSVC user due to           */
+/* AWS config setup in the /home/awssvc/.aws folder                           */
+/*       End Of Important:                                                  */
+/*                                                                            */
+/*  Prod AWS Bucket: s3://ec-neuco-stg-sftp/                                  */
+/*  Dev AWS Bucket:  s3://ec-neuco-stg-sftp/                                  */
+/*                                                                            */
+/*  Prod Profile:  AWSPDPRD                                                   */
+/*  Deve Profile:  AWSPDDEV                                                   */
+/*                                                                            */
+/*  Files synced from S3 bucket to /home/neuco                                */
+/*                                                                            */
+/*  IFS directory: /home/neuco                                                */
+
+/******************************************************************************/
+/* Modification History                                                       */
+/******************************************************************************/
+/*   *M ----------------------------------------------------------------------*/
+/*   *M TASK       DATE   ID  DESCRIPTION                                     */
+/*   *M JJF   3001 052323 JJF ORIG PGM                                       */
+/*   *M JJF   3018 070723 JJF make addenvvar unique by adding program name    */
+/*   *M JJF   3019 030326 JJF Add logic to rename .xml to .old in S3 bucket   */
+/*   *M ----------------------------------------------------------------------*/
+/******************************************************************************/
+             PGM
+
+/******************************************************************************/
+/* Work variables                                                             */
+/******************************************************************************/
+             DCL        VAR(&SYSNAME) TYPE(*CHAR) LEN(8)
+             DCL        VAR(&CMD) TYPE(*CHAR) LEN(500)
+             DCL        VAR(&CMD2) TYPE(*CHAR) LEN(500)
+             DCL        VAR(&IFS) TYPE(*CHAR) LEN(100) +
+                          VALUE('/home/Neuco')
+             DCL        VAR(&PATH) TYPE(*CHAR) LEN(100)
+             DCL        VAR(&ARCHPATH) TYPE(*CHAR) LEN(100)
+             DCL        VAR(&FILE) TYPE(*CHAR) LEN(100) +
+                          VALUE('residio_pro_perks.csv')
+             DCL        VAR(&ARCHIVE) TYPE(*CHAR) LEN(100) +
+                          VALUE('/home/Neuco/archive')
+             DCL        VAR(&XMLLIST) TYPE(*CHAR) LEN(100) +
+                          VALUE('/home/awssvc/s3_xml_files.txt')
+
+             DCL        VAR(&JOBNAME)    TYPE(*CHAR) LEN(10)
+             DCL        VAR(&JOBUSER)    TYPE(*CHAR) LEN(10)
+             DCL        VAR(&JOBNBR)     TYPE(*CHAR) LEN(6)
+             DCL        VAR(&EMLNOTE)    TYPE(*CHAR) LEN(400)
+             DCL        VAR(&EMLSUBJ)    TYPE(*CHAR) LEN(60)
+             DCL        VAR(&PRODTEST)   TYPE(*CHAR) LEN(10)
+             DCL        VAR(&PRF)        TYPE(*CHAR) LEN(20)
+             DCL        VAR(&PRDPRF)     TYPE(*CHAR) LEN(20) +
+                          VALUE('Neuco_development')
+             DCL        VAR(&DEVPRF)     TYPE(*CHAR) LEN(20) +
+                          VALUE('Neuco_development')
+             DCL        VAR(&LOCALDRV)   TYPE(*CHAR) LEN(50) +
+                          VALUE('/home/awssvc/.local/bin/aws +
+                          --profile')
+             DCL        VAR(&BUCKET)     TYPE(*CHAR) LEN(50)
+             DCL        VAR(&PRDBUCKET)  TYPE(*CHAR) LEN(50) +
+                          VALUE('s3://ec-neuco-stg-sftp')
+             DCL        VAR(&DEVBUCKET)  TYPE(*CHAR) LEN(50) +
+                          VALUE('s3://ec-neuco-stg-sftp')
+
+/* Use Environment Variable to set QSH commands to Escape vs Completion       */
+/* messages.  Remove them first and then add them back                        */
+
+             RMVENVVAR  ENVVAR(QIBM_QSH_CMD_ESCAPE_MSG)
+             MONMSG     MSGID(CPFA981)
+
+             ADDENVVAR  ENVVAR(QIBM_QSH_CMD_ESCAPE_MSG) VALUE(Y)
+
+/* Use Environment Variable to log QSH commands to IFS                        */
+
+             RMVENVVAR  ENVVAR(QIBM_QSH_CMD_OUTPUT)
+             MONMSG     MSGID(CPFA981)
+
+             ADDENVVAR  ENVVAR(QIBM_QSH_CMD_OUTPUT) +
+                          VALUE('FILE=/home/awssvc/qshell_output_NEUS+
+                          3RTVC') LEVEL(*JOB)
+
+
+/******************************************************************************/
+/* Adjust the bucket name based on the system                                 */
+/* PIM data has both PROD and DEV but they don't populate the DEV much        */
+/* We can still pull PROD data to DEV but just don't delete the data          */
+/* from the S3 bucket                                                         */
+/******************************************************************************/
+             RTVNETA    SYSNAME(&SYSNAME)
+             RTVDTAARA  DTAARA(QGPL/PRODTEST) RTNVAR(&PRODTEST)
+
+             IF         COND(&PRODTEST *EQ 'PROD') THEN(DO)
+               CHGVAR     VAR(&PRF) VALUE(&PRDPRF)
+               CHGVAR     VAR(&BUCKET) VALUE(&PRDBUCKET)
+             ENDDO
+             ELSE       CMD(DO)
+               CHGVAR     VAR(&PRF) VALUE(&DEVPRF)
+               CHGVAR     VAR(&BUCKET) VALUE(&DEVBUCKET)
+             ENDDO
+
+/******************************************************************************/
+/* Use the AWS sync command to copy all files from AWS bucket to IFS     x    */
+/*                                                                            */
+/*  Production -                                                              */
+/*   /home/awssvc/.local/bin/aws --profile awspdprd s3 sync                   */
+/*   s3://ec-neuco-stg-sftp /home/neuco                                       */
+/*                                                                            */
+/*  Development                                                               */
+/*   /home/awssvc/.local/bin/aws --profile awspddev s3 sync                   */
+/*   s3://ec-neuco-stg-sftp /home/neuco                                       */
+/*                                                                            */
+/******************************************************************************/
+
+             CHGVAR     VAR(&CMD) VALUE('exec' |> %TRIM(&LOCALDRV) +
+                          |> %TRIM(&PRF) |> 's3 sync' |> +
+                          %TRIM(&BUCKET) |> &IFS)
+
+             QSH        CMD(&CMD)
+             MONMSG     MSGID(QSH0005 QSH0006 QSH0007) EXEC(GOTO +
+                          CMDLBL(ERROR))
+
+/******************************************************************************/
+/* Rename .xml files to .old in S3 bucket                                    */
+/* This uses AWS CLI to list all .xml files and rename them                  */
+/******************************************************************************/
+
+             CHGVAR     VAR(&CMD) VALUE('exec' |> %TRIM(&LOCALDRV) +
+                          |> %TRIM(&PRF) |> 's3 ls' |> +
+                          %TRIM(&BUCKET) |> '--recursive | grep +
+                          "\.xml$" > ' |> %TRIM(&XMLLIST))
+
+             QSH        CMD(&CMD)
+             MONMSG     MSGID(QSH0005 QSH0006 QSH0007)
+
+/* Use AWS CLI to rename each .xml file to .old                              */
+/* This command reads the list and renames files in S3                       */
+
+             CHGVAR     VAR(&CMD2) VALUE('exec cd /home/awssvc && +
+                          while read line; do file=$(echo $line | +
+                          awk ''{print $4}''); ' |> %TRIM(&LOCALDRV) +
+                          |> %TRIM(&PRF) |> 's3 mv' |> +
+                          %TRIM(&BUCKET) |< '/$file' |> +
+                          %TRIM(&BUCKET) |< '/${file%.xml}.old; done +
+                          < s3_xml_files.txt')
+
+             QSH        CMD(&CMD2)
+             MONMSG     MSGID(QSH0005 QSH0006 QSH0007)
+
+/******************************************************************************/
+/* Move processed files to archive directory using QSH                       */
+/******************************************************************************/
+
+             CHGVAR     VAR(&CMD) VALUE('mv' |> &IFS |< '/*' |> &ARCHIVE)
+             /*QSH        CMD(&CMD)*/
+             /*MONMSG     MSGID(CPF0000)*/
+
+             GOTO       CMDLBL(ENDPGM)
+
+/******************************************************************************/
+/* Error occurred on QSH command                                              */
+/******************************************************************************/
+
+ ERROR:      RTVJOBA    JOB(&JOBNAME) USER(&JOBUSER) NBR(&JOBNBR)
+
+/******************************************************************************/
+/* Format email subject and text                                              */
+/******************************************************************************/
+
+             CHGVAR     VAR(&EMLNOTE) VALUE('Files not retrieved from +
+                          AWS S3.  See attached QSH joblog for +
+                          details.' |> 'Job' |> &JOBNBR |< '/' |< +
+                          &JOBUSER |< '/' |< &JOBNAME)
+
+             CHGVAR     VAR(&EMLSUBJ) VALUE('Files not retrieved from +
+                          AWS S3 bucket')
+
+/******************************************************************************/
+/* If error occurred on Development, note it in subject                       */
+/******************************************************************************/
+
+             IF         COND(&PRODTEST *NE 'PROD') THEN(DO)
+               CHGVAR     VAR(&EMLSUBJ) VALUE(%TRIM(&PRODTEST) *BCAT +
+                            &EMLSUBJ)
+             ENDDO
+
+/******************************************************************************/
+/* Send email with joblog attached from QSHELL Output                        */
+/******************************************************************************/
+
+             SNDSMTPEMM RCP((ISDEPT@ECMDI.COM)) SUBJECT(&EMLSUBJ) +
+                          NOTE(&EMLNOTE) +
+                          ATTACH(('/home/awssvc/qshell_output_NEUS3RT+
+                          VC' *HTML *TXT))
+
+ ENDPGM:     ENDPGM
