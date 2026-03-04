@@ -1,0 +1,94 @@
+/******************************************************************************/
+/*                                                                            */
+/* NEUS3REST                                                                  */
+/*                                                                            */
+/* This program will restore .old files back to .xml in AWS S3 bucket        */
+/* for testing purposes. This allows retesting of the NEUS3RTVC process.     */
+/*                                                                            */
+/*       Important                                                          */
+/* This program requires that the job runs under AWSSVC user due to           */
+/* AWS config setup in the /home/awssvc/.aws folder                           */
+/*       End Of Important:                                                  */
+/*                                                                            */
+/*  Prod AWS Bucket: s3://ec-neuco-stg-sftp/                                  */
+/*  Dev AWS Bucket:  s3://ec-neuco-stg-sftp/                                  */
+/*                                                                            */
+/*  Prod Profile:  AWSPDPRD                                                   */
+/*  Deve Profile:  AWSPDDEV                                                   */
+/*                                                                            */
+/******************************************************************************/
+/* Modification History                                                       */
+/******************************************************************************/
+/*   *M ----------------------------------------------------------------------*/
+/*   *M TASK       DATE   ID  DESCRIPTION                                     */
+/*   *M JJF   3019 030326 JJF ORIG PGM - Restore .old to .xml for testing    */
+/*   *M ----------------------------------------------------------------------*/
+/******************************************************************************/
+             PGM
+
+/******************************************************************************/
+/* Work variables                                                             */
+/******************************************************************************/
+             DCL        VAR(&SYSNAME) TYPE(*CHAR) LEN(8)
+             DCL        VAR(&CMD) TYPE(*CHAR) LEN(500)
+             DCL        VAR(&PRODTEST)   TYPE(*CHAR) LEN(10)
+             DCL        VAR(&PRF)        TYPE(*CHAR) LEN(20)
+             DCL        VAR(&PRDPRF)     TYPE(*CHAR) LEN(20) +
+                          VALUE('Neuco_development')
+             DCL        VAR(&DEVPRF)     TYPE(*CHAR) LEN(20) +
+                          VALUE('Neuco_development')
+             DCL        VAR(&BUCKET)     TYPE(*CHAR) LEN(50)
+             DCL        VAR(&PRDBUCKET)  TYPE(*CHAR) LEN(50) +
+                          VALUE('s3://ec-neuco-stg-sftp')
+             DCL        VAR(&DEVBUCKET)  TYPE(*CHAR) LEN(50) +
+                          VALUE('s3://ec-neuco-stg-sftp')
+
+/******************************************************************************/
+/* Adjust the bucket name based on the system                                 */
+/******************************************************************************/
+             RTVNETA    SYSNAME(&SYSNAME)
+             RTVDTAARA  DTAARA(QGPL/PRODTEST) RTNVAR(&PRODTEST)
+
+             IF         COND(&PRODTEST *EQ 'PROD') THEN(DO)
+               CHGVAR     VAR(&PRF) VALUE(&PRDPRF)
+               CHGVAR     VAR(&BUCKET) VALUE(&PRDBUCKET)
+             ENDDO
+             ELSE       CMD(DO)
+               CHGVAR     VAR(&PRF) VALUE(&DEVPRF)
+               CHGVAR     VAR(&BUCKET) VALUE(&DEVBUCKET)
+             ENDDO
+
+/******************************************************************************/
+/* Run Python script to restore .old files back to .xml in S3 bucket         */
+/******************************************************************************/
+
+             SNDPGMMSG  MSGID(CPF9897) MSGF(QCPFMSG) +
+                          MSGDTA('Restoring .old files to .xml in S3 +
+                          bucket for testing...') TOPGMQ(*EXT) +
+                          MSGTYPE(*INFO)
+
+             CHGVAR     VAR(&CMD) VALUE('exec /QOpenSys/pkgs/bin/python3 +
+                          /home/Neuco/restore_s3_xml.py' |> %TRIM(&PRF) +
+                          |> %TRIM(&BUCKET))
+
+             QSH        CMD(&CMD)
+             MONMSG     MSGID(QSH0005 QSH0006 QSH0007) EXEC(GOTO +
+                          CMDLBL(ERROR))
+
+             SNDPGMMSG  MSGID(CPF9897) MSGF(QCPFMSG) +
+                          MSGDTA('Restore completed successfully. You +
+                          can now retest NEUS3RTVC.') TOPGMQ(*EXT) +
+                          MSGTYPE(*COMP)
+
+             GOTO       CMDLBL(ENDPGM)
+
+/******************************************************************************/
+/* Error occurred on QSH command                                              */
+/******************************************************************************/
+
+ ERROR:      SNDPGMMSG  MSGID(CPF9897) MSGF(QCPFMSG) +
+                          MSGDTA('Error restoring .old files to .xml. +
+                          Check joblog for details.') TOPGMQ(*PRV) +
+                          MSGTYPE(*ESCAPE)
+
+ ENDPGM:     ENDPGM

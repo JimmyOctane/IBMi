@@ -106,21 +106,24 @@
              ENDDO
 
 /******************************************************************************/
-/* Use the AWS sync command to copy all files from AWS bucket to IFS     x    */
+/* Use the AWS sync command to copy only .xml files from AWS bucket to IFS   */
+/* Using --exclude "*" --include "*.xml" to only sync XML files              */
+/* This prevents reprocessing .old files that have already been processed    */
 /*                                                                            */
 /*  Production -                                                              */
 /*   /home/awssvc/.local/bin/aws --profile awspdprd s3 sync                   */
-/*   s3://ec-neuco-stg-sftp /home/neuco                                       */
+/*   s3://ec-neuco-stg-sftp /home/neuco --exclude "*" --include "*.xml"       */
 /*                                                                            */
 /*  Development                                                               */
 /*   /home/awssvc/.local/bin/aws --profile awspddev s3 sync                   */
-/*   s3://ec-neuco-stg-sftp /home/neuco                                       */
+/*   s3://ec-neuco-stg-sftp /home/neuco --exclude "*" --include "*.xml"       */
 /*                                                                            */
 /******************************************************************************/
 
              CHGVAR     VAR(&CMD) VALUE('exec' |> %TRIM(&LOCALDRV) +
                           |> %TRIM(&PRF) |> 's3 sync' |> +
-                          %TRIM(&BUCKET) |> &IFS)
+                          %TRIM(&BUCKET) |> &IFS |> '--exclude "*" +
+                          --include "*.xml"')
 
              QSH        CMD(&CMD)
              MONMSG     MSGID(QSH0005 QSH0006 QSH0007) EXEC(GOTO +
@@ -128,29 +131,14 @@
 
 /******************************************************************************/
 /* Rename .xml files to .old in S3 bucket                                    */
-/* This uses AWS CLI to list all .xml files and rename them                  */
+/* This uses a Python script to list and rename .xml files                   */
 /******************************************************************************/
 
-             CHGVAR     VAR(&CMD) VALUE('exec' |> %TRIM(&LOCALDRV) +
-                          |> %TRIM(&PRF) |> 's3 ls' |> +
-                          %TRIM(&BUCKET) |> '--recursive | grep +
-                          "\.xml$" > ' |> %TRIM(&XMLLIST))
+             CHGVAR     VAR(&CMD) VALUE('exec /QOpenSys/pkgs/bin/python3 +
+                          /home/Neuco/rename_s3_xml.py' |> %TRIM(&PRF) +
+                          |> %TRIM(&BUCKET))
 
              QSH        CMD(&CMD)
-             MONMSG     MSGID(QSH0005 QSH0006 QSH0007)
-
-/* Use AWS CLI to rename each .xml file to .old                              */
-/* This command reads the list and renames files in S3                       */
-
-             CHGVAR     VAR(&CMD2) VALUE('exec cd /home/awssvc && +
-                          while read line; do file=$(echo $line | +
-                          awk ''{print $4}''); ' |> %TRIM(&LOCALDRV) +
-                          |> %TRIM(&PRF) |> 's3 mv' |> +
-                          %TRIM(&BUCKET) |< '/$file' |> +
-                          %TRIM(&BUCKET) |< '/${file%.xml}.old; done +
-                          < s3_xml_files.txt')
-
-             QSH        CMD(&CMD2)
              MONMSG     MSGID(QSH0005 QSH0006 QSH0007)
 
 /******************************************************************************/
