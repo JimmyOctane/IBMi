@@ -1,0 +1,116 @@
+     A*=====================================================================
+     A* Display File: PCITEMLSTD
+     A* Purpose: Maintain Promotional Code Item List
+     A* Author: System Generated
+     A* Date: 2026-03-05
+     A*=====================================================================
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      INDARA
+     A                                      PRINT
+     A*
+     A* Subfile Record Format
+     A          R ITEMSFL                   SFL
+     A            OPT            1A  B  8  3
+     A            LISTNAME      10A  O  8  7
+     A            ITEMNO         6Y 0O  8 20EDTCDE(Z)
+     A            PRODUCTNO     15A  O  8 29
+     A            INCLEXCL       1A  O  8 47
+     A            CREATEUSER    10A  O  8 51
+     A*
+     A* Subfile Control Record Format
+     A          R ITEMCTL                   SFLCTL(ITEMSFL)
+     A                                      SFLSIZ(9999)
+     A                                      SFLPAG(0014)
+     A  91                                  SFLDSP
+     A  92                                  SFLDSPCTL
+     A  93                                  SFLCLR
+     A  94                                  SFLEND(*MORE)
+     A                                      CA03(03)
+     A                                      CA06(06)
+     A                                      CA12(12)
+     A            SFLRRN         4S 0H      SFLRCDNBR(CURSOR)
+     A*
+     A* Header Information
+     A                                  1  2DATE
+     A                                      EDTCDE(Y)
+     A                                  1 30'Item List Maintenance'
+     A                                      DSPATR(HI)
+     A                                  1 70TIME
+     A                                  2  2'List Name:'
+     A            SCRLIST       10A  B  2 14DSPATR(HI)
+     A                                  3  2'Status:'
+     A            SCRSTAT       20A  O  3 14
+     A*
+     A* Column Headers
+     A                                  5  2'Type options, press Enter.'
+     A                                  7  3'Opt'
+     A                                      DSPATR(HI)
+     A                                  7  7'List Name'
+     A                                      DSPATR(HI)
+     A                                  7 20'Item#'
+     A                                      DSPATR(HI)
+     A                                  7 29'Product Number'
+     A                                      DSPATR(HI)
+     A                                  7 47'I/E'
+     A                                      DSPATR(HI)
+     A                                  7 51'Created By'
+     A                                      DSPATR(HI)
+     A*
+     A*=====================================================================
+     A* Detail Maintenance Screen
+     A*=====================================================================
+     A          R ITEMDTL
+     A                                      CA03(03)
+     A                                      CA12(12)
+     A*
+     A* Header
+     A                                  1  2DATE
+     A                                      EDTCDE(Y)
+     A                                  1 26'Item List Detail Maintenance'
+     A                                      DSPATR(HI)
+     A                                  1 70TIME
+     A                                  3  2'Mode:'
+     A            MODE          10A  O  3 14DSPATR(HI)
+     A*
+     A* Detail Fields
+     A                                  5  2'List Name . . . . . :'
+     A            DLISTNAME     10A  B  5 25DSPATR(HI)
+     A*
+     A                                  7  2'Item Number . . . . :'
+     A            DITEMNO        6Y 0B  7 25EDTCDE(Z)
+     A                                  8  2'Product Number  . . :'
+     A            DPRODUCTNO    15A  B  8 25
+     A*
+     A                                 10  2'Include/Exclude . . :'
+     A            DINCLEXCL      1A  B 10 25
+     A                                 10 28'(I=Include, E=Exclude)'
+     A                                      COLOR(BLU)
+     A*
+     A* Information Display
+     A                                 12  2'Created By  . . . . :'
+     A            DCRTUSER      10A  O 12 25COLOR(TRQ)
+     A                                 13  2'Created Date  . . . :'
+     A            DCRTDATE      26A  O 13 25COLOR(TRQ)
+     A*
+     A* Instructions
+     A                                 20  2'Enter item number OR product -
+     A                                      number (not both)'
+     A                                      COLOR(BLU)
+     A*
+     A* Function Keys
+     A                                 23  2'F3=Exit   F12=Cancel'
+     A                                      COLOR(BLU)
+     A*
+     A*=====================================================================
+     A* Shared Message Subfile
+     A*=====================================================================
+     A          R MSGSFL                    SFL
+     A                                      SFLMSGRCD(24)
+     A            MSGKEY                    SFLMSGKEY
+     A            PGMQ                      SFLPGMQ(10)
+     A*
+     A          R MSGCTL                    SFLCTL(MSGSFL)
+     A                                      SFLDSP SFLDSPCTL SFLINZ
+     A                                      SFLSIZ(2) SFLPAG(1)
+     A  98                                  SFLEND
+     A            PGMQ                      SFLPGMQ(10)

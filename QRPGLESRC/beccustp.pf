@@ -11,7 +11,7 @@ DROP TABLE IF EXISTS BECCUSTP;
 -- Create the main transaction table
 CREATE TABLE BECCUSTP (
     -- Primary Key
-    GUID CHAR(26) NOT NULL,
+    GUID CHAR(36) NOT NULL,
 
     -- Business Keys
     ACCTID VARCHAR(20) NOT NULL,

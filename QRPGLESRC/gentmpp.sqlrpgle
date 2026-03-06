@@ -96,7 +96,7 @@
        // Retrieve branch from TBPMTBL table
        branchCode = DEFAULT_BRANCH;  // Default value
        exec sql
-         SELECT substr(TBNO03,1,3)
+         SELECT SUBSTRING(TBNO03,1,3)
            INTO :branchCode
            FROM TBPMTBL
            WHERE TBNO01 = 'TIDS'
@@ -143,17 +143,17 @@
        exec sql
          SELECT COALESCE(MAX(
            CASE
-             WHEN SUBSTR(IVNO04, 4, 1) BETWEEN '0' AND '9'
-             THEN CAST(SUBSTR(IVNO04, 4, 2) AS INTEGER)
-             ELSE ((ASCII(SUBSTR(IVNO04, 4, 1)) - 65) * 10) +
-                  CAST(SUBSTR(IVNO04, 5, 1) AS INTEGER) + 100
+             WHEN SUBSTRING(IVNO04, 4, 1) BETWEEN '0' AND '9'
+             THEN CAST(SUBSTRING(IVNO04, 4, 2) AS INTEGER)
+             ELSE ((ASCII(SUBSTRING(IVNO04, 4, 1)) - 65) * 10) +
+                  CAST(SUBSTRING(IVNO04, 5, 1) AS INTEGER) + 100
            END
          ), 0) + 1
            INTO :nextSequence
            FROM IVPMSTR
-          WHERE SUBSTR(IVNO04, 10, 6) = :dateStr
-            AND SUBSTR(IVNO04, 1, 3) = :categoryCode
-            AND SUBSTR(IVNO04, 7, 3) = :branchCode
+          WHERE SUBSTRING(IVNO04, 10, 6) = :dateStr
+            AND SUBSTRING(IVNO04, 1, 3) = :categoryCode
+            AND SUBSTRING(IVNO04, 7, 3) = :branchCode
             AND LENGTH(TRIM(IVNO04)) = 15;
 
        // If SQL failed or returned null, default to 1

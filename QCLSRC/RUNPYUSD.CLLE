@@ -1,0 +1,91 @@
+/* ==================================================================== */
+/* CL Program: RUNPYUSD - Run Python USD to CAD Exchange Rate         */
+/* Description: Executes Python script via QSH                         */
+/* Parameters: &USDAMT - USD amount to convert (optional)              */
+/* ==================================================================== */
+
+PGM PARM(&USDAMT)
+
+DCL VAR(&USDAMT) TYPE(*DEC) LEN(15 5)
+DCL VAR(&AMTCHAR) TYPE(*CHAR) LEN(20)
+DCL VAR(&MSGID) TYPE(*CHAR) LEN(7)
+DCL VAR(&MSGDTA) TYPE(*CHAR) LEN(512)
+DCL VAR(&CMDSTR) TYPE(*CHAR) LEN(256)
+
+/* If no parameter passed, default to 0 */
+MONMSG MSGID(CPF0000)
+CHGVAR VAR(&USDAMT) VALUE(&USDAMT + 0)
+MONMSG MSGID(MCH1202) EXEC(CHGVAR VAR(&USDAMT) VALUE(0))
+
+/* Display header */
+SNDPGMMSG MSG('========================================') +
+          TOPGMQ(*EXT) MSGTYPE(*INFO)
+SNDPGMMSG MSG('USD to CAD Exchange Rate Fetcher') +
+          TOPGMQ(*EXT) MSGTYPE(*INFO)
+SNDPGMMSG MSG('========================================') +
+          TOPGMQ(*EXT) MSGTYPE(*INFO)
+
+/* Test if we can create output file */
+SNDPGMMSG MSG('Creating output file...') +
+          TOPGMQ(*EXT) MSGTYPE(*INFO)
+
+QSH CMD('echo "Starting..." > /tmp/usd_cad_output.txt')
+MONMSG MSGID(CPF0000) EXEC(DO)
+  SNDPGMMSG MSG('ERROR: Cannot create output file') +
+            TOPGMQ(*EXT) MSGTYPE(*INFO)
+  GOTO CMDLBL(ERROR)
+ENDDO
+
+/* Execute the shell script */
+IF COND(&USDAMT > 0) THEN(DO)
+  CHGVAR VAR(&AMTCHAR) VALUE(%CHAR(&USDAMT))
+  CHGVAR VAR(&CMDSTR) VALUE('/home/jflanary/run_python_usd.sh' *BCAT %TRIM(&AMTCHAR))
+  SNDPGMMSG MSG('Converting USD amount...') +
+            TOPGMQ(*EXT) MSGTYPE(*INFO)
+  SNDPGMMSG MSG(&CMDSTR) TOPGMQ(*EXT) MSGTYPE(*INFO)
+  QSH CMD(&CMDSTR)
+  MONMSG MSGID(CPF0000) EXEC(DO)
+    SNDPGMMSG MSG('ERROR: Shell script failed') +
+              TOPGMQ(*EXT) MSGTYPE(*INFO)
+    GOTO CMDLBL(ERROR)
+  ENDDO
+ENDDO
+ELSE CMD(DO)
+  SNDPGMMSG MSG('Executing Python script...') +
+            TOPGMQ(*EXT) MSGTYPE(*INFO)
+  QSH CMD('/home/jflanary/run_python_usd.sh')
+  MONMSG MSGID(CPF0000) EXEC(DO)
+    SNDPGMMSG MSG('ERROR: Shell script failed') +
+              TOPGMQ(*EXT) MSGTYPE(*INFO)
+    GOTO CMDLBL(ERROR)
+  ENDDO
+ENDDO
+
+SNDPGMMSG MSG('Script executed successfully') +
+          TOPGMQ(*EXT) MSGTYPE(*INFO)
+
+/* Display the output file */
+SNDPGMMSG MSG('========================================') +
+          TOPGMQ(*EXT) MSGTYPE(*INFO)
+SNDPGMMSG MSG('Output:') +
+          TOPGMQ(*EXT) MSGTYPE(*INFO)
+SNDPGMMSG MSG('========================================') +
+          TOPGMQ(*EXT) MSGTYPE(*INFO)
+
+QSH CMD('cat /tmp/usd_cad_output.txt')
+MONMSG MSGID(CPF0000)
+
+GOTO CMDLBL(END)
+
+ERROR:
+SNDPGMMSG MSGID(CPF9898) MSGF(QCPFMSG) +
+          MSGDTA('Process failed - check messages above') +
+          MSGTYPE(*ESCAPE)
+
+END:
+SNDPGMMSG MSG('========================================') +
+          TOPGMQ(*EXT) MSGTYPE(*INFO)
+SNDPGMMSG MSG('Process completed') +
+          TOPGMQ(*EXT) MSGTYPE(*INFO)
+
+ENDPGM

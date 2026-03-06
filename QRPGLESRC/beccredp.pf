@@ -11,7 +11,7 @@ DROP TABLE IF EXISTS BECCREDP;
 -- Create the credit decision table
 CREATE TABLE BECCREDP (
     -- Primary Key
-    GUID CHAR(26) NOT NULL,
+    GUID CHAR(36) NOT NULL,
 
     -- Business Keys
     ACCTID VARCHAR(50) NOT NULL,

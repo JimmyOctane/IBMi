@@ -1,0 +1,60 @@
+/* ==================================================================== */
+/* CL Program: RUNPYUSDC - Run Python USD to CAD Exchange Rate        */
+/* Description: Wrapper CL to compile and execute RUNPYUSD program    */
+/* ==================================================================== */
+
+PGM
+
+DCL VAR(&MSGID) TYPE(*CHAR) LEN(7)
+DCL VAR(&MSGDTA) TYPE(*CHAR) LEN(512)
+
+/* Display header */
+SNDPGMMSG MSG('Starting USD to CAD Exchange Rate Fetch...') +
+          TOPGMQ(*EXT) MSGTYPE(*INFO)
+
+/* Check if Python script exists in IFS */
+SNDPGMMSG MSG('Checking for Python script...') +
+          TOPGMQ(*EXT) MSGTYPE(*INFO)
+
+/* Compile the SQLRPGLE program if needed */
+MONMSG MSGID(CPF0000) EXEC(GOTO CMDLBL(COMPILE))
+
+/* Try to call the program */
+CALL PGM(RUNPYUSD)
+MONMSG MSGID(CPF0000) EXEC(GOTO CMDLBL(COMPILE))
+
+GOTO CMDLBL(END)
+
+COMPILE:
+SNDPGMMSG MSG('Compiling RUNPYUSD program...') +
+          TOPGMQ(*EXT) MSGTYPE(*INFO)
+
+/* Create the program using CRTSQLRPGI */
+CRTSQLRPGI OBJ(QTEMP/RUNPYUSD) +
+           SRCFILE(QRPGLESRC) +
+           SRCMBR(RUNPYUSD) +
+           COMMIT(*NONE) +
+           DBGVIEW(*SOURCE) +
+           REPLACE(*YES)
+
+MONMSG MSGID(CPF0000) EXEC(DO)
+  SNDPGMMSG MSG('Error compiling RUNPYUSD program') +
+            TOPGMQ(*EXT) MSGTYPE(*ESCAPE)
+  GOTO CMDLBL(ERROR)
+ENDDO
+
+/* Call the compiled program */
+CALL PGM(QTEMP/RUNPYUSD)
+MONMSG MSGID(CPF0000) EXEC(GOTO CMDLBL(ERROR))
+
+GOTO CMDLBL(END)
+
+ERROR:
+SNDPGMMSG MSG('Error occurred during execution') +
+          TOPGMQ(*EXT) MSGTYPE(*ESCAPE)
+
+END:
+SNDPGMMSG MSG('Process completed') +
+          TOPGMQ(*EXT) MSGTYPE(*COMP)
+
+ENDPGM
