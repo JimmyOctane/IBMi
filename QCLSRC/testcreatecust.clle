@@ -1,0 +1,36 @@
+             PGM
+
+             /* Compile CREATECUST if needed */
+             CRTSQLRPGI OBJ(JAMIEDEV/CREATECUST) +
+                        SRCFILE(JAMIEDEV/QRPGLESRC) +
+                        SRCMBR(CREATECUST) +
+                        COMMIT(*NONE) +
+                        DBGVIEW(*SOURCE) +
+                        REPLACE(*YES)
+
+             MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(COMPTEST))
+
+ COMPTEST:   /* Compile test program */
+             CRTSQLRPGI OBJ(JAMIEDEV/TESTCREATECUST) +
+                        SRCFILE(JAMIEDEV/QRPGLESRC) +
+                        SRCMBR(TESTCREATECUST) +
+                        COMMIT(*NONE) +
+                        DBGVIEW(*SOURCE) +
+                        REPLACE(*YES)
+
+             MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(ERROR))
+
+             /* Run the test */
+             CALL       PGM(JAMIEDEV/TESTCREATECUST)
+
+             MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(ERROR))
+
+             SNDPGMMSG  MSG('Test completed successfully') +
+                        TOPGMQ(*EXT)
+
+             GOTO       CMDLBL(ENDPGM)
+
+ ERROR:      SNDPGMMSG  MSG('Error during compile or test') +
+                        TOPGMQ(*EXT)
+
+ ENDPGM:     ENDPGM

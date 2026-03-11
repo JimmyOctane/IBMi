@@ -1,0 +1,199 @@
+**FREE FORMAT TO FIXED-FORMAT CONVERSION REFERENCE**
+
+=============================================================================
+CONTROL SPECIFICATIONS (H-SPEC)
+=============================================================================
+
+**FREE FORMAT:
+Ctl-Opt DftActGrp(*No) ActGrp(*New) Option(*SrcStmt:*NoDebugIo)
+        BndDir('ECBIND');
+
+FIXED FORMAT (starts at position 1):
+H DftActGrp(*No) ActGrp(*New) Option(*SrcStmt:*NoDebugIo)
+H BndDir('ECBIND')
+
+=============================================================================
+COPY STATEMENTS
+=============================================================================
+
+**FREE FORMAT:
+/COPY qcpysrc,SDEMAIL_CP
+
+FIXED FORMAT (starts at position 1):
+/COPY qcpysrc,SDEMAIL_CP
+
+=============================================================================
+PROTOTYPES (D-SPEC)
+=============================================================================
+
+**FREE FORMAT:
+Dcl-PR getNextCustomerNumber ExtPgm('ARR5006');
+  pCustomerNumber Packed(6:0);
+  pType Char(2);
+  pValid Char(1);
+End-PR;
+
+FIXED FORMAT (starts at position 1):
+D getNextCustNum  PR                  ExtPgm('ARR5006')
+D  pCustNumber                    6P 0
+D  pType                          2A
+D  pValid                         1A
+
+=============================================================================
+ENTRY PARAMETERS (D-SPEC and C-SPEC)
+=============================================================================
+
+**FREE FORMAT:
+Dcl-PI *N;
+  pGUID Char(36) Const;
+End-PI;
+
+FIXED FORMAT:
+D                 PI
+D  pGUID                        36A   Const
+
+=============================================================================
+DATA STRUCTURES (D-SPEC)
+=============================================================================
+
+**FREE FORMAT:
+Dcl-DS BeccustpDS ExtName('BECCUSTP') Qualified End-DS;
+
+FIXED FORMAT:
+D BeccustpDS    E DS                  ExtName(BECCUSTP) Qualified
+
+**FREE FORMAT:
+Dcl-DS ArphbalDataDS Qualified;
+  ARNO16 Packed(3:0);
+  ARNO01 Packed(6:0);
+  ARNM05 Char(20);
+End-DS;
+
+FIXED FORMAT:
+D ArphbalDataDS   DS                  Qualified
+D  ARNO16                         3P 0
+D  ARNO01                         6P 0
+D  ARNM05                        20A
+
+=============================================================================
+STANDALONE VARIABLES (D-SPEC)
+=============================================================================
+
+**FREE FORMAT:
+Dcl-S BeccustpFound Ind Inz(*Off);
+Dcl-S RecordsInserted Int(10) Inz(0);
+Dcl-S wGUID Char(36);
+Dcl-S DsplyMsg Char(52);
+
+FIXED FORMAT:
+D BeccustpFound   S               N   Inz(*Off)
+D RecordsInsert   S             10I 0 Inz(0)
+D wGUID           S             36A
+D DsplyMsg        S             52A
+
+=============================================================================
+MAIN CALCULATION SPECIFICATIONS (C-SPEC)
+=============================================================================
+
+**FREE FORMAT:
+*InLR = *On;
+wGUID = pGUID;
+ReadBeccustpByGUID(wGUID);
+
+FIXED FORMAT (code starts at position 10, max column 80):
+     C                   Eval      *InLR = *On
+     C                   Eval      wGUID = pGUID
+     C                   CallP     ReadBeccustpByGUID(wGUID)
+
+**FREE FORMAT:
+If BeccustpFound;
+  Dsply ('BECCUSTP found for GUID:');
+  Dsply %Trim(wGUID);
+EndIf;
+
+FIXED FORMAT:
+     C                   If        BeccustpFound
+     C     'BECCUSTP found for GUID:'
+     C                   Dsply
+     C                   Eval      DsplyMsg = %Trim(wGUID)
+     C                   Dsply                   DsplyMsg
+     C                   EndIf
+
+=============================================================================
+SQL STATEMENTS (C/EXEC SQL)
+=============================================================================
+
+**FREE FORMAT:
+Exec SQL
+  SELECT *
+  INTO :BeccustpDS
+  FROM BECCUSTP
+  WHERE GUID = :pGUID;
+
+FIXED FORMAT (C/EXEC SQL starts at position 7):
+     C/EXEC SQL
+     C+ SELECT *
+     C+ INTO :BeccustpDS
+     C+ FROM BECCUSTP
+     C+ WHERE GUID = :pGUID
+     C/END-EXEC
+
+=============================================================================
+PROCEDURE DEFINITIONS (P-SPEC)
+=============================================================================
+
+**FREE FORMAT:
+Dcl-Proc InsertCustomer;
+  Dcl-PI *N;
+    pBeccustp LikeDS(BeccustpDS) Const;
+  End-PI;
+  
+  Dcl-S newCustNum Packed(6:0) Inz(0);
+  
+  // procedure code here
+  
+End-Proc;
+
+FIXED FORMAT:
+     P InsertCustomer  B
+     D InsertCustomer  PI
+     D  pBeccustp                        LikeDS(BeccustpDS) Const
+     
+     D newCustNum      S              6P 0 Inz(0)
+     
+      * procedure code here
+     
+     P InsertCustomer  E
+
+=============================================================================
+KEY RULES FOR FIXED FORMAT:
+=============================================================================
+
+1. H-spec: Starts at position 1, 'H' in column 6
+2. F-spec: Starts at position 1, 'F' in column 6
+3. D-spec: Starts at position 1, 'D' in column 6
+4. C-spec: Starts at position 7 for operations, position 10 for code
+5. P-spec: Starts at position 1, 'P' in column 6
+6. Maximum line length: Column 80
+7. Continuation: C+ for SQL, or use - in position 7 for regular code
+8. Comments: * in position 7 for full-line comments, // not allowed
+9. Field names: Maximum 10 characters (older RPG) or longer if RPGIV
+10. No inline declarations - all D-specs must be at top
+
+=============================================================================
+COLUMN POSITIONS FOR C-SPEC:
+=============================================================================
+
+Positions 7-8:   Control level indicators (01-99) or blank
+Positions 9-11:  Indicators (01-99, LR, etc.)
+Position 12-25:  Factor 1
+Position 26-35:  Operation code
+Position 36-49:  Factor 2
+Position 50-63:  Result field
+Positions 64-68: Field length
+Position 69:     Decimal positions
+Positions 71-76: Resulting indicators
+
+Modern RPG IV uses extended Factor 2 format where operation extends
+beyond column 35 when using EVAL, CALLP, etc.
+
