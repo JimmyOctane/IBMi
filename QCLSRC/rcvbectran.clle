@@ -1,0 +1,132 @@
+ /*---------------------------------------------------------------------------*/
+ /*   *N PROGRAM NAME - RCVBECTRAN                                            */
+ /*---------------------------------------------------------------------------*/
+ /*   *P EAST COAST METAL DISTRIBUTORS INC. 2000                              */
+ /*---------------------------------------------------------------------------*/
+ /*   *D Retrieve and process SFTP Bectran files                              */
+ /*---------------------------------------------------------------------------*/
+ /*   *S PURPOSE:                                                             */
+ /*   *S    Receive SFTP files from Bectran                                   */
+ /*   *S     Credit Decision                                                  */
+ /*   *S     Customer XML Setup                                               */
+ /*   *S                                                                      */
+ /*   *S Bectran site directory:    /TN2026021289684xml/inb/wip               */
+ /*   *S ECMD IFS Directory:        /home/bectran/                            */
+ /*   *S Retrieve File Names:       cred_deci_ccyymmddhhmmss.xml              */
+ /*   *S                            cus_xml_setup_ccyymmddhhmmss.xml          */
+ /*   *S                                                                      */
+ /*   *S SPECIAL NOTES:                                                       */
+ /*   *S                                                                      */
+ /*   *M ---------------------------------------------------------------------*/
+ /*   *M TASK       DATE   ID  DESCRIPTION                                    */
+ /*   *V APB   9511 022626 APB Initial creation                               */
+ /*   *M ---------------------------------------------------------------------*/
+
+             PGM        PARM(&FTPYN)
+
+             DCL        VAR(&FTPYN) TYPE(*CHAR) LEN(1)
+             DCL        VAR(&PRODTEST) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&IFSPATH) TYPE(*CHAR) LEN(50) +
+                          VALUE('/Home/Bectran/')
+             DCL        VAR(&RMTLOC) TYPE(*CHAR) LEN(10) +
+                          VALUE('BECTRAN')
+             DCL        VAR(&RMTLOCT) TYPE(*CHAR) LEN(10) +
+                          VALUE('BECTRANT')
+             DCL        VAR(&RMTFILE) TYPE(*CHAR) LEN(55)
+             DCL        VAR(&RMTDIR) TYPE(*CHAR) LEN(55) +
+                          VALUE('/TN2026021289684xml/inb/wip')
+             DCL        VAR(&RMTDIRT) TYPE(*CHAR) LEN(55) +
+                          VALUE('/TN2026021289684xml/inb/wip')
+             DCL        VAR(&RMTDIRB) TYPE(*CHAR) LEN(55) +
+                          VALUE('/TN2026021289684xml/inb/done')
+             DCL        VAR(&JOBNAME) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&JOBUSER) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&JOBNBR) TYPE(*CHAR) LEN(6)
+             DCL        VAR(&PGM) TYPE(*CHAR) LEN(10) VALUE('RTVBECTRAN')
+             DCL        VAR(&NAME) TYPE(*CHAR) LEN(20) +
+                          VALUE('Retrieve Bectran')
+
+             RTVDTAARA  DTAARA(QGPL/PRODTEST) RTNVAR(&PRODTEST)
+
+/* Bectran will use a different test folder from prod. */
+
+             IF         COND(&PRODTEST *NE 'PROD') THEN(DO)
+             CHGVAR     VAR(&RMTDIR) VALUE(&RMTDIRT)
+             CHGVAR     VAR(&RMTLOC) VALUE(&RMTLOCT)
+             ENDDO
+
+ /* crtdupobj in qtemp */
+             CALL       PGM(OPC9990) PARM('3' 'IFSDIRT')
+             CALL       PGM(OPC9990) PARM('3' 'IFSDIRT1')
+
+             RTVJOBA    JOB(&JOBNAME) USER(&JOBUSER) NBR(&JOBNBR)
+
+             ADDLIBLE   LIB(TAATOOL)
+             MONMSG     MSGID(CPF0000)
+
+ /* FTP Y/N                                      */
+
+             IF         COND(&FTPYN *NE 'Y') THEN(GOTO CMDLBL(NOFTP))
+
+ /* Make sure there is no open connection before starting                */
+
+             AFENDFTP
+             MONMSG     MSGID(UFT0000)
+
+ /* Open a connection to the remote location                             */
+
+             AFSTRFTP   SVRDFN(&RMTLOC)
+             MONMSG     MSGID(UFT9100 UFT9800 UFT9900) EXEC(DO)
+             CALLSUBR   SUBR(ERROR)
+             GOTO       CMDLBL(END)
+             ENDDO
+
+/* change the directory         */
+             AFCHDIR    DIRECT(&RMTDIR)
+
+ /* Retrieve the file and load to IFS                                    */
+ /* Note that IFS paths are case sensitive */
+ /* Get a list of files                                                  */
+             AFLIST     OUTPUT(*RTVCMD) OBJECTS(*FILES)
+             MONMSG     MSGID(UFT9820) EXEC(DO)
+             GOTO       CMDLBL(END)
+             ENDDO
+
+ /* Retrieve file from the list                                          */
+ GET_FILE:   AFRTVLE    LISTENTRY(&RMTFILE)
+             MONMSG     MSGID(UFT9822) EXEC(GOTO CMDLBL(END_FILES))
+
+ /* Get the file and put it in the IFS for processing                    */
+             AFGETIFS   RMTPATH(&RMTFILE) IFSPATH(&IFSPATH)
+             MONMSG     MSGID(UFT9800 UFT9900) EXEC(DO)
+             CALLSUBR   SUBR(ERROR)
+             GOTO       CMDLBL(END)
+             ENDDO
+
+             DLYJOB     DLY(5)
+
+ /* Move the file to: /TN2026021289684xml/inb/done             */
+             AFRENAME   OBJPATH(&RMTFILE) NEWPATH(&RMTDIRB)
+
+ /* Get next file                                                */
+             GOTO       CMDLBL(GET_FILE)
+
+ END_FILES:
+             AFENDFTP
+             MONMSG     MSGID(UFT0000)
+
+ NOFTP:
+             CALL       PGM(BECTRANPRC) PARM((&IFSPATH))
+
+ /* error occurred, send email with log */
+             SUBR       SUBR(ERROR)
+             AFENDFTP
+             MONMSG     MSGID(UFT0000)
+
+             CALL       PGM(SFTPLOG) PARM(&JOBNAME &JOBNBR &JOBUSER +
+                          &PGM &NAME)
+             ENDSUBR
+
+             /*-------------------------------------------*/
+
+END:         ENDPGM

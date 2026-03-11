@@ -86,7 +86,7 @@
         exec sql include sqlca;
 
         // Copy members for data structures and prototypes
-        /copy qrpglesrc,ARCHIVEIFS_CP
+        /copy qcpysrc,ARCHIFS_CP
 
         //******************************************************************************
         // ARCHIVEIFS - External Procedure
@@ -94,17 +94,22 @@
         dcl-proc ARCHIVEIFS export;
 
         dcl-pi ARCHIVEIFS likeds(returnArchiveDS);
-          inDocumentPath varchar(100) const; // Full path to document
+          inDocumentPath char(300) const; // Full path to document
         end-pi;
 
           // Local variables
-          dcl-s documentDir varchar(90);     // Directory containing doc
-          dcl-s documentName varchar(50);    // Document filename only
-          dcl-s archiveDir varchar(100);     // Full path to archive dir
+          dcl-s documentDir varchar(90);      // Directory containing doc
+          dcl-s documentName varchar(50);     // Document filename only
+          dcl-s archiveDir char(300);         // Full path to archive dir
           dcl-s newDocumentPath varchar(150); // New path for doc
-          dcl-s lastSlashPos packed(3:0);    // Position of last slash
-          dcl-s fileExists ind;              // Document exists check
-          dcl-s archiveExists ind;           // Archive folder exists
+          dcl-s lastSlashPos packed(3:0);     // Position of last slash
+          dcl-s fileExists ind;               // Document exists check
+          dcl-s archiveExists ind;            // Archive folder exists
+          dcl-s destExists ind;               // Destination file exists
+          dcl-s timestamp char(26);           // Timestamp for unique name
+          dcl-s baseFileName varchar(50);     // Filename without extension
+          dcl-s fileExtension varchar(10);    // File extension
+          dcl-s dotPos packed(3:0);           // Position of last dot
           dcl-ds returnDS likeds(returnArchiveDS);
 
           // Initialize return structure
@@ -126,7 +131,7 @@
             select case when count(*) > 0 then '1' else '0' end
             into :fileExists
             from TABLE(QSYS2.IFS_OBJECT_STATISTICS(
-              START_PATH_NAME => :inDocumentPath,
+              START_PATH_NAME => trim(:inDocumentPath),
               SUBTREE_DIRECTORIES => 'NO'
             ))
             where OBJECT_TYPE = '*STMF'
@@ -155,17 +160,17 @@
             select case when count(*) > 0 then '1' else '0' end
             into :archiveExists
             from TABLE(QSYS2.IFS_OBJECT_STATISTICS(
-              START_PATH_NAME => :archiveDir,
+              START_PATH_NAME => trim(:archiveDir),
               SUBTREE_DIRECTORIES => 'NO'
             ))
             where OBJECT_TYPE = '*DIR'
-              and PATH_NAME = :archiveDir;
+              and PATH_NAME = trim(:archiveDir);
 
           // If archive directory doesn't exist, create it
           if SQLCODE <> 0 or archiveExists = *off;
             exec sql
               call QSYS2.QCMDEXC('MKDIR DIR(''' ||
-                                :archiveDir || ''')');
+                                trim(:archiveDir) || ''')');
 
             if SQLCODE <> 0;
               returnDS.ErrorMessage = 'Failed to create archive ' +
@@ -180,10 +185,48 @@
           newDocumentPath = %trim(archiveDir) + '/' +
                            %trim(documentName);
 
+          // Check if destination file already exists
+          exec sql
+            select case when count(*) > 0 then '1' else '0' end
+            into :destExists
+            from TABLE(QSYS2.IFS_OBJECT_STATISTICS(
+              START_PATH_NAME => trim(:newDocumentPath),
+              SUBTREE_DIRECTORIES => 'NO'
+            ))
+            where OBJECT_TYPE = '*STMF'
+              and PATH_NAME = trim(:newDocumentPath);
+
+          // If destination exists, append timestamp to filename
+          if SQLCODE = 0 and destExists = *on;
+            // Get current timestamp
+            timestamp = %char(%timestamp());
+            // Remove special characters: YYYY-MM-DD-HH.MM.SS.mmmmmm
+            // Convert to: YYYYMMDD_HHMMSS
+            timestamp = %subst(timestamp:1:4) + %subst(timestamp:6:2) +
+                       %subst(timestamp:9:2) + '_' +
+                       %subst(timestamp:12:2) + %subst(timestamp:15:2) +
+                       %subst(timestamp:18:2);
+
+            // Split filename into base and extension
+            dotPos = %scanr('.' : documentName);
+            if dotPos > 0;
+              baseFileName = %subst(documentName : 1 : dotPos - 1);
+              fileExtension = %subst(documentName : dotPos);
+              newDocumentPath = %trim(archiveDir) + '/' +
+                               %trim(baseFileName) + '_' +
+                               %trim(timestamp) + %trim(fileExtension);
+            else;
+              // No extension, just append timestamp
+              newDocumentPath = %trim(archiveDir) + '/' +
+                               %trim(documentName) + '_' +
+                               %trim(timestamp);
+            endif;
+          endif;
+
           // Move document to archive folder
           exec sql
-            call QSYS2.QCMDEXC('MOV OBJ(''' || :inDocumentPath ||
-                              ''') TOOBJ(''' || :newDocumentPath ||
+            call QSYS2.QCMDEXC('MOV OBJ(''' || trim(:inDocumentPath) ||
+                              ''') TOOBJ(''' || trim(:newDocumentPath) ||
                               ''')');
 
           if SQLCODE <> 0;
