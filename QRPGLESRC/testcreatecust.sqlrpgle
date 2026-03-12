@@ -1,10 +1,11 @@
 **FREE
 //===========================================================================
 // Program: TESTCREATECUST
-// Description: Simple test program for CREATECUST
+// Description: Simple test program for CREATECUST service program
 //
 // Purpose:
-//   Test the CREATECUST program by calling it with a GUID from BECCUSTP
+//   Test the CREATECUST service program by calling it with a GUID from
+//   BECCUSTP
 //
 // Usage:
 //   1. Find a GUID from BECCUSTP table that needs processing
@@ -12,12 +13,11 @@
 //   3. Check results in AR tables and BECCUSTP status
 //===========================================================================
 
-Ctl-Opt DftActGrp(*No) ActGrp(*New) Option(*SrcStmt:*NoDebugIo);
+Ctl-Opt DftActGrp(*No) ActGrp(*New) Option(*SrcStmt:*NoDebugIo)
+        BndDir('ECBIND');
 
-// Prototype for CREATECUST program
-Dcl-PR CreateCustomer ExtPgm('CREATECUST');
-  pGUID Char(36) Const;
-End-PR;
+// Copy member for CreateCustomer procedure prototype
+/COPY qcpysrc,CREATECUST_CP
 
 // Variables
 Dcl-S testGUID Char(36);

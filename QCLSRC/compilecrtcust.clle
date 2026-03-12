@@ -1,0 +1,95 @@
+             PGM
+
+             /* ========================================================= */
+             /* Compile CREATECUST Service Program and Related Programs  */
+             /* ========================================================= */
+
+             SNDPGMMSG  MSG('Starting CREATECUST compilation...') +
+                        TOPGMQ(*EXT)
+
+             /* Step 1: Create the service program module */
+             CRTSQLRPGI OBJ(JAMIEDEV/CREATECUST) +
+                        SRCFILE(JAMIEDEV/QRPGLESRC) +
+                        SRCMBR(CREATECUST) +
+                        OBJTYPE(*MODULE) +
+                        COMMIT(*NONE) +
+                        DBGVIEW(*SOURCE) +
+                        REPLACE(*YES)
+
+             MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(ERROR1))
+
+             SNDPGMMSG  MSG('Module CREATECUST created successfully') +
+                        TOPGMQ(*EXT)
+
+             /* Step 2: Create the service program */
+             CRTSRVPGM  SRVPGM(JAMIEDEV/CREATECUST) +
+                        MODULE(JAMIEDEV/CREATECUST) +
+                        EXPORT(*ALL) +
+                        ACTGRP(*CALLER) +
+                        BNDDIR(ECBIND) +
+                        REPLACE(*YES) +
+                        TEXT('Customer Creation Service Program')
+
+             MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(ERROR2))
+
+             SNDPGMMSG  MSG('Service program CREATECUST created') +
+                        TOPGMQ(*EXT)
+
+             /* Step 3: Compile wrapper program (optional) */
+             CRTSQLRPGI OBJ(JAMIEDEV/CREATECUST_PGM) +
+                        SRCFILE(JAMIEDEV/QRPGLESRC) +
+                        SRCMBR(CREATECUST_PGM) +
+                        COMMIT(*NONE) +
+                        DBGVIEW(*SOURCE) +
+                        REPLACE(*YES)
+
+             MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(ERROR3))
+
+             SNDPGMMSG  MSG('Wrapper program created successfully') +
+                        TOPGMQ(*EXT)
+
+             /* Step 4: Compile test program */
+             CRTSQLRPGI OBJ(JAMIEDEV/TESTCREATECUST) +
+                        SRCFILE(JAMIEDEV/QRPGLESRC) +
+                        SRCMBR(TESTCREATECUST) +
+                        COMMIT(*NONE) +
+                        DBGVIEW(*SOURCE) +
+                        REPLACE(*YES)
+
+             MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(ERROR4))
+
+             SNDPGMMSG  MSG('Test program created successfully') +
+                        TOPGMQ(*EXT)
+
+             SNDPGMMSG  MSG('All compilations completed successfully!') +
+                        TOPGMQ(*EXT)
+
+             GOTO       CMDLBL(ENDPGM)
+
+ ERROR1:     SNDPGMMSG  MSG('Error creating CREATECUST module') +
+                        TOPGMQ(*EXT)
+             GOTO       CMDLBL(ENDPGM)
+
+ ERROR2:     SNDPGMMSG  MSG('Error creating CREATECUST service program') +
+                        TOPGMQ(*EXT)
+             GOTO       CMDLBL(ENDPGM)
+
+ ERROR3:     SNDPGMMSG  MSG('Error creating wrapper program') +
+                        TOPGMQ(*EXT)
+             GOTO       CMDLBL(COMPTEST)
+
+ ERROR4:     SNDPGMMSG  MSG('Error creating test program') +
+                        TOPGMQ(*EXT)
+             GOTO       CMDLBL(ENDPGM)
+
+ COMPTEST:   /* Continue to test even if wrapper failed */
+             CRTSQLRPGI OBJ(JAMIEDEV/TESTCREATECUST) +
+                        SRCFILE(JAMIEDEV/QRPGLESRC) +
+                        SRCMBR(TESTCREATECUST) +
+                        COMMIT(*NONE) +
+                        DBGVIEW(*SOURCE) +
+                        REPLACE(*YES)
+
+             MONMSG     MSGID(CPF0000)
+
+ ENDPGM:     ENDPGM

@@ -67,8 +67,12 @@
         //
         //===========================================================================
 
-        Ctl-Opt DftActGrp(*No) ActGrp(*New) Option(*SrcStmt:*NoDebugIo)
-                BndDir('ECBIND');
+        Ctl-Opt NoMain;
+        Ctl-Opt Option(*SrcStmt:*NoDebugIo);
+        Ctl-Opt BndDir('ECBIND');
+
+        // Copy member for procedure prototype
+        /COPY qcpysrc,CREATECUST_CP
 
         // Copy member for sendEmail
         /COPY qcpysrc,SDEMAIL_CP
@@ -79,11 +83,6 @@
         pType Char(2);
         pValid Char(1);
         End-PR;
-
-        // Entry parameters
-        Dcl-PI *N;
-        pGUID Char(36) Const;
-        End-PI;
 
         // Data structure for BECCUSTP record - automatically matches table
         Dcl-DS BeccustpDS ExtName('BECCUSTP') Qualified End-DS;
@@ -213,8 +212,14 @@
         Dcl-S TAXS_JURIS_N Packed(20:0);        // AvaTax jurisdiction numeric
         Dcl-S BNKINFAUTH Char(1);               // Bank info authorization
 
-        // Main Processing
-        *InLR = *On;
+        //===========================================================================
+        //              EXPORTED PROCEDURE IMPLEMENTATION
+        //===========================================================================
+
+        Dcl-Proc CreateCustomer Export;
+        Dcl-PI *N;
+          pGUID Char(36) Const;
+        End-PI;
 
         // Store passed GUID
         wGUID = pGUID;
@@ -270,7 +275,11 @@
         Dsply %Trim(wGUID);
         EndIf;
 
-        Return;
+        End-Proc CreateCustomer;
+
+        //===========================================================================
+        //              INTERNAL PROCEDURES
+        //===========================================================================
 
         //===========================================================================
         // Procedure: InsertCustomer
