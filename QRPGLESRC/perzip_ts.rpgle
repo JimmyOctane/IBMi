@@ -20,20 +20,37 @@
         // PERZIP  - run a command
             dcl-s someReturnField char(80) inz;
 
-         /COPY qrpglesrc,PERZIP_CP
+         /COPY qcpysrc,PERZIP_CP
 
 
          // run command
         // Initialize test data
         reset addressParmDS;
-        addressParmDS.inCity = 'STREATOR';
-        addressParmDS.inState = 'IL';
-        addressParmDS.inzip = '61364';
+        addressParmDS.inAddress1 = 'GREENVILLE MEMORIAL HOSPITAL';
+        addressParmDS.inAddress2 = 'GATE 1 701 GROVE RD';
+        addressParmDS.inAddress3 = 'SUITE 114 BMB158';
+        addressParmDS.inCity = 'GREENVILLE';
+        addressParmDS.inState = 'SC';
+        addressParmDS.inzip = '29605';
         addressParmDS.returncase = 'U';
-        addressParmDS.maxAddressLength = '30';
+        addressParmDS.maxAddressLength = 30;
+        addressParmDS.runFullAddressCheck = 'Y';
         addressParmDS.addressType = 'S';
-      // Call the validation service
-        addressParmDS = validateAddress(addressParmDS);
+        // ------------------------------------------------------------
+        // Address Type Reference
+        //   M = Mailing Address
+        //       - Used for correspondence only
+        //       - Can be PO Box or non-physical location
+        //       - Not guaranteed to be deliverable for shipments
+        //
+        //   S = Street / Shipping Address
+        //       - Must be a physical, serviceable location
+        //       - Required for deliveries and geocoding
+        //       - Used for street-level match indicators (E/S/P/Z/N/U)
+        // ------------------------------------------------------------
+
+         // Call the validation service
+         addressParmDS = validateAddress(addressParmDS);
 
 
          *inlr = *on;

@@ -1,69 +1,67 @@
+            // ------------------------------------------------------------------
+            // PROGRAM NAME - PERZIP
+            // ------------------------------------------------------------------
+            // COPYRIGHT East Coast Metals
+            // ------------------------------------------------------------------
+            // USPS Address Validation & ZIP+4 Lookup Service
+            // NOMAIN service program providing comprehensive address validation,
+            // standardization, and ZIP+4 lookup using USPS certified ML219403
+            // and ML218202 validation engines with multiple address matching
+            // and ECZIPCODE database integration
+            // ------------------------------------------------------------------
+            // PURPOSE:
+            //    USPS CASS certification compliance for address validation
+            //    ZIP+4 lookup and standardization
+            //    Multiple address matching with up to 100 results
+            //    International address detection and bypass
+            //    Automatic ECZIPCODE database maintenance
+            //    DPV (Delivery Point Validation) processing
+            //    LACS (Locatable Address Conversion System) updates
+            //    Carrier route and delivery point assignment
+            //    Business/residential classification
+            //    Congressional district and FIPS code assignment
+            //
+            // SPECIAL NOTES:
+            //    External Dependencies:
+            //      Legacy Programs:
+            //        - ML219403: USPS CASS-certified address validation engine
+            //        - ML218202: ZIP code lookup service for city/county information
+            //      Database Tables:
+            //        - ECZIPCODE: ZIP code master table for validation and storage
+            //      Copy Members:
+            //        - PERZIP_CP: Common data structures and prototypes
+            //
+            // ----------------------------------------------------------------
+            // PER/ZIP4 ERROR CODE DESCRIPTIONS:
+            // ----------------------------------------------------------------
+            // ADR - insufficient address information
+            // ALT - address changed from alternate to base
+            // ANS - address not on street
+            // BNC - PO Box not found in city (finance number)
+            // BNR - Box missing or not found in RR/HC (default taken)
+            // DBE - USPS database exception (firm required to make match)
+            // DBX - US Postal Service database has expired
+            // DPV - Delivery Point Validation failed
+            // EWS - Early Warning System (EWS) match
+            // LLK - address changed by LACSLink processing
+            // LLN - insufficient last line (city, state, ZIP) information
+            // MLT - multiple addresses found
+            // NDA - nondelivery address
+            // PGM - program error
+            // PWX - Password has expired
+            // RNF - RR/HC number not found in city (finance number)
+            // SIZ - Address cannot be abbreviated to given length
+            // SLK - address changed by SuiteLink processing
+            // SNF - street not found in city (finance number)
+            // STR - street name not found
+            // XST - ZIP+4 database member missing for state
+            // ----------------------------------------------------------------
+            // ----------------------------------------------------------------
+            // TASK       DATE   ID  DESCRIPTION
+            // ---------- ------ --- -----------------------------------------
+            // JJF   3182 010826 JJF created program
+            // ----------------------------------------------------------------
 
-
-       // ------------------------------------------------------------------
-       // PROGRAM NAME - PERZIP
-       // ------------------------------------------------------------------
-       // COPYRIGHT East Coast Metals
-       // ------------------------------------------------------------------
-       // USPS Address Validation & ZIP+4 Lookup Service
-       // NOMAIN service program providing comprehensive address validation,
-       // standardization, and ZIP+4 lookup using USPS certified ML219403
-       // and ML218202 validation engines with multiple address matching
-       // and ECZIPCODE database integration
-       // ------------------------------------------------------------------
-       // PURPOSE:
-       //    USPS CASS certification compliance for address validation
-       //    ZIP+4 lookup and standardization
-       //    Multiple address matching with up to 100 results
-       //    International address detection and bypass
-       //    Automatic ECZIPCODE database maintenance
-       //    DPV (Delivery Point Validation) processing
-       //    LACS (Locatable Address Conversion System) updates
-       //    Carrier route and delivery point assignment
-       //    Business/residential classification
-       //    Congressional district and FIPS code assignment
-       //
-       // SPECIAL NOTES:
-       //    External Dependencies:
-       //      Legacy Programs:
-       //        - ML219403: USPS CASS-certified address validation engine
-       //        - ML218202: ZIP code lookup service for city/county information
-       //      Database Tables:
-       //        - ECZIPCODE: ZIP code master table for validation and storage
-       //      Copy Members:
-       //        - PERZIP_CP: Common data structures and prototypes
-       //
-       // ----------------------------------------------------------------
-       // PER/ZIP4 ERROR CODE DESCRIPTIONS:
-       // ----------------------------------------------------------------
-       // ADR - insufficient address information
-       // ALT - address changed from alternate to base
-       // ANS - address not on street
-       // BNC - PO Box not found in city (finance number)
-       // BNR - Box missing or not found in RR/HC (default taken)
-       // DBE - USPS database exception (firm required to make match)
-       // DBX - US Postal Service database has expired
-       // DPV - Delivery Point Validation failed
-       // EWS - Early Warning System (EWS) match
-       // LLK - address changed by LACSLink processing
-       // LLN - insufficient last line (city, state, ZIP) information
-       // MLT - multiple addresses found
-       // NDA - nondelivery address
-       // PGM - program error
-       // PWX - Password has expired
-       // RIC - Residential/Commercial Indicator Conflict (RDI mismatch)
-       // RNF - RR/HC number not found in city (finance number)
-       // SIZ - Address cannot be abbreviated to given length
-       // SLK - address changed by SuiteLink processing
-       // SNF - street not found in city (finance number)
-       // STR - street name not found
-       // XST - ZIP+4 database member missing for state
-       // ----------------------------------------------------------------
-       // ----------------------------------------------------------------
-       // TASK       DATE   ID  DESCRIPTION
-       // ---------- ------ --- -----------------------------------------
-       // JJF   3182 010826 JJF created program
-       // ----------------------------------------------------------------
 
             // Control Options
             Ctl-Opt NoMain;                         // Service program (no main)
@@ -76,7 +74,7 @@
             // SQL Communication Area
             Exec SQL Include SQLCA;
 
-          /COPY qrpglesrc,PERZIP_CP
+          /COPY qcpysrc,PERZIP_CP
 
 
             // Non-US Address Detection Service
@@ -152,7 +150,7 @@
 
             dcl-ds ML219403_DS qualified;
                CaseControl                 char(1);
-               MaxAddressLength            char(2);
+               MaxAddressLength            zoned(2:0);
                ErrorCode                   char(3);
                ErrorMessage                char(80);
                CassFileName                char(10);
@@ -260,7 +258,7 @@
             // ML219403 - Address Validation Program Prototype
             dcl-pr ML219403 extpgm('ML219403');
                CaseControl char(1);                    // CASE##
-               MaxAddressLength char(2);               // ADRL##
+               MaxAddressLength zoned(2:0);            // ADRL##
                ErrorCode char(3);                      // ECOD##
                ErrorMessage char(80);                  // EMSG##
                CassFileName char(10);                  // CASF##
@@ -458,156 +456,160 @@
                 );
             EndIf;
 
-            // Initialize all ML219403_DS fields before mapping
-            clear ML219403_DS;
 
-            // Map localAddressDS fields to ML219403_DS for ML219403 call
-            ML219403_DS.CaseControl = pAddressDS.returncase;
-            ML219403_DS.MaxAddressLength = pAddressDS.maxAddressLength ;
-            ML219403_DS.FirmName = pAddressDS.inAddressname;
-            ML219403_DS.SecondaryAddress = pAddressDS.inAddress2;
-            ML219403_DS.DeliveryAddress = pAddressDS.inAddress1;
-            ML219403_DS.LastLine = %trim(pAddressDS.inCity) + ' ' +
-                                   %trim(pAddressDS.inState) + ' ' +
-                                   %trim(pAddressDS.inZip);
-            ML219403_DS.City = pAddressDS.inCity;
-            ML219403_DS.State = pAddressDS.inState;
-            ML219403_DS.ZipCode = %subst(pAddressDS.inZip:1:5);  // 5-digit ZIP
+            if paddressDS.runFullAddressCheck = 'Y';
 
-            // Call ML219403 to get address validation
-            ML219403(
-                ML219403_DS.CaseControl:
-                ML219403_DS.MaxAddressLength:
-                ML219403_DS.ErrorCode:
-                ML219403_DS.ErrorMessage:
-                ML219403_DS.CassFileName:
-                ML219403_DS.DatabaseFlag:
-                ML219403_DS.URBName:
-                ML219403_DS.FirmName:
-                ML219403_DS.SecondaryAddress:
-                ML219403_DS.DeliveryAddress:
-                ML219403_DS.LastLine:
-                ML219403_DS.StreetNumber:
-                ML219403_DS.PreDirection:
-                ML219403_DS.StreetName:
-                ML219403_DS.StreetSuffix:
-                ML219403_DS.PostDirection:
-                ML219403_DS.SecAddressType:
-                ML219403_DS.SecAddressNumber:
-                ML219403_DS.Sec2AddressType:
-                ML219403_DS.Sec2AddressNumber:
-                ML219403_DS.ExtraneousInfo:
-                ML219403_DS.City:
-                ML219403_DS.CityAbbreviation:
-                ML219403_DS.State:
-                ML219403_DS.ZipCode:
-                ML219403_DS.Zip4:
-                ML219403_DS.DeliveryPoint:
-                ML219403_DS.CarrierRoute:
-                ML219403_DS.CountyName:
-                ML219403_DS.CountyStateCode:
-                ML219403_DS.FIPSCountyNumber:
-                ML219403_DS.FIPSStateNumber:
-                ML219403_DS.CongressionalDistNumber:
-                ML219403_DS.CongressionalDistStateCode:
-                ML219403_DS.EWSFlag:
-                ML219403_DS.LACSIndicator:
-                ML219403_DS.RecordTypeCode:
-                ML219403_DS.DefaultFlag:
-                ML219403_DS.PMBDesignation:
-                ML219403_DS.StreetMatchLevelInd:
-                ML219403_DS.SecAddressFlag:
-                ML219403_DS.ELOTSequenceNumber:
-                ML219403_DS.ELOTAscDescCode:
-                ML219403_DS.DPVIndicator:
-                ML219403_DS.DPVCMRAIndicator:
-                ML219403_DS.DPVFootPrintInd:
-                ML219403_DS.DPVFootNotes:
-                ML219403_DS.OccupancyCode:
-                ML219403_DS.DirectoryDPVFlag:
-                ML219403_DS.IntelligenceCode:
-                ML219403_DS.RDICode:
-                ML219403_DS.BusinessResidentialInd:
-                ML219403_DS.LacsLinkIndicator:
-                ML219403_DS.LacsLinkReturnCode:
-                ML219403_DS.SuiteLinkIndicator:
-                ML219403_DS.SuiteLinkReturnCode:
-                ML219403_DS.ReturnLatLon:
-                ML219403_DS.LatLonMatchQuality:
-                ML219403_DS.Latitude:
-                ML219403_DS.Longitude:
-                ML219403_DS.MSA2000Code:
-                ML219403_DS.MCD2000Code:
-                ML219403_DS.CDP2000Code:
-                ML219403_DS.CensusTract:
-                ML219403_DS.CensusBlockGroup:
-                ML219403_DS.CurrentMSACode:
-                ML219403_DS.CurrentMICRSACode:
-                ML219403_DS.CurrentMetDivCode:
-                ML219403_DS.CurrentConSACode:
-                ML219403_DS.ZipClass:
-                ML219403_DS.TimeZone:
-                ML219403_DS.TelephoneAreaCode1:
-                ML219403_DS.TelephoneAreaCode2:
-                ML219403_DS.TelephoneAreaCode3:
-                // arrays
-                ML219403_DS.MultSecAddr:
-                ML219403_DS.MultDelAddr:
-                ML219403_DS.MultStreetNo:
-                ML219403_DS.MultPreDir:
-                ML219403_DS.MultStreetName:
-                ML219403_DS.MultStreetSuffix:
-                ML219403_DS.MultPostDir:
-                ML219403_DS.MultAptType:
-                ML219403_DS.MultAptNumber:
-                ML219403_DS.MultCityName:
-                ML219403_DS.MultCityAbbr:
-                ML219403_DS.MultStateCode:
-                ML219403_DS.MultZipCode:
-                ML219403_DS.MultZip4:
-                ML219403_DS.MultLastLine:
-                ML219403_DS.MultCarrierRte:
-                ML219403_DS.MultDelPoint:
-                ML219403_DS.MultCountyName:
-                ML219403_DS.MultCountyStateCD:
-                ML219403_DS.MultFIPSState:
-                ML219403_DS.MultFIPSCounty:
-                ML219403_DS.MultCongDist:
-                ML219403_DS.MultLACSInd:
-                ML219403_DS.MultStrMatchLev:
-                ML219403_DS.MultSecAdrFlag
-            );
+              // Initialize all ML219403_DS fields before mapping
+              clear ML219403_DS;
 
-            // Map ML219403_DS results back to localAddressDS (override if
-            // validation successful)
-            If ML219403_DS.ErrorCode = *blanks; // No errors from validation
-                localAddressDS.outAddress1 =
-                    %trim(ML219403_DS.SecondaryAddress);
-                localAddressDS.outAddress2 =
-                    %trim(ML219403_DS.DeliveryAddress);
-                localAddressDS.outCity = %trim(ML219403_DS.City);
-                localAddressDS.outState = %trim(ML219403_DS.State);
-                localAddressDS.outZip = %trim(ML219403_DS.ZipCode);
-                if ML219403_DS.Zip4 <> *blanks;
-                    localAddressDS.outZip = %trim(localAddressDS.outZip) + '-'
-                                          + %trim(ML219403_DS.Zip4);
-                endif;
-                localAddressDS.errorCode = *blanks;
-                localAddressDS.errorMessage = *blanks;
-            Else; // Use ML218202 results if ML219403 had errors
-                // Preserve existing output values if they exist, otherwise use input
-                if localAddressDS.outCity = *blanks;
-                    localAddressDS.outCity = localAddressDS.inCity;
-                endif;
-                if localAddressDS.outState = *blanks;
-                    localAddressDS.outState = localAddressDS.inState;
-                endif;
-                if localAddressDS.outZip = *blanks;
-                    localAddressDS.outZip = localAddressDS.inZip;
-                endif;
-                localAddressDS.errorCode = ML219403_DS.ErrorCode;
-                localAddressDS.errorMessage = %trim(ML219403_DS.ErrorMessage);
-            EndIf;
+              // Map localAddressDS fields to ML219403_DS for ML219403 call
+              ML219403_DS.CaseControl = pAddressDS.returncase;
+              ML219403_DS.MaxAddressLength = pAddressDS.maxAddressLength ;
+              ML219403_DS.FirmName = pAddressDS.inAddressname;
+              ML219403_DS.SecondaryAddress = pAddressDS.inAddress2;
+              ML219403_DS.DeliveryAddress = pAddressDS.inAddress1;
+              ML219403_DS.LastLine = %trim(pAddressDS.inCity) + ' ' +
+                                    %trim(pAddressDS.inState) + ' ' +
+                                    %trim(pAddressDS.inZip);
+              ML219403_DS.City = pAddressDS.inCity;
+              ML219403_DS.State = pAddressDS.inState;
+              ML219403_DS.ZipCode = %subst(pAddressDS.inZip:1:5);  // 5-digit ZIP
+
+              // Call ML219403 to get address validation
+              ML219403(
+                  ML219403_DS.CaseControl:
+                  ML219403_DS.MaxAddressLength:
+                  ML219403_DS.ErrorCode:
+                  ML219403_DS.ErrorMessage:
+                  ML219403_DS.CassFileName:
+                  ML219403_DS.DatabaseFlag:
+                  ML219403_DS.URBName:
+                  ML219403_DS.FirmName:
+                  ML219403_DS.SecondaryAddress:
+                  ML219403_DS.DeliveryAddress:
+                  ML219403_DS.LastLine:
+                  ML219403_DS.StreetNumber:
+                  ML219403_DS.PreDirection:
+                  ML219403_DS.StreetName:
+                  ML219403_DS.StreetSuffix:
+                  ML219403_DS.PostDirection:
+                  ML219403_DS.SecAddressType:
+                  ML219403_DS.SecAddressNumber:
+                  ML219403_DS.Sec2AddressType:
+                  ML219403_DS.Sec2AddressNumber:
+                  ML219403_DS.ExtraneousInfo:
+                  ML219403_DS.City:
+                  ML219403_DS.CityAbbreviation:
+                  ML219403_DS.State:
+                  ML219403_DS.ZipCode:
+                  ML219403_DS.Zip4:
+                  ML219403_DS.DeliveryPoint:
+                  ML219403_DS.CarrierRoute:
+                  ML219403_DS.CountyName:
+                  ML219403_DS.CountyStateCode:
+                  ML219403_DS.FIPSCountyNumber:
+                  ML219403_DS.FIPSStateNumber:
+                  ML219403_DS.CongressionalDistNumber:
+                  ML219403_DS.CongressionalDistStateCode:
+                  ML219403_DS.EWSFlag:
+                  ML219403_DS.LACSIndicator:
+                  ML219403_DS.RecordTypeCode:
+                  ML219403_DS.DefaultFlag:
+                  ML219403_DS.PMBDesignation:
+                  ML219403_DS.StreetMatchLevelInd:
+                  ML219403_DS.SecAddressFlag:
+                  ML219403_DS.ELOTSequenceNumber:
+                  ML219403_DS.ELOTAscDescCode:
+                  ML219403_DS.DPVIndicator:
+                  ML219403_DS.DPVCMRAIndicator:
+                  ML219403_DS.DPVFootPrintInd:
+                  ML219403_DS.DPVFootNotes:
+                  ML219403_DS.OccupancyCode:
+                  ML219403_DS.DirectoryDPVFlag:
+                  ML219403_DS.IntelligenceCode:
+                  ML219403_DS.RDICode:
+                  ML219403_DS.BusinessResidentialInd:
+                  ML219403_DS.LacsLinkIndicator:
+                  ML219403_DS.LacsLinkReturnCode:
+                  ML219403_DS.SuiteLinkIndicator:
+                  ML219403_DS.SuiteLinkReturnCode:
+                  ML219403_DS.ReturnLatLon:
+                  ML219403_DS.LatLonMatchQuality:
+                  ML219403_DS.Latitude:
+                  ML219403_DS.Longitude:
+                  ML219403_DS.MSA2000Code:
+                  ML219403_DS.MCD2000Code:
+                  ML219403_DS.CDP2000Code:
+                  ML219403_DS.CensusTract:
+                  ML219403_DS.CensusBlockGroup:
+                  ML219403_DS.CurrentMSACode:
+                  ML219403_DS.CurrentMICRSACode:
+                  ML219403_DS.CurrentMetDivCode:
+                  ML219403_DS.CurrentConSACode:
+                  ML219403_DS.ZipClass:
+                  ML219403_DS.TimeZone:
+                  ML219403_DS.TelephoneAreaCode1:
+                  ML219403_DS.TelephoneAreaCode2:
+                  ML219403_DS.TelephoneAreaCode3:
+                  // arrays
+                  ML219403_DS.MultSecAddr:
+                  ML219403_DS.MultDelAddr:
+                  ML219403_DS.MultStreetNo:
+                  ML219403_DS.MultPreDir:
+                  ML219403_DS.MultStreetName:
+                  ML219403_DS.MultStreetSuffix:
+                  ML219403_DS.MultPostDir:
+                  ML219403_DS.MultAptType:
+                  ML219403_DS.MultAptNumber:
+                  ML219403_DS.MultCityName:
+                  ML219403_DS.MultCityAbbr:
+                  ML219403_DS.MultStateCode:
+                  ML219403_DS.MultZipCode:
+                  ML219403_DS.MultZip4:
+                  ML219403_DS.MultLastLine:
+                  ML219403_DS.MultCarrierRte:
+                  ML219403_DS.MultDelPoint:
+                  ML219403_DS.MultCountyName:
+                  ML219403_DS.MultCountyStateCD:
+                  ML219403_DS.MultFIPSState:
+                  ML219403_DS.MultFIPSCounty:
+                  ML219403_DS.MultCongDist:
+                  ML219403_DS.MultLACSInd:
+                  ML219403_DS.MultStrMatchLev:
+                  ML219403_DS.MultSecAdrFlag
+              );
+
+              // Map ML219403_DS results back to localAddressDS (override if
+              // validation successful)
+              If ML219403_DS.ErrorCode = *blanks; // No errors from validation
+                  localAddressDS.outAddress1 =
+                      %trim(ML219403_DS.DeliveryAddress);
+                  localAddressDS.outAddress2 =
+                      %trim(ML219403_DS.SecondaryAddress);
+                  localAddressDS.outCity = %trim(ML219403_DS.City);
+                  localAddressDS.outState = %trim(ML219403_DS.State);
+                  localAddressDS.outZip = %trim(ML219403_DS.ZipCode);
+                  if ML219403_DS.Zip4 <> *blanks;
+                      localAddressDS.outZip = %trim(localAddressDS.outZip) + '-'
+                                            + %trim(ML219403_DS.Zip4);
+                  endif;
+                  localAddressDS.errorCode = *blanks;
+                  localAddressDS.errorMessage = *blanks;
+              Else; // Use ML218202 results if ML219403 had errors
+                  // Preserve existing output values if they exist, otherwise use input
+                  if localAddressDS.outCity = *blanks;
+                      localAddressDS.outCity = localAddressDS.inCity;
+                  endif;
+                  if localAddressDS.outState = *blanks;
+                      localAddressDS.outState = localAddressDS.inState;
+                  endif;
+                  if localAddressDS.outZip = *blanks;
+                      localAddressDS.outZip = localAddressDS.inZip;
+                  endif;
+                  localAddressDS.errorCode = ML219403_DS.ErrorCode;
+                  localAddressDS.errorMessage = %trim(ML219403_DS.ErrorMessage);
+              EndIf;
+            endif;
 
             return localAddressDS;
 
@@ -630,9 +632,6 @@
           // MLT - Multiple addresses found
           // NDR - Non\Zdelivery address
           // PGM - Program error
-          // RIC - Residential/Commercial Indicator Conflict (RDI mismatch between
-          //       input classification and USPS RDI classification - not fatal,
-          //       address can still be standardized)
           // RNF - RR/HC not found in city
           // SNF - Street not found in city
           // STR - Street name not found
@@ -769,28 +768,6 @@
           end-proc;
 
           // -----------------------------------------------------------------------
-          // Procedure: stripNonNumeric - Remove all non-numeric characters from string
-          // -----------------------------------------------------------------------
-          dcl-proc stripNonNumeric;
-            dcl-pi *n varchar(50);
-              inputString varchar(50) const;
-            end-pi;
-            
-            dcl-s result varchar(50) inz('');
-            dcl-s i int(10);
-            dcl-s currentChar char(1);
-            
-            for i = 1 to %len(%trim(inputString));
-              currentChar = %subst(inputString:i:1);
-              if %check('0123456789':currentChar) = 0;  // Character is numeric
-                result += currentChar;
-              endif;
-            endfor;
-            
-            return result;
-          end-proc;
-
-          // -----------------------------------------------------------------------
           // Procedure: processInboundAddress - Handle inbound address parameters
           // Modernized version of legacy address squishing and field mapping logic
           // -----------------------------------------------------------------------
@@ -803,14 +780,9 @@
             dcl-s pos6 char(1);
             dcl-s pos7to10 char(4);
             dcl-s pos6to9 char(4);
-            dcl-s cleanZip varchar(50);
 
             // Initialize output structure with input values
             processedAddress = inAddressParms;
-
-            // Strip non-numeric characters from ZIP code first
-            cleanZip = stripNonNumeric(%trim(processedAddress.inZip));
-            processedAddress.inZip = cleanZip;
 
             // First check address and squish if separated
             // If ADDR1 has data, ADDR2 is blank, but ADDR3 has data,
@@ -822,7 +794,7 @@
               clear processedAddress.inAddress1;
             endif;
 
-            // Parse ZIP code positions for later use (now using cleaned ZIP)
+            // Parse ZIP code positions for later use
             if %len(%trim(processedAddress.inZip)) >= 6;
               pos6 = %subst(processedAddress.inZip:6:1);
               if %len(%trim(processedAddress.inZip)) >= 10;
@@ -836,33 +808,33 @@
             // Address field mapping based on MaxAddressLength
             select;
               // For 60-character addresses, combine ADDR2 and ADDR3 for delivery
-              when processedAddress.maxAddressLength = '60';
+              when processedAddress.maxAddressLength = 60;
                 processedAddress.outAddress2 =
                 %trim(processedAddress.inAddress2)
                 + ' ' +
                 %trim(processedAddress.inAddress3);
 
               // Standard address mapping with various combinations
-              when processedAddress.maxAddressLength <> '60'
+              when processedAddress.maxAddressLength <> 60
                    and processedAddress.inAddress3 <> *blanks
                    and processedAddress.inAddress2 <> *blanks;
                 processedAddress.outAddress2 = processedAddress.inAddress3;
                 processedAddress.outAddress1 = processedAddress.inAddress2;
 
-              when processedAddress.maxAddressLength <> '60'
+              when processedAddress.maxAddressLength <> 60
                    and processedAddress.inAddress3 = *blanks
                    and processedAddress.inAddress2 <> *blanks
                    and processedAddress.inAddress1 <> *blanks;
                 processedAddress.outAddress2 = processedAddress.inAddress2;
                 processedAddress.outAddress1 = processedAddress.inAddress1;
 
-              when processedAddress.maxAddressLength <> '60'
+              when processedAddress.maxAddressLength <> 60
                    and processedAddress.inAddress3 = *blanks
                    and processedAddress.inAddress2 = *blanks
                    and processedAddress.inAddress1 <> *blanks;
                 processedAddress.outAddress2 = processedAddress.inAddress1;
 
-              when processedAddress.maxAddressLength <> '60'
+              when processedAddress.maxAddressLength <> 60
                    and processedAddress.inAddress3 <> *blanks
                    and processedAddress.inAddress2 = *blanks
                    and processedAddress.inAddress1 <> *blanks;
@@ -874,15 +846,29 @@
             processedAddress.outCity = processedAddress.inCity;
             processedAddress.outState = processedAddress.inState;
 
-            // Handle ZIP code formatting (now with numeric-only ZIP)
+            // Handle ZIP code formatting
             select;
-              // 9-digit ZIP: split into 5-digit + hyphen + 4-digit
-              when %len(%trim(processedAddress.inZip)) = 9;
+              // ZIP has hyphen in position 6 with ZIP+4 data
+              when pos6 = '-' and pos7to10 <> *blanks;
                 processedAddress.outZip = %subst(processedAddress.inZip:1:5)
                                         + '-'
-                                        + %subst(processedAddress.inZip:6:4);
+                                        + pos7to10;
 
-              // 5-digit ZIP or other lengths: use as-is
+              // ZIP has hyphen in position 6 but no ZIP+4 data
+              when pos6 = '-' and pos7to10 = *blanks;
+                processedAddress.outZip = %subst(processedAddress.inZip:1:5);
+
+              // ZIP has data in position 6 (not hyphen or space) - treat as ZIP+4
+              when pos6 <> '-' and pos6 <> ' ';
+                processedAddress.outZip = %subst(processedAddress.inZip:1:5)
+                                        + '-'
+                                        + pos6to9;
+
+              // ZIP has space in position 6 and no additional data
+              when pos6 = ' ' and pos7to10 = *blanks;
+                processedAddress.outZip = %subst(processedAddress.inZip:1:5);
+
+              // Default case - use ZIP as-is
               other;
                 processedAddress.outZip = processedAddress.inZip;
             endsl;

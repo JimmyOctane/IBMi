@@ -1,6 +1,6 @@
 
         //===========================================================================
-        // Program: WRITMCUSX
+        // Program: CRTCUST
         // Description: Customer Master Creation from BECCUSTP to AR System
         //
         // Purpose:
@@ -72,10 +72,13 @@
         Ctl-Opt BndDir('ECBIND');
 
         // Copy member for procedure prototype
-        /COPY qcpysrc,CREATECUST_CP
+        /COPY qcpysrc,CRTCUST_CP
 
         // Copy member for sendEmail
         /COPY qcpysrc,SDEMAIL_CP
+
+        // Copy member for address validation
+        /COPY qcpysrc,PERZIP_CP
 
         // Prototype for ARR5006 - Get Next Customer Number
         Dcl-PR getNextCustomerNumber ExtPgm('ARR5006');
@@ -301,23 +304,67 @@
         // Clear the global CustomerDS
         Clear CustomerDS;
 
-        // Get next customer number from ARR5006
+        // Map customer data BEFORE getting customer number
+        CustomerDS.ARNM01 = %Upper(%Trim(pBeccustp.CUSTLEGAL));  // Customer Legal Name
+        CustomerDS.ARNM03 = %Upper(%Trim(pBeccustp.CUSTCRTBY));  // User ID
+        CustomerDS.ARNM05 = %Upper(%Trim(pBeccustp.CUSTDBA));    // DBA/Sort Name
+
+        // Map mailing address
+        // ARAD01 is reserved for DBA/business name info
+        // Primary street address goes in ARAD02, secondary in ARAD03
+        CustomerDS.ARAD01 = %Upper(%Trim(pBeccustp.CUSTDBA));    // DBA/Business Name in Address 1
+        CustomerDS.ARAD02 = %Upper(%Trim(pBeccustp.ADDR1));      // Primary Street Address
+        CustomerDS.ARAD03 = %Upper(%Trim(pBeccustp.ADDR2));      // Secondary Address Line
+        CustomerDS.ARCY01 = %Upper(%Trim(pBeccustp.CITY));       // Mailing City
+        CustomerDS.ARST01 = %Upper(%Trim(pBeccustp.STATE));      // Mailing State
+        CustomerDS.ARZP15 = %Trim(pBeccustp.ZIPCODE);            // Mailing Zip
+
+        // Validate address using PERZIP service
+        ValidateCustomerAddress();
+
+        // Validate sort name for Hydros customers BEFORE duplicate check
+        ValidateSortName(CustomerDS.ARNM05);
+
+        // If sort name validation failed, skip insert
+        If Not SortNameValid;
+            RecordsSkipped += 1;
+            Dsply ('Sort name validation failed: ' + %Trim(CustomerDS.ARNM05));
+            Return;
+        EndIf;
+
+        // Progressive duplicate check:
+        // 1. Match on Zip, State, City (case-insensitive)
+        // 2. Then check address lines for actual street address match
+        Exec SQL
+            SELECT ARNO01
+            INTO :ExistingCustNo
+            FROM ARPMCUS
+            WHERE UPPER(ARZP15) = UPPER(:CustomerDS.ARZP15)
+            AND UPPER(ARST01) = UPPER(:CustomerDS.ARST01)
+            AND UPPER(ARCY01) = UPPER(:CustomerDS.ARCY01)
+            AND (
+                UPPER(ARAD01) = UPPER(:CustomerDS.ARAD01)
+                OR UPPER(ARAD02) = UPPER(:CustomerDS.ARAD02)
+                OR UPPER(ARAD03) = UPPER(:CustomerDS.ARAD03)
+            )
+            FETCH FIRST 1 ROW ONLY;
+
+        If SQLCODE = 0;
+            // Duplicate found, skip insert
+            RecordExists = *On;
+            RecordsSkipped += 1;
+            // Call duplicate handling procedure
+            HandleDuplicateCustomer(ExistingCustNo: CustomerDS);
+            Return;
+        EndIf;
+
+        // No duplicate found - NOW get next customer number from ARR5006
         newCustomerNumber = 0;
         TypeField = *Blanks;
         ValidField = *Blanks;
         getNextCustomerNumber(newCustomerNumber: TypeField: ValidField);
 
         CustomerDS.ARNO01 = newCustomerNumber;  // Customer Number from ARR5006
-        CustomerDS.ARNM01 = %Upper(%Trim(pBeccustp.CUSTLEGAL));  // Customer Legal Name
-        CustomerDS.ARNM03 = %Upper(%Trim(pBeccustp.CUSTCRTBY));  // User ID
-        CustomerDS.ARNM05 = %Upper(%Trim(pBeccustp.CUSTDBA));    // DBA/Sort Name
-
-        // Map mailing address
-        CustomerDS.ARAD01 = %Upper(%Trim(pBeccustp.ADDR1));      // Mailing Address 1
-        CustomerDS.ARAD02 = %Upper(%Trim(pBeccustp.ADDR2));      // Mailing Address 2
-        CustomerDS.ARCY01 = %Upper(%Trim(pBeccustp.CITY));       // Mailing City
-        CustomerDS.ARST01 = %Upper(%Trim(pBeccustp.STATE));      // Mailing State
-        CustomerDS.ARZP15 = %Trim(pBeccustp.ZIPCODE);    // Mailing Zip
 
         // Populate ArphbalDataDS for later use
         Clear ArphbalDataDS;
@@ -410,52 +457,17 @@
 
         OppmeraDataDS.ARNOD9 = 0;                                // Contact Control Number (default)
 
-        // Validate sort name for Hydros customers
-        ValidateSortName(CustomerDS.ARNM05);
-
-        // If sort name validation failed, skip insert
-        If Not SortNameValid;
-            RecordsSkipped += 1;
-            Dsply ('Sort name validation failed: ' + %Trim(CustomerDS.ARNM05));
-            Return;
-        EndIf;
-
-        // Progressive duplicate check:
-        // 1. Match on Zip, State, City (case-insensitive)
-        // 2. Then check address lines (skip line 1 if it's business name)
-        // 3. Check address 2 and 3 for actual street address match
+        // Insert new record (duplicate check already done above)
         Exec SQL
-            SELECT ARNO01
-            INTO :ExistingCustNo :FoundRecord
-            FROM ARPMCUS
-            WHERE UPPER(ARZP15) = UPPER(:CustomerDS.ARZP15)
-            AND UPPER(ARST01) = UPPER(:CustomerDS.ARST01)
-            AND UPPER(ARCY01) = UPPER(:CustomerDS.ARCY01)
-            AND (
-                UPPER(ARAD02) = UPPER(:CustomerDS.ARAD02)
-                OR UPPER(ARAD03) = UPPER(:CustomerDS.ARAD03)
-            )
-            FETCH FIRST 1 ROW ONLY;
-
-        If FoundRecord < 0;
-            // No match found, insert new record
-            Exec SQL
             INSERT INTO ARPMCUS
             VALUES (:CustomerDS);
 
-            If SQLCODE = 0;
+        If SQLCODE = 0;
             RecordsInserted += 1;
             Dsply ('Record inserted: ' + %Char(CustomerDS.ARNO01));
-            Else;
+        Else;
             // Call error handling procedure
             HandleInsertError(CustomerDS: SQLCODE: SQLSTATE);
-            EndIf;
-        Else;
-            // Duplicate found, skip insert
-            RecordExists = *On;
-            RecordsSkipped += 1;
-            // Call duplicate handling procedure
-            HandleDuplicateCustomer(ExistingCustNo: CustomerDS);
         EndIf;
 
         End-Proc;
@@ -570,8 +582,8 @@
         Dcl-S EmailErrorMessage Char(80);
 
         // Set email subject and body
-        emailList.Subject = 'WRITMCUSX Error - Customer Insert Failed';
-        emailList.Note = 'An error occurred in WRITMCUSX program: '
+        emailList.Subject = 'CRTCUST Error - Customer Insert Failed';
+        emailList.Note = 'An error occurred in CRTCUST program: '
                         + %Trim(pErrorMsg);
 
         // Email ID for the body
@@ -948,7 +960,12 @@
             Clear TAXS_JURIS_N;
         Else;
             TAXS_JURIS = TblmtblDS.tbno03;
-            TAXS_JURIS_N = %Dec(TAXS_JURIS:20:0);
+            // Only convert to numeric if TAXS_JURIS is not blank
+            If %Trim(TAXS_JURIS) <> *Blanks;
+                TAXS_JURIS_N = %Dec(TAXS_JURIS:20:0);
+            Else;
+                Clear TAXS_JURIS_N;
+            EndIf;
         EndIf;
 
         // Retrieve setting for ECMS
@@ -1057,7 +1074,7 @@
           %Trim(pCustomer.ARST01) + ' ' + %Trim(pCustomer.ARZP15);
 
         // Set email subject and body
-        emailList.Subject = 'WRITMCUSX - Duplicate Customer Detected';
+        emailList.Subject = 'CRTCUST - Duplicate Customer Detected';
         emailList.Note = DuplicateMsg;
 
         // Email ID for the body
@@ -1078,6 +1095,54 @@
             Dsply DsplyMsg;
         Else;
             Dsply ('Duplicate notification email sent');
+        EndIf;
+
+        End-Proc;
+
+        //===========================================================================
+        // Procedure: ValidateCustomerAddress
+        // Description: Validate customer address using PERZIP service
+        //===========================================================================
+        Dcl-Proc ValidateCustomerAddress;
+
+        // Local address validation data structure
+        Dcl-DS addressValidationDS LikeDS(AddressParmDS);
+
+        // Initialize address validation parameters
+        Reset addressValidationDS;
+        addressValidationDS.inAddress1 = %Trim(CustomerDS.ARAD01);
+        addressValidationDS.inAddress2 = %Trim(CustomerDS.ARAD02);
+        addressValidationDS.inAddress3 = %Trim(CustomerDS.ARAD03);
+        addressValidationDS.inCity = %Trim(CustomerDS.ARCY01);
+        addressValidationDS.inState = %Trim(CustomerDS.ARST01);
+        addressValidationDS.inzip = %Trim(CustomerDS.ARZP15);
+        addressValidationDS.returncase = 'U';              // Return uppercase
+        addressValidationDS.maxAddressLength = 30;         // Max 30 characters
+        addressValidationDS.runFullAddressCheck = 'Y';     // Run full validation
+        addressValidationDS.addressType = 'S';             // Street/Shipping address
+
+        // Call the validation service
+        addressValidationDS = validateAddress(addressValidationDS);
+
+        // Check for validation errors
+        If %Trim(addressValidationDS.errorCode) <> *Blanks;
+            Dsply ('Address validation warning: ' +
+                   %Trim(addressValidationDS.errorCode));
+            DsplyMsg = %Trim(addressValidationDS.errorMessage);
+            Dsply DsplyMsg;
+            
+            // Log the error but don't fail - use original address
+            // Common error codes: ADR, STR, SNF, MLT, etc.
+        Else;
+            // Address validated successfully - update with standardized address
+            CustomerDS.ARAD01 = %Upper(%Trim(addressValidationDS.outAddress1));
+            CustomerDS.ARAD02 = %Upper(%Trim(addressValidationDS.outAddress2));
+            CustomerDS.ARAD03 = %Upper(%Trim(addressValidationDS.outAddress3));
+            CustomerDS.ARCY01 = %Upper(%Trim(addressValidationDS.outCity));
+            CustomerDS.ARST01 = %Upper(%Trim(addressValidationDS.outState));
+            CustomerDS.ARZP15 = %Trim(addressValidationDS.outZip);
+            
+            Dsply ('Address validated and standardized');
         EndIf;
 
         End-Proc;
