@@ -1,0 +1,177 @@
+**FREE
+//==============================================================================
+// Program: LISTPRBK
+// Purpose: List items that would be written to PRPPRBK (Price Book) table
+//          Based on PRICEBOOK.RPGLE logic
+//==============================================================================
+// Description:
+//   This program reads and displays items from the PRPPRBK table that were
+//   written by the PRICEBOOK program. These are the actual price book items.
+//
+//   Note: PRP4950 only contains one control record with job info.
+//         PRPPRBK contains the actual item records.
+//
+//   Parameters match PRICEBOOK.RPGLE for filtering:
+//     Profile, Customer, Disc_Prof_1-3, instocky, inabc, indiso,
+//     invend2, invend3
+//==============================================================================
+
+Ctl-Opt DftActGrp(*No) ActGrp(*New) Option(*SrcStmt:*NoDebugIO);
+
+// File definitions - manually defined since table name differs
+Dcl-Ds PriceBookItem Qualified;
+  PRNO22 Packed(7:0);   // Profile number
+  ARNO01 Packed(6:0);   // Customer number
+  IVNO07 Packed(6:0);   // Item number
+  IVNO04 Char(30);      // Item description
+  PRNO03 Packed(7:0);   // Discount profile
+End-Ds;
+
+// Parameters (matching PRICEBOOK.RPGLE) - all optional
+Dcl-Pi *N;
+  Profile     Char(7)   Options(*NoPass:*Omit);
+  Customer    Char(6)   Options(*NoPass:*Omit);
+  Disc_Prof_1 Char(7)   Options(*NoPass:*Omit);
+  Disc_Prof_2 Char(7)   Options(*NoPass:*Omit);
+  Disc_Prof_3 Char(7)   Options(*NoPass:*Omit);
+  InStocky    Char(1)   Options(*NoPass:*Omit);
+  InAbc       Char(1)   Options(*NoPass:*Omit);
+  InDiso      Char(1)   Options(*NoPass:*Omit);
+  InVend2     Char(6)   Options(*NoPass:*Omit);
+  InVend3     Char(6)   Options(*NoPass:*Omit);
+End-Pi;
+
+// Work fields
+Dcl-S RecordCount Packed(7:0) Inz(0);
+Dcl-S ProfileNum Packed(7:0);
+Dcl-S CustomerNum Packed(6:0);
+Dcl-S WkVend2 Packed(6:0);
+Dcl-S WkVend3 Packed(6:0);
+Dcl-S WkCust Packed(6:0);
+Dcl-S DiscProf1Num Packed(7:0);
+Dcl-S DiscProf2Num Packed(7:0);
+Dcl-S DiscProf3Num Packed(7:0);
+
+// Initialize internal variables from parameters using %Parms()
+// If parameter is passed and not omitted, use it; otherwise initialize to default
+
+// Profile (parameter 1)
+If %Parms() >= 1 And %Addr(Profile) <> *Null;
+  ProfileNum = %Dec(Profile:7:0);
+Else;
+  ProfileNum = 0;
+EndIf;
+
+// Customer (parameter 2)
+If %Parms() >= 2 And %Addr(Customer) <> *Null;
+  Monitor;
+    If %Check('0123456789 ':Customer) = 0;
+      CustomerNum = %Dec(Customer:6:0);
+    Else;
+      CustomerNum = 0;
+    EndIf;
+  On-Error;
+    CustomerNum = 0;
+  EndMon;
+Else;
+  CustomerNum = 0;
+EndIf;
+
+// Discount Profile 1 (parameter 3)
+If %Parms() >= 3 And %Addr(Disc_Prof_1) <> *Null And Disc_Prof_1 <> *Blanks;
+  DiscProf1Num = %Dec(Disc_Prof_1:7:0);
+Else;
+  DiscProf1Num = 0;
+EndIf;
+
+// Discount Profile 2 (parameter 4)
+If %Parms() >= 4 And %Addr(Disc_Prof_2) <> *Null And Disc_Prof_2 <> *Blanks;
+  DiscProf2Num = %Dec(Disc_Prof_2:7:0);
+Else;
+  DiscProf2Num = 0;
+EndIf;
+
+// Discount Profile 3 (parameter 5)
+If %Parms() >= 5 And %Addr(Disc_Prof_3) <> *Null And Disc_Prof_3 <> *Blanks;
+  DiscProf3Num = %Dec(Disc_Prof_3:7:0);
+Else;
+  DiscProf3Num = 0;
+EndIf;
+
+// InVend2 (parameter 9)
+If %Parms() >= 9 And %Addr(InVend2) <> *Null;
+  Monitor;
+    If %Check('0123456789 ':InVend2) = 0;
+      WkVend2 = %Dec(InVend2:6:0);
+    Else;
+      WkVend2 = 0;
+    EndIf;
+  On-Error;
+    WkVend2 = 0;
+  EndMon;
+Else;
+  WkVend2 = 0;
+EndIf;
+
+// InVend3 (parameter 10)
+If %Parms() >= 10 And %Addr(InVend3) <> *Null;
+  Monitor;
+    If %Check('0123456789 ':InVend3) = 0;
+      WkVend3 = %Dec(InVend3:6:0);
+    Else;
+      WkVend3 = 0;
+    EndIf;
+  On-Error;
+    WkVend3 = 0;
+  EndMon;
+Else;
+  WkVend3 = 0;
+EndIf;
+
+// SQL cursor with all filtering logic embedded
+// Join with IVLMSTR for item master data (ABC, vendor, description checks)
+// Join with IVLMSBR for branch-specific data (in-stock, ABC classification)
+// Join with PRLMCPF for discount/contract data
+
+Exec SQL Declare C1 Cursor For
+  Select Distinct P.IVNO07,    // Item number
+         P.IVNO04               // Item description
+  From PRPPRBK P
+  Left Join IVLMSTR8 I On P.IVNO07 = I.IVNO07
+  Left Join IVLMSBR2 B On P.IVNO07 = B.IVNO07
+                      And P.ARNO01 = B.IVNO10
+  Left Join PRLMCPFO D On P.ARNO01 = D.ARNO01
+                      And (D.IVNO07 = P.IVNO07
+                       Or (D.IVNO07 = 0 And D.IVCD17 = I.IVCD17)
+                       Or (D.IVNO07 = 0 And D.IVCD17 = I.IVCD17
+                           And D.IVCD18 = I.IVCD18)
+                       Or (D.IVNO07 = 0 And D.IVCD17 = I.IVCD17
+                           And D.IVCD18 = I.IVCD18
+                           And D.IVCD19 = I.IVCD19))
+  Where 1=1
+    And (:ProfileNum = 0 Or P.PRNO22 = :ProfileNum)
+    And (:CustomerNum = 0 Or P.ARNO01 = :CustomerNum)
+    And (:DiscProf1Num = 0 Or P.PRNO03 = :DiscProf1Num
+                           Or P.PRNO03 = :DiscProf2Num
+                           Or P.PRNO03 = :DiscProf3Num)
+  Order By P.IVNO07;
+
+Exec SQL Open C1;
+
+// Main processing - read items
+DoU SqlCode <> 0;
+  
+  Exec SQL Fetch Next From C1 Into
+    :PriceBookItem.IVNO07,
+    :PriceBookItem.IVNO04;
+  
+  If SqlCode = 0;
+    RecordCount += 1;
+  EndIf;
+  
+EndDo;
+
+Exec SQL Close C1;
+
+*InLR = *On;
+Return;
