@@ -13,17 +13,18 @@ CREATE OR REPLACE TABLE XMLORDHDR (
   poNumber2           VARCHAR(20),
   jobName             VARCHAR(100),
   uniqueId            VARCHAR(50),
-  
+  transmissionId      VARCHAR(50),
+
   /* Shipping Information */
   freightMethod       VARCHAR(20),
   requestedPickupTime TIMESTAMP,
   shipCode            VARCHAR(20),
   shipSubcode         VARCHAR(20),
-  
+
   /* Vendor Information */
   vendorCode          VARCHAR(20),
   vendorName          VARCHAR(100),
-  
+
   /* Order Details */
   placedDate          TIMESTAMP,
   branchSell          VARCHAR(10),
@@ -34,7 +35,7 @@ CREATE OR REPLACE TABLE XMLORDHDR (
   orderTypeCode       CHAR(1),
   orderStatusCode     CHAR(1),
   orderStatusCodeOverride VARCHAR(10),
-  
+
   /* Financial Information (Numeric fields) */
   amount              DECIMAL(15,5),
   surchargeAmount     DECIMAL(15,5),
@@ -43,12 +44,12 @@ CREATE OR REPLACE TABLE XMLORDHDR (
   taxAmount           DECIMAL(15,5),
   percentage          DECIMAL(7,4),
   overridePrice       DECIMAL(15,5),
-  
+
   /* Customer Information */
   accountNumber       VARCHAR(20),
   accountName         VARCHAR(100),
   contact             VARCHAR(50),
-  
+
   /* Ship To Address */
   city                VARCHAR(150),
   state               CHAR(2),
@@ -58,7 +59,7 @@ CREATE OR REPLACE TABLE XMLORDHDR (
   addressLine2        VARCHAR(100),
   addressLine3        VARCHAR(100),
   shipContact         VARCHAR(50),
-  
+
   /* Bill To Address */
   billCity            VARCHAR(150),
   billState           CHAR(2),
@@ -67,14 +68,14 @@ CREATE OR REPLACE TABLE XMLORDHDR (
   billAddressLine1    VARCHAR(100),
   billAddressLine2    VARCHAR(100),
   billAddressLine3    VARCHAR(100),
-  
+
   /* Payment Information */
   cardInfo            VARCHAR(100),
-  
+
   /* Audit Fields */
   createdDate         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updatedDate         TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  
+
   /* Processing Status Fields */
   processedFlag       CHAR(1) NOT NULL WITH DEFAULT,
   processedStamp      TIMESTAMP
@@ -87,6 +88,7 @@ LABEL ON COLUMN XMLORDHDR
    poNumber2 IS 'Secondary PO Number',
    jobName IS 'Job Name',
    uniqueId IS 'Unique Identifier',
+   transmissionId IS 'Transmission ID',
    freightMethod IS 'Freight Method Code',
    requestedPickupTime IS 'Requested Pickup Time',
    shipCode IS 'Ship Code',
@@ -134,3 +136,4 @@ LABEL ON COLUMN XMLORDHDR
    processedStamp IS 'Processing Timestamp');
 
 LABEL ON TABLE XMLORDHDR IS 'XML Order Header';
+

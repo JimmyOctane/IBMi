@@ -9,6 +9,7 @@
 CREATE OR REPLACE TABLE XMLORDDTL (
   /* Link to Header */
   orderNumber         CHAR(40)        NOT NULL WITH DEFAULT,
+  transmissionId      VARCHAR(50),
   
   /* Line Item Identification */
   lineNumber          INT             NOT NULL WITH DEFAULT,
@@ -38,6 +39,7 @@ CREATE OR REPLACE TABLE XMLORDDTL (
 /* Add column comments */
 LABEL ON COLUMN XMLORDDTL
   (orderNumber IS 'Order Number',
+   transmissionId IS 'Transmission ID',
    lineNumber IS 'Line Item Number',
    typeCode IS 'Line Item Type Code',
    productName IS 'Product Name/Number',

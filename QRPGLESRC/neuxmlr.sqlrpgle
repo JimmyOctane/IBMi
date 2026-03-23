@@ -132,16 +132,16 @@
           //-----------------------------------------------------------
           // Local Variables
           //-----------------------------------------------------------
-          
+
           // Counter for line items
           dcl-s itemCount int(10) inz(0);
           dcl-s itemErrorCount int(10) inz(0);
-          
+
           // Formatted timestamp variables
           dcl-s fmtPlacedDate timestamp;
           dcl-s fmtReqPickupTime timestamp;
           dcl-s tempDate char(40);
-          
+
           // Processing status and error tracking
           dcl-s processStatus char(1) inz('S');  // S=Success, E=Error
           dcl-s errorMessage varchar(500) inz('');
@@ -150,7 +150,7 @@
           dcl-s sqlErrState char(5);
           dcl-s errorStage varchar(20);
           dcl-s headerCount int(10) inz(0);
-          
+
           // Transmission ID from XML
           dcl-s transmissionId varchar(50);
 
@@ -228,11 +228,11 @@
           dcl-proc NEUCOXML export;
 
             dcl-pi NEUCOXML ind;
-              inDocPath varchar(1000) const;
+              inDocPath char(300) const;
             end-pi;
 
-            // Local error indicator
-            dcl-s errorInd ind inz(*off);
+            // Local success indicator
+            dcl-s successInd ind inz(*on);
 
             // Set IFS document path from parameter
             ifsDocPath = inDocPath;
@@ -246,7 +246,7 @@
                 REGEXP_REPLACE(
                   LISTAGG(Line, ''), '<\?xml[^>]*\?>',
                   '', 1, 0, 'i')) AS doc
-              FROM TABLE(QSYS2.IFS_READ(PATH_NAME => :ifsDocPath))
+              FROM TABLE(QSYS2.IFS_READ(PATH_NAME => trim(:ifsDocPath)))
             )
             SELECT
               transmission_id,
@@ -348,7 +348,7 @@
               PASSING xml_data.doc AS "doc"
             COLUMNS
               transmission_id VARCHAR(50)
-                PATH '../transmission_id',
+                PATH '../transmission_header/transmission_id',
               order_number char(40)
                 PATH 'OrderHeader/order_info/order_number',
               po_number VARCHAR(20)
@@ -452,11 +452,11 @@
             exec sql GET DIAGNOSTICS CONDITION 1
               :sqlErrState = RETURNED_SQLSTATE,
               :sqlDiagMsg = MESSAGE_TEXT;
-        
+
             errorMessage = 'Failed to extract header from XML: ' +
                            %trim(sqlDiagMsg);
-            errorInd = *on;
-            
+            successInd = *off;
+
             // Write single audit record for this error
             exec sql
               INSERT INTO XMLORDAUD (
@@ -469,7 +469,7 @@
                 :sqlErrState, :errorMessage
               );
             exec sql COMMIT;
-            return errorInd;
+            return successInd;
           endif;
 
           // Format timestamps - Remove 'Z' and replace 'T' with '-'
@@ -505,7 +505,7 @@
           exec sql
             INSERT INTO XMLORDHDR (
               orderNumber, poNumber, poNumber2, jobName,
-              uniqueId, freightMethod, vendorCode, vendorName,
+              uniqueId, transmissionId, freightMethod, vendorCode, vendorName,
               placedDate, requestedPickupTime, branchSell,
               branchShip, shipCode, shipSubcode,
               specialInstructions, orderNotes, chargeOrCash,
@@ -521,7 +521,8 @@
             ) VALUES (
               :hdrOrderNumber, :hdrPoNumber,
               :hdrPoNumber2, :hdrJobName,
-              :hdrUniqueId, :hdrFreightMethod,
+              :hdrUniqueId, :transmissionId,
+              :hdrFreightMethod,
               :hdrVendorCode, :hdrVendorName,
               :fmtPlacedDate,
               :fmtReqPickupTime,
@@ -558,11 +559,11 @@
             exec sql GET DIAGNOSTICS CONDITION 1
               :sqlErrState = RETURNED_SQLSTATE,
               :sqlDiagMsg = MESSAGE_TEXT;
-        
+
             errorMessage = 'Failed to insert header record: ' +
                            %trim(sqlDiagMsg);
-            errorInd = *on;
-            
+            successInd = *off;
+
             // Write single audit record for this error
             exec sql
               INSERT INTO XMLORDAUD (
@@ -575,7 +576,7 @@
                 :sqlErrCode, :sqlErrState, :errorMessage
               );
             exec sql COMMIT;
-            return errorInd;
+            return successInd;
           else;
             // Header inserted successfully
             headerCount = 1;
@@ -601,7 +602,7 @@
                   1, 0, 'i'
                 )
               ) AS doc
-              FROM TABLE(QSYS2.IFS_READ(PATH_NAME => :ifsDocPath))
+              FROM TABLE(QSYS2.IFS_READ(PATH_NAME => trim(:ifsDocPath)))
             )
             SELECT
               line_number,
@@ -622,7 +623,7 @@
             XMLTABLE ('$doc/transmission/order/line_items/line_item'
               PASSING xml_data.doc AS "doc"
             COLUMNS
-              line_number char(40) PATH 'line_number',
+              line_number VARCHAR(40) PATH 'line_number',
               type_code VARCHAR(40) PATH 'type_code',
               product_name VARCHAR(40) PATH 'product_name',
               mincron_item_id VARCHAR(40) PATH 'mincron_item_id',
@@ -633,7 +634,7 @@
               amount VARCHAR(40) PATH 'price/amount',
               cost VARCHAR(40) PATH 'price/cost',
               surcharge_amount VARCHAR(40) PATH 'price/surcharge_amount',
-              taxAmount VARCHAR(40) PATH 'price/tax_info',
+              taxAmount VARCHAR(40) PATH 'price/tax_info/amount',
               taxPercent VARCHAR(40) PATH 'price/tax_info/percentage',
               price_override VARCHAR(40) PATH 'price/price_override'
             ) AS Y;
@@ -650,12 +651,12 @@
             exec sql GET DIAGNOSTICS CONDITION 1
               :sqlErrState = RETURNED_SQLSTATE,
               :sqlDiagMsg = MESSAGE_TEXT;
-        
+
             errorMessage = 'Failed to open line item cursor: ' +
                            %trim(sqlDiagMsg);
             exec sql close lineItemCursor;
-            errorInd = *on;
-            
+            successInd = *off;
+
             // Write single audit record for this error
             exec sql
               INSERT INTO XMLORDAUD (
@@ -668,7 +669,7 @@
                 :errorStage, :sqlErrCode, :sqlErrState, :errorMessage
               );
             exec sql COMMIT;
-            return errorInd;
+            return successInd;
           endif;
 
           // Fetch and process each line item
@@ -712,12 +713,12 @@
             // Insert line item into detail table
             exec sql
               INSERT INTO XMLORDDTL (
-                orderNumber, lineNumber, typeCode, productName,
+                orderNumber, transmissionId, lineNumber, typeCode, productName,
                 mincronItemId, externalItemId, pimId, bundleId,
                 quantity, amount, cost, surchargeAmount,
                 taxAmount, taxPercent, priceOverride
               ) VALUES (
-                :hdrOrderNumber,
+                :hdrOrderNumber, :transmissionId,
                 COALESCE(INT(NULLIF(:dtlLineNumber, '')), 0),
                 :dtlTypeCode, :dtlProductName,
                 :dtlMincronItemId, :dtlExternalItemId,
@@ -783,8 +784,9 @@
           //-----------------------------------------------------------
           // Cleanup
           //-----------------------------------------------------------
-          // Return success
-          return errorInd;
+          // Return success indicator
+          return successInd;
 
           end-proc NEUCOXML;
+
 
