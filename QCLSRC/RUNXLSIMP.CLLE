@@ -1,0 +1,58 @@
+/* ================================================================== */
+/* CL Program to Run Excel Import                                     */
+/* ================================================================== */
+/* This CL program calls the shell script to run the Python program  */
+/* that imports Excel data into DB2                                   */
+/*                                                                    */
+/* To compile:                                                        */
+/*   CRTBNDCL PGM(YOURLIB/RUNXLSIMP)                                 */
+/*           SRCFILE(YOURLIB/QCLSRC)                                 */
+/*           SRCMBR(RUNXLSIMP)                                       */
+/*                                                                    */
+/* To run:                                                            */
+/*   CALL YOURLIB/RUNXLSIMP                                          */
+/* ================================================================== */
+
+             PGM
+
+             DCL        VAR(&CMD) TYPE(*CHAR) LEN(500)
+             DCL        VAR(&MSGID) TYPE(*CHAR) LEN(7)
+             DCL        VAR(&MSGDTA) TYPE(*CHAR) LEN(512)
+
+             /* Display start message */
+             SNDPGMMSG  MSGID(CPF9897) MSGF(QCPFMSG) +
+                          MSGDTA('Starting Excel to DB2 import...') +
+                          TOPGMQ(*EXT) MSGTYPE(*STATUS)
+
+             /* Build QSH command to run the shell script */
+             CHGVAR     VAR(&CMD) VALUE('QSH CMD(''/home/jflanary/+
+                          run_excel_import.sh'')')
+
+             /* Execute the command */
+             CALL       PGM(QCMDEXC) PARM(&CMD 500)
+
+             /* Check if command was successful */
+             MONMSG     MSGID(CPF0000) EXEC(DO)
+                RCVMSG     MSGTYPE(*EXCP) MSGDTA(&MSGDTA) MSGID(&MSGID)
+                SNDPGMMSG  MSGID(CPF9897) MSGF(QCPFMSG) +
+                             MSGDTA('Error running import: ' *CAT +
+                             &MSGID *CAT ' - ' *CAT &MSGDTA) +
+                             TOPGMQ(*EXT) MSGTYPE(*DIAG)
+                GOTO       CMDLBL(ERROR)
+             ENDDO
+
+             /* Display completion message */
+             SNDPGMMSG  MSGID(CPF9897) MSGF(QCPFMSG) +
+                          MSGDTA('Excel import completed. Check +
+                          /tmp/excel_import_output.txt for details.') +
+                          TOPGMQ(*EXT) MSGTYPE(*COMP)
+
+             RETURN
+
+ ERROR:      /* Error handling */
+             SNDPGMMSG  MSGID(CPF9897) MSGF(QCPFMSG) +
+                          MSGDTA('Excel import failed. Check +
+                          /tmp/excel_import_error.txt for details.') +
+                          TOPGMQ(*EXT) MSGTYPE(*ESCAPE)
+
+             ENDPGM

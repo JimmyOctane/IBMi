@@ -1,0 +1,86 @@
+-- Query to list QSYSWRK jobs by user and last time processed
+-- This query retrieves active and recently completed jobs from the QSYSWRK subsystem
+
+SELECT
+    JOB_NAME,
+    AUTHORIZATION_NAME AS USER_NAME,
+    JOB_TYPE,
+    JOB_STATUS,
+    SUBSYSTEM,
+    FUNCTION,
+    FUNCTION_TYPE,
+    CPU_TIME,
+    TOTAL_DISK_IO_COUNT,
+    JOB_ACTIVE_TIME,
+    TIMESTAMP(
+        SUBSTR(CHAR(JOB_ACTIVE_TIME), 1, 4) || '-' ||
+        SUBSTR(CHAR(JOB_ACTIVE_TIME), 5, 2) || '-' ||
+        SUBSTR(CHAR(JOB_ACTIVE_TIME), 7, 2) || ' ' ||
+        SUBSTR(CHAR(JOB_ACTIVE_TIME), 9, 2) || ':' ||
+        SUBSTR(CHAR(JOB_ACTIVE_TIME), 11, 2) || ':' ||
+        SUBSTR(CHAR(JOB_ACTIVE_TIME), 13, 2)
+    ) AS LAST_PROCESSED_TIME,
+    MEMORY_POOL,
+    RUN_PRIORITY,
+    THREAD_COUNT,
+    TEMPORARY_STORAGE
+FROM
+    TABLE(QSYS2.ACTIVE_JOB_INFO(
+        SUBSYSTEM_LIST_FILTER => 'QSYSWRK',
+        DETAILED_INFO => 'ALL'
+    )) AS JOBS
+WHERE
+    SUBSYSTEM = 'QSYSWRK'
+ORDER BY
+    AUTHORIZATION_NAME,
+    JOB_ACTIVE_TIME DESC;
+
+-- Alternative query using JOB_INFO for historical jobs
+-- Uncomment if you need to see completed jobs as well
+
+/*
+SELECT 
+    JOB_NAME,
+    USER_NAME,
+    JOB_TYPE,
+    JOB_STATUS,
+    SUBSYSTEM,
+    FUNCTION,
+    CPU_TIME_USED,
+    JOB_ENTERED_SYSTEM_TIME,
+    JOB_END_TIME,
+    CASE 
+        WHEN JOB_END_TIME IS NOT NULL THEN JOB_END_TIME
+        ELSE CURRENT_TIMESTAMP
+    END AS LAST_PROCESSED_TIME
+FROM 
+    TABLE(QSYS2.JOB_INFO(JOB_SUBSYSTEM_FILTER => 'QSYSWRK')) AS JOBS
+WHERE 
+    SUBSYSTEM = 'QSYSWRK'
+ORDER BY 
+    USER_NAME,
+    LAST_PROCESSED_TIME DESC;
+*/
+
+-- Summary query: Count of jobs by user in QSYSWRK
+-- Uncomment to see job counts per user
+
+/*
+SELECT 
+    AUTHORIZATION_NAME AS USER_NAME,
+    COUNT(*) AS JOB_COUNT,
+    MAX(JOB_ACTIVE_TIME) AS MOST_RECENT_ACTIVITY,
+    SUM(CPU_TIME) AS TOTAL_CPU_TIME,
+    SUM(TOTAL_DISK_IO_COUNT) AS TOTAL_DISK_IO
+FROM 
+    TABLE(QSYS2.ACTIVE_JOB_INFO(
+        SUBSYSTEM_LIST_FILTER => 'QSYSWRK',
+        DETAILED_INFO => 'ALL'
+    )) AS JOBS
+WHERE 
+    SUBSYSTEM = 'QSYSWRK'
+GROUP BY 
+    AUTHORIZATION_NAME
+ORDER BY 
+    MOST_RECENT_ACTIVITY DESC;
+*/

@@ -1,0 +1,59 @@
+/* ================================================================== */
+/* CL Program to Install Python Packages                              */
+/* ================================================================== */
+/* This CL program calls the shell script to install required Python */
+/* packages (pandas, openpyxl, pyodbc) for Excel import              */
+/*                                                                    */
+/* To compile:                                                        */
+/*   CRTBNDCL PGM(YOURLIB/INSTPYPKG)                                 */
+/*           SRCFILE(YOURLIB/QCLSRC)                                 */
+/*           SRCMBR(INSTPYPKG)                                       */
+/*                                                                    */
+/* To run:                                                            */
+/*   CALL YOURLIB/INSTPYPKG                                          */
+/* ================================================================== */
+
+             PGM
+
+             DCL        VAR(&CMD) TYPE(*CHAR) LEN(500)
+             DCL        VAR(&MSGID) TYPE(*CHAR) LEN(7)
+             DCL        VAR(&MSGDTA) TYPE(*CHAR) LEN(512)
+
+             /* Display start message */
+             SNDPGMMSG  MSGID(CPF9897) MSGF(QCPFMSG) +
+                          MSGDTA('Installing Python packages for Excel +
+                          import...') +
+                          TOPGMQ(*EXT) MSGTYPE(*STATUS)
+
+             /* Build QSH command to run the installation script */
+             CHGVAR     VAR(&CMD) VALUE('QSH CMD(''/home/jflanary/+
+                          install_python_packages.sh'')')
+
+             /* Execute the command */
+             CALL       PGM(QCMDEXC) PARM(&CMD 500)
+
+             /* Check if command was successful */
+             MONMSG     MSGID(CPF0000) EXEC(DO)
+                RCVMSG     MSGTYPE(*EXCP) MSGDTA(&MSGDTA) MSGID(&MSGID)
+                SNDPGMMSG  MSGID(CPF9897) MSGF(QCPFMSG) +
+                             MSGDTA('Error installing packages: ' *CAT +
+                             &MSGID *CAT ' - ' *CAT &MSGDTA) +
+                             TOPGMQ(*EXT) MSGTYPE(*DIAG)
+                GOTO       CMDLBL(ERROR)
+             ENDDO
+
+             /* Display completion message */
+             SNDPGMMSG  MSGID(CPF9897) MSGF(QCPFMSG) +
+                          MSGDTA('Python packages installed successfully! +
+                          You can now run RUNXLSIMP.') +
+                          TOPGMQ(*EXT) MSGTYPE(*COMP)
+
+             RETURN
+
+ ERROR:      /* Error handling */
+             SNDPGMMSG  MSGID(CPF9897) MSGF(QCPFMSG) +
+                          MSGDTA('Package installation failed. Check if +
+                          Python and pip are installed.') +
+                          TOPGMQ(*EXT) MSGTYPE(*ESCAPE)
+
+             ENDPGM

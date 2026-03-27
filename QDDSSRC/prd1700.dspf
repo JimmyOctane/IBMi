@@ -1,0 +1,338 @@
+     A*------------------------------------------------------------------------*
+     A*N FILE NAME - PRD1700                                                   *
+     A*------------------------------------------------------------------------*
+     A*P COPYRIGHT MINCRON SBC CORP. 1983,1990,2006.                           *
+     A*------------------------------------------------------------------------*
+     A*D PRINT PRICE BOOK PROMPT                                               *
+     A*M ----------------------------------------------------------------------*
+     A*M TASK       DATE   ID  DESCRIPTION                                     *
+     A*M ---------- ------ --- ------------------------------------------------*
+     A*V 8000011000 013006 000 MINCRON MSS/HD RELEASE 11.0                     *
+¢A   A*V KSB   5899 031913 000 REMOVED SOME OPTIONS                            *
+¢B   A*V KSB   8189 102924 000 ADDED PRICE SHEET OPTION                        *
+¢C   A*V JJF   3194 032626 000 EXCLUDE ITEMS FROM PRINTING ON PRICE BOOK       *
+     A*M ----------------------------------------------------------------------*
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      REF(*LIBL/DBFREF)
+   %AA*                                     HELP(25 'User Documentaion')
+   %AA*                                     CF01(25)
+%A   A                                      CF01(25 'HELP')
+     A                                      PRINT
+     A          R PRF1700A
+     A                                      TEXT('Print Price Book Prompt')
+     A                                      CF03(03 'Return')
+     A                                      CF04(04 'Prompt')
+ ¢C  A                                      CF07(07 'Omit Items')
+     A                                      BLINK
+     A                                      RTNCSRLOC(&CRCD &CFLD &CPOS)
+     A                                      CSRLOC(CROW       CCOL)
+     A            CROW           3S 0H
+     A            CCOL           3S 0H
+     A            CRCD          10A  H
+     A            CFLD          10A  H
+     A            CPOS           4S 0H
+     A                                  1  2'PRF1700A'
+     A                                      COLOR(BLU)
+     A                                  1 31'Request Price Book'
+     A                                      DSPATR(HI)
+   ¢AA*                                 2  1'Type options, press Enter.'
+   ¢AA*                                     COLOR(BLU)
+   ¢AA*                                 3  3'Selection criteria'
+     A                                  4  6'Pricing branch  . . . . . . . . . -
+     A                                      . . .'
+     A            ARNO16    R        B  4 46EDTCDE(4)
+     A                                      CHANGE(90)
+     A  80                                  DSPATR(RI PC)
+     A            ARNM07    R        O  4 54
+   ¢AA*                                 5  6'Enterprise or customer number . . -
+¢A   A                                  5  6'Customer number . . . . . . . . . -
+     A                                      . . .'
+     A            ENT_CUS   R        B  5 46REFFLD(ARNO01)
+     A                                      EDTCDE(4)
+     A                                      CHANGE(90)
+     A  81                                  DSPATR(RI PC)
+     A            CUS_NAME      27A  O  5 54
+   ¢AA*                                 6  9'or by discount profile(s)  . . . .-
+   ¢AA*                                      .'
+   ¢AA*           PRNO24    R        B  6 46CHANGE(90)
+   ¢AA* 82                                  DSPATR(RI PC)
+   ¢AA*           PRNO25    R        B  6 54CHANGE(90)
+   ¢AA* 83                                  DSPATR(RI PC)
+   ¢AA*           PRNO26    R        B  6 62CHANGE(90)
+   ¢AA* 84                                  DSPATR(RI PC)
+¢A   A            PRNO24    R        H
+¢A   A            PRNO25    R        H
+¢A   A            PRNO26    R        H
+   ¢AA*                                 7  6'If customer, job number . . . . . -
+¢A   A                                  7  6'Job#. . . . . . . . . . . . . . . -
+     A                                      . . .'
+     A            ARNO06    R        B  7 46CHANGE(90)
+     A  85                                  DSPATR(RI PC)
+     A            JOB_NAME  R        O  7 54REFFLD(ARNM04)
+   ¢AA*                                 9  3'Select item criteria'
+   ¢AA*                                10  6'Y=Select all items, N=Item specifi-
+   ¢AA*                                     c . .'
+   ¢AA*           PRCD96         1A  B 10 46VALUES('Y' 'N')
+   ¢AA* 86                                  DSPATR(RI PC)
+¢A   A            PRCD96         1A  H
+   ¢AA* 42                             11  9'Note: Options below can be used in-
+¢A   A  42                              9  5'Note: Options below can be used in-
+     A                                       any combination.'
+     A                                      DSPATR(HI)
+     A                                      COLOR(WHT)
+   ¢AA* 42                             12  6'Book type (P=Purchasing, C=Counter-
+   ¢AA*                                     ) . .'
+   ¢AA*           PRCD89    R        B 12 46CHANGE(90)
+   ¢AA*                                     VALUES('P' 'C' ' ')
+   ¢AA*N42                                  DSPATR(ND)
+   ¢AA*N42                                  DSPATR(PR)
+¢A   A            PRCD89    R        H
+   ¢AA* 42                             13  9'If book specified, section . . . .-
+   ¢AA*                                      .'
+¢A   A  42                             11  6'Purch section . . . . .'
+   ¢AA*           SECTION   R        B 13 46REFFLD(IVCD17)
+¢A   A            SECTION   R        B 11 30REFFLD(IVCD17)
+     A N42                                  DSPATR(ND)
+     A N42                                  DSPATR(PR)
+     A                                      CHANGE(90)
+     A  87                                  DSPATR(RI PC)
+   ¢AA* 42        SEC_NAME      27A  O 13 54
+¢A   A  42        SEC_NAME      27A  O 11 38
+   ¢AA* 42                             14 28'group . . . . . .'
+¢A   A  42                             12 12'group . . . . . .'
+   ¢AA*           GROUP     R        B 14 46REFFLD(IVCD18)
+¢A   A            GROUP     R        B 12 30REFFLD(IVCD18)
+     A N42                                  DSPATR(ND)
+     A N42                                  DSPATR(PR)
+     A                                      CHANGE(90)
+     A  88                                  DSPATR(RI)
+   ¢AA* 42        GRP_NAME      27A  O 14 54
+¢A   A  42        GRP_NAME      27A  O 12 38
+   ¢AA* 42                             15 28'category  . . . .'
+¢A   A  42                             13 12'category  . . . .'
+   ¢AA*           CATEGORY  R        B 15 46REFFLD(IVCD19)
+¢A   A            CATEGORY  R        B 13 30REFFLD(IVCD19)
+     A N42                                  DSPATR(ND)
+     A N42                                  DSPATR(PR)
+     A                                      CHANGE(90)
+     A  89                                  DSPATR(RI)
+   ¢AA* 42        CAT_NAME      27A  O 15 54
+¢A   A  42        CAT_NAME      27A  O 13 38
+   ¢AA* 42                             16  6'Vendor specific Y/N . . . . . . . -
+¢A   A  42                             14  6'Vendor specific Y/N . . . . . . . -
+     A                                      . . .'
+   ¢AA*           PRCD94    R        B 16 46VALUES('Y' 'N')
+¢A   A            PRCD94    R        B 14 46VALUES('Y' 'N')
+     A  96                                  DSPATR(RI PC)
+     A                                      CHANGE(90)
+     A N42                                  DSPATR(ND)
+     A N42                                  DSPATR(PR)
+   ¢AA* 30 42     APNO01    R        O 16 54
+¢A   A  30 42     APNO01    R        O 14 53
+   ¢AA* 30 42     VEND_NAME     20A  O 16 61
+¢A   A  30 42     VEND_NAME     20A  O 14 61
+¢A   A  30 42     VEND2     R        B 15 53REFFLD(APNO01)
+¢A   A  30 42     VEND_NAME2    20A  O 15 61
+¢A   A  30 42     VEND3     R        B 16 53REFFLD(APNO01)
+¢A   A  30 42     VEND_NAME3    20A  O 16 61
+     A  42                             17  6'Sales history date range Y/N  . . -
+     A                                      . . .'
+     A            PRCD93    R        B 17 46VALUES('Y' 'N')
+     A N42                                  DSPATR(ND)
+     A N42                                  DSPATR(PR)
+     A                                      CHANGE(90)
+     A  91                                  DSPATR(RI PC)
+     A  39 42                          17 54'From'
+     A                                      DSPATR(HI)
+     A  39 42     FROM_SDATE     6Y 0O 17 59EDTCDE(Y)
+     A  39 42                          17 68'To'
+     A                                      DSPATR(HI)
+     A  39 42     TO_SDATE       6Y 0O 17 71EDTCDE(Y)
+   ¢AA* 42                             18  6'Items w/attached alias numbers Y/N-
+   ¢AA*                                       . .'
+   ¢AA*           PRCD95    R        B 18 46VALUES('Y' 'N')
+¢A   A            PRCD95    R        H
+   ¢AA*                                     CHANGE(90)
+   ¢AA*N42                                  DSPATR(ND)
+   ¢AA*N42                                  DSPATR(PR)
+   ¢AA* 42 46                          19  6'Items on contract (A=All, C=Contra-
+   ¢AA*                                     cted,'
+   ¢AA* 42 46                          20  9'E=Exclude items on contract,'
+   ¢AA* 42 46                          21  9'S=Specific items on contract)  . .-
+   ¢AA*                                      .'
+   ¢AA*           PRCD97    R        B 21 46VALUES('A' 'C' 'E' 'S')
+   ¢AA*                                     CHANGE(90)
+   ¢AA*N42
+   ¢AA*N46                                  DSPATR(ND)
+   ¢AA*N42
+   ¢AA*N46                                  DSPATR(PR)
+   ¢AA* 92                                  DSPATR(RI PC)
+¢A   A            PRCD97    R        H
+   ¢AA* 44 42 46  PROF_VEND R        O 21 54REFFLD(APNO01)
+   ¢AA* 44 42 46  PRF_VNAME     20A  O 21 61
+   ¢AA* 44 42 46  NO13      R        O 22 54REFFLD(PRNO13)
+   ¢AA* 44 42 46  PROF_NAME     18A  O 22 63
+¢A   A  44 42 46  PROF_VEND R        H      REFFLD(APNO01)
+¢A   A  44 42 46  PRF_VNAME     20A  H
+¢A   A  44 42 46  NO13      R        H      REFFLD(PRNO13)
+¢A   A  44 42 46  PROF_NAME     18A  H
+¢A   A                                 18  6'Stock Item (based on pricing br)'
+¢A   A                                 19  6'ABC Item (based on pricing br)'
+¢A   A                                 20  6'Special Price (Spcl Ltr/CntrProfl)'
+¢A   A            STKCY          1A  B 18 46VALUES('Y' 'N')
+¢A   A            PRIABC         1   B 19 46VALUES('Y' 'N')
+¢A   A            PRDISO         1   B 20 46VALUES('Y' 'N')
+     A                                 23  2'F3=Exit'
+     A                                      COLOR(BLU)
+     A                                 23 12'F4=Prompt'
+     A                                      COLOR(BLU)
+ ¢C  A                                 23 24'F7=Omit Items'
+ ¢C  A                                      COLOR(BLU)
+     A            MSGFLD        78A  O 24  2DSPATR(HI)
+     A          R PRF1700B
+     A                                      TEXT('Print Price Book Prompt')
+     A                                      CF03(03 'Return')
+     A                                      CF04(04 'Prompt')
+     A                                      CF10(10 'Submit')
+     A                                      CF12(12 'Cancel')
+     A                                      BLINK
+     A                                      RTNCSRLOC(&CRCD &CFLD &CPOS)
+     A                                      CSRLOC(CROW       CCOL)
+     A            CROW           3S 0H
+     A            CCOL           3S 0H
+     A            CRCD          10A  H
+     A            CFLD          10A  H
+     A            CPOS           4S 0H
+     A                                  1  2'PRF1700B'
+     A                                      COLOR(BLU)
+     A                                  1 30'Request Price Book'
+     A                                      DSPATR(HI)
+     A                                  3  3'Assigned price book profile number-
+     A                                       . . . .'
+     A            PRNO22    R        O  3 46
+   ¢AA*                                 4  1'Type options, press Enter.'
+   ¢AA*                                     COLOR(BLU)
+   ¢AA*                                 5  3'Specify processing options'
+   ¢AA*                                 6  6'Output type(s) Y/N . . . . . . Pri-
+   ¢AA*                                     nter . .'
+   ¢AA*           PRCD98    R        B  6 49VALUES('Y' 'N')
+¢A   A            PRCD98    R        H
+   ¢AA* 93                                  DSPATR(RI PC)
+   ¢AA*                                     CHANGE(90)
+   ¢AA*                                 6 52'DataBase . .'
+   ¢AA*           PRCDB2    R        B  6 65VALUES('Y' 'N')
+¢A   A            PRCDB2    R        H
+   ¢AA* 93                                  DSPATR(RI)
+   ¢AA*                                     CHANGE(90)
+   ¢AA*N50                              6 68'Email . .'
+   ¢AA*N50        PRCDA2    R        B  6 78VALUES('Y' 'N')
+¢A   A N50                              6  8'Email . .'
+¢A   A N50        PRCDA2    R        B  6 18VALUES('Y' 'N')
+¢B   A                                      DSPATR(PR)
+   ¢BA*                                     CHANGE(90)
+   ¢BA* 50                                  DSPATR(PR)
+   ¢BA* 93                                  DSPATR(RI)
+   ¢AA*                                 7  6'Sort sequence type (A=Alias/Produc-
+   ¢AA*                                     t,'
+   ¢AA*                                 8  9'B=Selected book/Product, P=Product-
+   ¢AA*                                     ) . .'
+   ¢AA*           PRCD99    R        B  8 49VALUES('A' 'P' 'B')
+   ¢AA*                                     CHANGE(90)
+   ¢AA* 94                                  DSPATR(RI PC)
+¢A   A            PRCD99    R        H
+¢A ¢BA*           PRCDA1    R        H
+   ¢AA*                                 9  6'Use price sheet (C=Current, N=Next-
+   ¢AA*                                     )  . . .'
+   ¢AA*           PRCDA1    R        B  9 49VALUES('C' 'N')
+   ¢AA*                                     CHANGE(90)
+¢B   A                                 17  6'Use price sheet (C=Current, N=Next-
+¢B   A                                      )  . . .'
+¢B   A            PRCDA1    R        B 17 49VALUES('C' 'N')
+¢B   A                                      CHANGE(90)
+   ¢AA*                                10  6'Costing base (M=Market, R=Replacem-
+   ¢AA*                                     ent,'
+   ¢AA*                                11  9'W=Weighted average cost)  . . . . -
+   ¢AA*                                     . . .'
+   ¢AA*           PRCDA6    R        B 11 49VALUES('M' 'R' 'W')
+¢A   A            PRCDA6    R        H
+   ¢AA*                                     CHANGE(90)
+   ¢AA*N50                             12  6'Email web address . . . . .'
+¢A   A N50                              6 21'Email addr 1'
+   ¢AA*N50        EMAIL     R        B 12 35REFFLD(OPAD01)
+¢A   A N50        EMAIL     R        B  6 35REFFLD(OPAD01)
+     A                                      CHECK(LC)
+     A  50                                  DSPATR(PR)
+¢A   A  65                                  DSPATR(RI PC)
+¢A   A N50                              7 21'Email addr 2'
+¢A   A N50        EMAIL2    R        B  7 35REFFLD(OPAD01)
+¢A   A                                      CHECK(LC)
+¢A   A  50                                  DSPATR(PR)
+¢A   A  66                                  DSPATR(RI PC)
+¢A   A                                 10  8'Attachment Type'
+¢A   A                                 10 30'P=PDF, X=Excel'
+¢A   A N50        DSRFMT         1A  B 10 26VALUES('X' 'P')
+¢A   A  97                                  DSPATR(RI PC)
+   ¢AA*                                14  3'Specify output options'
+   ¢AA*                                15  6'Print list prices Y/N . . . . . . -
+   ¢AA*                                     .'
+   ¢AA*           PRCDA4    R        B 15 42VALUES('Y' 'N')
+   ¢AA*                                     CHANGE(90)
+   ¢AA*                                15 48'Print net prices Y/N  . . . .'
+   ¢AA*           PRCDA3    R        B 15 78VALUES('Y' 'N')
+   ¢AA*                                     CHANGE(90)
+   ¢AA* 52                             16  6'Print cost amounts Y/N  . . . . . -
+   ¢AA*                                     .'
+   ¢AA* 52        PRCDA7    R        B 16 42VALUES('Y' 'N')
+   ¢AA*                                     CHANGE(90)
+   ¢AA* 95                                  DSPATR(RI PC)
+   ¢AA* 52                             16 48'Print GP percents Y/N . . . .'
+   ¢AA* 52        PRCDA5    R        B 16 78VALUES('Y' 'N')
+   ¢AA*                                     CHANGE(90)
+   ¢AA* 95                                  DSPATR(RI)
+   ¢AA*                                17  6'Print quantity/price breaks Y/N . -
+   ¢AA*                                     .'
+   ¢AA*           PRCDA8    R        B 17 42VALUES('Y' 'N')
+   ¢AA*                                     CHANGE(90)
+   ¢AA*                                17 48'Print UPC codes Y/N . . . . .'
+   ¢AA*           PRCDA9    R        B 17 78VALUES('Y' 'N')
+   ¢AA*                                     CHANGE(90)
+   ¢AA*                                18  6'Print extended descriptions Y/N . -
+   ¢AA*                                     .'
+   ¢AA*           PRCDB1    R        B 18 42VALUES('Y' 'N')
+   ¢AA*                                     CHANGE(90)
+   ¢AA*                                18 48'Print alias numbers Y/N . . .'
+   ¢AA*           PRCDB3    R        B 18 78VALUES('Y' 'N')
+   ¢AA*                                     CHANGE(90)
+¢A   A            PRCDA4    R        H
+¢A   A            PRCDA3    R        H
+¢A   A            PRCDA7    R        H
+¢A   A            PRCDA5    R        H
+¢A   A            PRCDA8    R        H
+¢A   A            PRCDA9    R        H
+¢A   A            PRCDB1    R        H
+¢A   A            PRCDB3    R        H
+   ¢AA*                                19  6'Number of copies to print . . . . -
+¢A   A                                 13  4'Number of copies to print . . . . -
+     A                                      .'
+   ¢AA*           PRNO23    R        B 19 42EDTCDE(4)
+¢A   A            PRNO23    R        B 13 40EDTCDE(4)
+     A                                      CHANGE(90)
+¢A   A                                      RANGE(01 10)
+   ¢AA*                                20  6'Notes to print on headings  . . . -
+¢A   A                                 14  4'Notes to print on headings  . . . -
+     A                                      .'
+   ¢AA*           DN11A         30A  B 20 42CHECK(LC)
+¢A   A            DN11A         30A  B 14 40CHECK(LC)
+     A                                      CHANGE(90)
+   ¢AA*           DN11B         30A  B 21 42CHECK(LC)
+¢A   A            DN11B         30A  B 15 40CHECK(LC)
+     A                                      CHANGE(90)
+     A                                 23  2'F3=Exit'
+     A                                      COLOR(BLU)
+     A                                 23 12'F4=Prompt'
+     A                                      COLOR(BLU)
+     A                                 23 24'F10=Submit'
+     A                                      COLOR(BLU)
+     A                                 23 37'F12=Cancel'
+     A                                      COLOR(BLU)
+     A            MSGFLD        78A  O 24  2DSPATR(HI)

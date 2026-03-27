@@ -1,0 +1,38 @@
+-- ============================================================================
+-- Table: LISTPRBK
+-- Purpose: Store price book item listing data
+-- Description: Captures item details with company, branch, and customer info
+-- ============================================================================
+
+CREATE OR REPLACE TABLE LISTPRBK (
+  COMPANY          DECIMAL(3, 0)  NOT NULL WITH DEFAULT,
+  BRANCH           DECIMAL(3, 0)  NOT NULL WITH DEFAULT,
+  CUSTOMER         DECIMAL(6, 0)  NOT NULL WITH DEFAULT,
+  ITEM             DECIMAL(6, 0)  NOT NULL WITH DEFAULT,
+  PRODUCT          CHAR(30)       NOT NULL WITH DEFAULT,
+  SECTION          CHAR(3)        NOT NULL WITH DEFAULT,
+  GRPCODE          CHAR(3)        NOT NULL WITH DEFAULT,
+  CATEGORY         CHAR(3)        NOT NULL WITH DEFAULT,
+  DESCRIPTION      CHAR(30)       NOT NULL WITH DEFAULT,
+  USERID           CHAR(10)       NOT NULL WITH DEFAULT,
+  STATUS           CHAR(1)        NOT NULL WITH DEFAULT 'A',
+  INSERTTIMESTAMP  TIMESTAMP      NOT NULL WITH DEFAULT CURRENT_TIMESTAMP,
+  LASTCHANGESTAMP  TIMESTAMP      NOT NULL WITH DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Add column text descriptions
+COMMENT ON TABLE LISTPRBK IS 'Price Book Item Listing';
+
+COMMENT ON COLUMN LISTPRBK.COMPANY IS 'Company Number';
+COMMENT ON COLUMN LISTPRBK.BRANCH IS 'Branch Number';
+COMMENT ON COLUMN LISTPRBK.CUSTOMER IS 'Customer Number';
+COMMENT ON COLUMN LISTPRBK.ITEM IS 'Item Number';
+COMMENT ON COLUMN LISTPRBK.PRODUCT IS 'Product Description';
+COMMENT ON COLUMN LISTPRBK.SECTION IS 'Purchasing Section';
+COMMENT ON COLUMN LISTPRBK.GRPCODE IS 'Purchasing Group';
+COMMENT ON COLUMN LISTPRBK.CATEGORY IS 'Purchasing Category';
+COMMENT ON COLUMN LISTPRBK.DESCRIPTION IS 'Item Description';
+COMMENT ON COLUMN LISTPRBK.USERID IS 'User ID';
+COMMENT ON COLUMN LISTPRBK.STATUS IS 'Status Flag (A=Active, I=Inactive)';
+COMMENT ON COLUMN LISTPRBK.INSERTTIMESTAMP IS 'Insert Timestamp';
+COMMENT ON COLUMN LISTPRBK.LASTCHANGESTAMP IS 'Last Change Timestamp';

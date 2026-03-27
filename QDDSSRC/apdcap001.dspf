@@ -1,0 +1,480 @@
+     A*%%TS  SD  20241231  131711  JFLANARY    REL-V7R5M0  5770-WDS
+     A*------------------------------------------------------------------------*
+     A*N FILE NAME - APDCAP001                                                 *
+     A*------------------------------------------------------------------------*
+     A*P                                                                       *
+     A*------------------------------------------------------------------------*
+     A*D HISTORY TABLE FOR CAPTURIS                                            *
+     A*M ----------------------------------------------------------------------*
+     A*M TASK       DATE   ID  DESCRIPTION                                     *
+     A*M ---------- ------ --- ------------------------------------------------*
+     A*V 3072       111924 JJF CREATION OF DISPLAY                             *
+     A*M ----------------------------------------------------------------------*
+     A*%%EC
+     A                                      DSPSIZ(27 132 *DS4)
+     A                                      REF(*LIBL/DBFREF)
+     A                                      CHGINPDFT(UL)
+     A                                      INDARA
+     A                                      CF01
+     A                                      CF02
+     A                                      CF03
+     A                                      CF04
+     A                                      CF05
+     A                                      CF06
+     A                                      CF07
+     A                                      CF08
+     A                                      CF09
+     A                                      CF10
+     A                                      CF11
+     A                                      CF12
+     A                                      CF13
+     A                                      CF14
+     A                                      CF15
+     A                                      CF16
+     A                                      CF17
+     A                                      CF18
+     A                                      CF19
+     A                                      CF20
+     A                                      CF21
+     A                                      CF22
+     A                                      CF23
+     A                                      CF24
+     A N33                                  PAGEDOWN
+     A                                      PAGEUP
+     A                                      PRINT
+     A*=============================================================
+     A*  Subfile number one
+     A*=============================================================
+     A          R SUB01                     SFL
+     A*%%TS  SD  20241231  131711  JFLANARY    REL-V7R5M0  5770-WDS
+     A                                      SFLNXTCHG
+     A            H1SRVACCT     30A  H
+     A            H1SRVINV      22A  H
+     A            H1SDATES      30A  H
+     A            H1SITE        30A  H
+     A            H1GLACCT      20A  H
+     A            H1SERVD       30A  H
+     A            H1ADDDATE     10A  H
+     A*           S1COST         9Y 2O 10102EDTWRD('       .  ')
+     A* 90                                  COLOR(WHT)
+     A            S1COST         9S 2H
+     A            S1QTYHOLD      7S 0H
+     A            S1RVWDRED      1A  H
+     A*           H1YELLOW       1A  H
+     A            S1OPT          1A  B 10  2
+     A            S1APVENDOR    10A  O 10 27
+     A  90                                  COLOR(RED)
+     A            S1VNAME       30A  O 10 38
+     A  90                                  COLOR(RED)
+     A            S1BRANCH       3S 0O 10 69
+     A  90                                  COLOR(RED)
+     A            S1INVDATE      6Y 0O 10 73EDTWRD('  /  /  ')
+     A  90                                  COLOR(RED)
+     A            S1AMOUNT       9Y 2O 10 82EDTCDE(M)
+     A  90                                  COLOR(RED)
+     A            S1SRVCFROM     6Y 0O 10 94EDTWRD('  /  /  ')
+     A  90                                  COLOR(RED)
+     A            S1SRVCTO       6Y 0O 10103EDTWRD('  /  /  ')
+     A  90                                  COLOR(RED)
+     A            S1INVOICE     22A  O 10  4
+     A  90                                  COLOR(RED)
+     A            S1ERROR       20A  O 10112DSPATR(HI)
+     A            H1ERROR        1A  H
+     A*=============================================================
+     A*  Control for subfile number one
+     A*=============================================================
+     A          R SUB01CTL                  SFLCTL(SUB01)
+     A*%%TS  SD  20241231  131711  JFLANARY    REL-V7R5M0  5770-WDS
+     A                                      SFLSIZ(0018)
+     A                                      SFLPAG(0011)
+     A                                      RTNCSRLOC(&#REC &#FLD)
+     A                                      BLINK
+     A                                      OVERLAY
+     A                                      SFLCSRRRN(&WHERE)
+     A  31                                  SFLDSP
+     A  32                                  SFLDSPCTL
+     A  30                                  SFLCLR
+     A  33                                  SFLEND(*MORE)
+     A            SCRRN          4S 0H      SFLRCDNBR
+     A            #REC          10A  H
+     A            #FLD          10A  H
+     A            WHERE          5S 0H
+     A                                  1  3DATE
+     A                                      EDTCDE(Y)
+     A                                      COLOR(BLU)
+     A            C1TITLE       40A  O  1 47DSPATR(HI)
+     A                                  2  3TIME
+     A                                      COLOR(BLU)
+     A            C1DISPLAY     40A  O  2 47COLOR(BLU)
+     A            C1FORMAT      10A  O  3  3COLOR(PNK)
+     A                                  4  3'Type options, press Enter.'
+     A                                      COLOR(BLU)
+     A                                  5  4'5=Display Details'
+     A                                      COLOR(BLU)
+     A                                  8  1'Op'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A                                  8 27'Vendor'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A                                  8 38'Vendor Name'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A            C1VNAME       30A  B  9 38DSPATR(HI)
+     A                                      CHANGE(80)
+     A            C1INVDATE      6Y 0B  9 73EDTWRD('  /  /  ')
+     A                                      CHANGE(80)
+     A  26                                  DSPATR(RI)
+     A  26                                  DSPATR(PC)
+     A                                      COLOR(WHT)
+     A                                  9 87'Amount'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A                                  8 69'Br'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A                                  8 73'Inv Date'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A                                  7 96'Service Date(s)'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A                                  8  4'Capturis Invoice'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A            C1INVOICE     22A  B  9  4DSPATR(HI)
+     A                                      CHANGE(80)
+     A                                  8 98'From'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A                                  8109'To'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A            C1SRVCFROM     6Y 0B  9 94EDTWRD('  /  /  ')
+     A                                      CHANGE(80)
+     A  27                                  DSPATR(RI)
+     A  27                                  DSPATR(PC)
+     A                                      COLOR(WHT)
+     A            C1SRVCTO       6Y 0B  9103EDTWRD('  /  /  ')
+     A                                      CHANGE(80)
+     A                                      COLOR(WHT)
+     A  28                                  DSPATR(RI)
+     A  28                                  DSPATR(PC)
+     A            C1BRANCH       3Y 0B  9 69DSPATR(UL)
+     A                                      EDTCDE(4)
+     A                                      CHANGE(80)
+     A  25                                  DSPATR(RI)
+     A                                      COLOR(WHT)
+     A            C1VENDOR      10A  B  9 27DSPATR(HI)
+     A                                      CHANGE(80 'changed')
+     A                                  9112'Error Code'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A*=========================================================================
+     A          R FKEY01
+     A*%%TS  SD  20241120  152845  JFLANARY    REL-V7R5M0  5770-WDS
+     A                                 22  3'F3=Exit'
+     A                                      COLOR(BLU)
+     A                                 22 25'F12=Cancel'
+     A                                      COLOR(BLU)
+     A                                 22 13'F4=Prompt'
+     A                                      COLOR(BLU)
+      *=========================================================================
+     A          R MSGSFL                    SFL
+     A                                      SFLMSGRCD(23)
+     A            MSGKEY                    SFLMSGKEY
+     A            PGMQ                      SFLPGMQ(10)
+     A*=========================================================================
+     A* Message subfile stuff
+     A*=========================================================================
+     A          R MSGCTL                    SFLCTL(MSGSFL)
+     A*%%TS  SD  20240402  164322  JFLANARY    REL-V7R4M0  5770-WDS
+     A                                      OVERLAY
+     A                                      SFLDSP
+     A                                      SFLDSPCTL
+     A                                      SFLINZ
+     A N03                                  SFLEND
+     A                                      SFLSIZ(0002)
+     A                                      SFLPAG(0001)
+     A            PGMQ                      SFLPGMQ(10)
+     A*-------------------------------------------------------------------------
+     A*=============================================================
+     A*  Subfile number TWO
+     A*=============================================================
+     A          R SUB02                     SFL
+     A*%%TS  SD  20241121  115612  JFLANARY    REL-V7R5M0  5770-WDS
+     A                                      SFLNXTCHG
+     A            S2VNAME       30A  O  9 15
+     A            S2OPT          1A  B  9  2
+     A            S2APVENDOR    10A  O  9  4
+     A*=============================================================
+     A*  Control for subfile number one
+     A*=============================================================
+     A          R SUB02CTL                  SFLCTL(SUB02)
+     A*%%TS  SD  20241126  145516  JFLANARY    REL-V7R5M0  5770-WDS
+     A                                      SFLSIZ(0018)
+     A                                      SFLPAG(0007)
+     A                                      WINDOW(WINDOWFMT1)
+     A                                      RTNCSRLOC(&#REC &#FLD)
+     A                                      BLINK
+     A                                      OVERLAY
+     A                                      SFLCSRRRN(&WHERE2)
+     A  35                                  SFLDSP
+     A  36                                  SFLDSPCTL
+     A  34                                  SFLCLR
+     A  37                                  SFLEND(*MORE)
+     A            SCRRN2         4S 0H      SFLRCDNBR
+     A            #REC          10A  H
+     A            #FLD          10A  H
+     A            WHERE2         5S 0H
+     A                                  1  3DATE
+     A                                      EDTCDE(Y)
+     A                                      COLOR(BLU)
+     A                                  2  3TIME
+     A                                      COLOR(BLU)
+     A            C2FORMAT      10A  O  1 41COLOR(PNK)
+     A                                  4  3'Type options, press Enter.'
+     A                                      COLOR(BLU)
+     A                                  5  4'1=Select'
+     A                                      COLOR(BLU)
+     A                                  8  2'O'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A                                  7  4'Vendor'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A                                  7 15'Vendor Name'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A            C2VNAME       30A  B  8 15DSPATR(HI)
+     A                                      CHANGE(81)
+     A            W1TITLE       25A  O  1 14DSPATR(HI)
+     A            C2VENDOR      10A  B  8  4DSPATR(HI)
+     A                                      CHANGE(81 'changed')
+      *=========================================================================
+     A          R MSGSFL2                   SFL
+     A                                      SFLMSGRCD(20)
+     A            MSGKEY                    SFLMSGKEY
+     A            PGMQ                      SFLPGMQ(10)
+     A*=========================================================================
+     A* Message subfile stuff
+     A*=========================================================================
+     A          R MSGCTL2                   SFLCTL(MSGSFL2)
+     A*%%TS  SD  20240402  164322  JFLANARY    REL-V7R4M0  5770-WDS
+     A                                      OVERLAY
+     A                                      WINDOW(WINDOWFMT1)
+     A                                      SFLDSP
+     A                                      SFLDSPCTL
+     A                                      SFLINZ
+     A N03                                  SFLEND
+     A                                      SFLSIZ(0002)
+     A                                      SFLPAG(0001)
+     A            PGMQ                      SFLPGMQ(10)
+     A*-------------------------------------------------------------------------
+     A          R WINDOWFMT1
+     A*%%TS  SD  20241121  091435  JFLANARY    REL-V7R5M0  5770-WDS
+     A                                      WINDOW(2 35 20 50 *NOMSGLIN)
+     A                                 19  2'F3=Exit'
+     A                                      COLOR(BLU)
+     A                                 19 12'F12=Cancel'
+     A                                      COLOR(BLU)
+     A*=============================================================
+     A          R SUB03                     SFL
+     A*%%TS  SD  20241122  094321  JFLANARY    REL-V7R5M0  5770-WDS
+     A                                      SFLNXTCHG
+     A            S3OPT          1A  B  9  2
+     A            S3INVOICE     22A  O  9  4
+     A            S3DATE         6Y 0O  9 27EDTWRD('  /  /  ')
+     A            S3TOTAL        9Y 2O  9 36EDTCDE(J)
+     A*=============================================================
+     A*  Control for subfile - capturis invoice
+     A*=============================================================
+     A          R SUB03CTL                  SFLCTL(SUB03)
+     A*%%TS  SD  20241126  145516  JFLANARY    REL-V7R5M0  5770-WDS
+     A                                      SFLSIZ(0018)
+     A                                      SFLPAG(0007)
+     A                                      WINDOW(WINDOWFMT1)
+     A                                      RTNCSRLOC(&#REC &#FLD)
+     A                                      BLINK
+     A                                      OVERLAY
+     A                                      SFLCSRRRN(&WHERE3)
+     A  39                                  SFLDSP
+     A  40                                  SFLDSPCTL
+     A  38                                  SFLCLR
+     A  41                                  SFLEND(*MORE)
+     A            SCRRN3         4S 0H      SFLRCDNBR
+     A            #REC          10A  H
+     A            #FLD          10A  H
+     A            WHERE3         5S 0H
+     A                                  1  3DATE
+     A                                      EDTCDE(Y)
+     A                                      COLOR(BLU)
+     A                                  2  3TIME
+     A                                      COLOR(BLU)
+     A            C3FORMAT      10A  O  1 41COLOR(PNK)
+     A                                  4  3'Type options, press Enter.'
+     A                                      COLOR(BLU)
+     A                                  5  4'1=Select'
+     A                                      COLOR(BLU)
+     A                                  8  2'O'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A            W1TITLE       25A  O  1 14DSPATR(HI)
+     A                                  8  4'Invoice'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A                                  7 27'Date'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A            C3DATE         6Y 0B  8 27EDTWRD('  /  /  ')
+     A                                      DSPATR(HI)
+     A                                      CHANGE(83 'changed')
+     A                                  8 36'Invoice Total'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A*=============================================================
+     A          R SUB04                     SFL
+     A*%%TS  SD  20241122  085101  JFLANARY    REL-V7R5M0  5770-WDS
+     A                                      SFLNXTCHG
+     A            S4OPT          1A  B  9  2
+     A            S4BRANCH       3Y 0O  9  5
+     A            S4BNAME       25A  O  9  9
+     A*=============================================================
+     A*  Control for subfile - capturis invoice
+     A*=============================================================
+     A          R SUB04CTL                  SFLCTL(SUB04)
+     A*%%TS  SD  20241126  145516  JFLANARY    REL-V7R5M0  5770-WDS
+     A                                      SFLSIZ(0018)
+     A                                      SFLPAG(0007)
+     A                                      WINDOW(WINDOWFMT1)
+     A                                      RTNCSRLOC(&#REC &#FLD)
+     A                                      BLINK
+     A                                      OVERLAY
+     A                                      SFLCSRRRN(&WHERE4)
+     A  43                                  SFLDSP
+     A  44                                  SFLDSPCTL
+     A  42                                  SFLCLR
+     A  45                                  SFLEND(*MORE)
+     A            SCRRN4         4S 0H      SFLRCDNBR
+     A            #REC          10A  H
+     A            #FLD          10A  H
+     A            WHERE4         5S 0H
+     A                                  1  3DATE
+     A                                      EDTCDE(Y)
+     A                                      COLOR(BLU)
+     A                                  2  3TIME
+     A                                      COLOR(BLU)
+     A            C4FORMAT      10A  O  1 41COLOR(PNK)
+     A                                  4  3'Type options, press Enter.'
+     A                                      COLOR(BLU)
+     A                                  5  4'1=Select'
+     A                                      COLOR(BLU)
+     A                                  8  2'O'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A            W4TITLE       25A  O  1 14DSPATR(HI)
+     A                                  8  5'Brc'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A                                  8  9'Branch Name'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A*-------------------------------------------------------------------------
+     A          R SCREEN1
+     A*%%TS  SD  20241230  155634  JFLANARY    REL-V7R5M0  5770-WDS
+     A                                      WINDOW(WINDOWFMT2)
+     A                                      OVERLAY
+     A                                  4  2'Vendor . . . . . :'
+     A                                      DSPATR(HI)
+     A                                  5  2'Vendor Name  . . :'
+     A                                      DSPATR(HI)
+     A                                  6  2'Service account  :'
+     A                                      DSPATR(HI)
+     A                                  7  2'Service invoice  :'
+     A                                      DSPATR(HI)
+     A                                  4 60'Service Dates  . :'
+     A                                      DSPATR(HI)
+     A                                  6 60'Service Desc . . :'
+     A                                      DSPATR(HI)
+     A                                  9  2'Site . . . . . . :'
+     A                                      DSPATR(HI)
+     A                                 10  2'Site Name  . . . :'
+     A                                      DSPATR(HI)
+     A                                  9 60'Service $  . . . :'
+     A                                      DSPATR(HI)
+     A                                 12  2'GL Account . . . :'
+     A                                      DSPATR(HI)
+     A                                 11 60'Inv Date . . . . :'
+     A                                      DSPATR(HI)
+     A                                 12 60'Date Received  . :'
+     A                                      DSPATR(HI)
+     A                                 13 60'Capturis Inv#  . :'
+     A                                      DSPATR(HI)
+     A            W2VENDOR      10   O  4 21
+     A  60                                  DSPATR(RI)
+     A            W2VNAME       30A  O  5 21
+     A            W2VENDACT     30A  O  6 21
+     A            W2INVOICE     22A  O  7 21
+     A            W2SRVFROM      6Y 0O  4 79EDTWRD('  /  /  ')
+     A            W2SRVTO        6Y 0O  4 90EDTWRD('  /  /  ')
+     A            W2SNAME       20A  O  6 79
+     A            W2SERVICE     30A  O  5 79
+     A            W2BRANCH       3  0O  9 21
+     A  61                                  DSPATR(RI)
+     A            W2SITE        30A  O 10 21
+     A            W2SERVICE$     9Y 2O  9 79EDTWRD('       .  ')
+     A            W2GLACCT      20   O 12 21
+     A  62                                  DSPATR(RI)
+     A            W2INVDATE      6Y 0O 11 79EDTWRD('  /  /  ')
+     A            W2DATERCV      6Y 0O 12 79EDTWRD('  /  /  ')
+     A            W2CAPINV#     20A  O 13 79
+     A            W2TITLE       40A  O  1 41DSPATR(HI)
+     A                                  1  2'SCREEN1'
+     A                                      COLOR(PNK)
+     A                                  1112DATE
+     A                                      EDTCDE(Y)
+     A                                  2112TIME
+     A                                  2  2USER
+     A                                 15  2'Total YTD  . . . :'
+     A                                      DSPATR(HI)
+     A                                 16  2'Average YTD  . . :'
+     A                                      DSPATR(HI)
+     A                                 17  2'Average Month  . :'
+     A                                      DSPATR(HI)
+     A                                 18  2'Over All Total . :'
+     A                                      DSPATR(HI)
+     A            W2TOTAL1       9Y 2O 14 21EDTWRD('       .  ')
+     A            W2TOTAL3       9Y 2O 16 21EDTWRD('       .  ')
+     A            W2TOTAL4       9Y 2O 17 21EDTWRD('       .  ')
+     A            W2TOTAL5       9Y 2O 18 21EDTWRD('       .  ')
+     A                                 14  2'Current Amount . :'
+     A                                      DSPATR(HI)
+     A            W2TOTAL2       9Y 2O 15 21EDTWRD('       .  ')
+     A                                 13  4'Description  . :'
+     A                                      DSPATR(HI)
+     A            W2GNAME       25A  O 13 21
+     A*=========================================================================
+     A          R WINDOWFMT2
+     A*%%TS  SD  20241230  140715  JFLANARY    REL-V7R5M0  5770-WDS
+     A                                      WINDOW(2 5 22 120 *NOMSGLIN)
+     A                                 21  2'F3=Exit'
+     A                                      COLOR(BLU)
+     A                                 21 12'F12=Cancel'
+     A                                      COLOR(BLU)
+     A*=========================================================================
+     A          R MSGSFL5                   SFL
+     A                                      SFLMSGRCD(22)
+     A            MSGKEY                    SFLMSGKEY
+     A            PGMQ                      SFLPGMQ(10)
+     A*=========================================================================
+     A          R MSGCTL5                   SFLCTL(MSGSFL5)
+     A*%%TS  SD  20241230  140715  JFLANARY    REL-V7R5M0  5770-WDS
+     A                                      OVERLAY
+     A                                      SFLDSP
+     A                                      SFLDSPCTL
+     A                                      SFLINZ
+     A N03                                  SFLEND
+     A                                      SFLSIZ(0002)
+     A                                      SFLPAG(0001)
+     A                                      WINDOW(WINDOWFMT2)
+     A            PGMQ                      SFLPGMQ(10)

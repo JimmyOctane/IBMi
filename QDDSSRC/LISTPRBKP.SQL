@@ -1,0 +1,38 @@
+-- ============================================================================
+-- Table: LISTPRBKP (Price Book Exclusions)
+-- Purpose: Store excluded/omitted price book items
+-- Description: Captures items marked as *OMIT with company, branch, customer
+-- ============================================================================
+
+CREATE OR REPLACE TABLE LISTPRBKP (
+  COMPANY          DECIMAL(3, 0)  NOT NULL WITH DEFAULT,
+  BRANCH           DECIMAL(3, 0)  NOT NULL WITH DEFAULT,
+  CUSTOMER         DECIMAL(6, 0)  NOT NULL WITH DEFAULT,
+  ITEM             DECIMAL(6, 0)  NOT NULL WITH DEFAULT,
+  PRODUCT          CHAR(30)       NOT NULL WITH DEFAULT,
+  SECTION          CHAR(3)        NOT NULL WITH DEFAULT,
+  GRPCODE          CHAR(3)        NOT NULL WITH DEFAULT,
+  CATEGORY         CHAR(3)        NOT NULL WITH DEFAULT,
+  DESCRIPTION      CHAR(30)       NOT NULL WITH DEFAULT,
+  USERID           CHAR(10)       NOT NULL WITH DEFAULT,
+  STATUS           CHAR(1)        NOT NULL WITH DEFAULT 'X',
+  INSERTTIMESTAMP  TIMESTAMP      NOT NULL WITH DEFAULT CURRENT_TIMESTAMP,
+  LASTCHANGESTAMP  TIMESTAMP      NOT NULL WITH DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Add column text descriptions
+COMMENT ON TABLE LISTPRBKP IS 'Price Book Excluded Items';
+
+COMMENT ON COLUMN LISTPRBKP.COMPANY IS 'Company Number';
+COMMENT ON COLUMN LISTPRBKP.BRANCH IS 'Branch Number';
+COMMENT ON COLUMN LISTPRBKP.CUSTOMER IS 'Customer Number';
+COMMENT ON COLUMN LISTPRBKP.ITEM IS 'Item Number';
+COMMENT ON COLUMN LISTPRBKP.PRODUCT IS 'Product Description';
+COMMENT ON COLUMN LISTPRBKP.SECTION IS 'Purchasing Section';
+COMMENT ON COLUMN LISTPRBKP.GRPCODE IS 'Purchasing Group';
+COMMENT ON COLUMN LISTPRBKP.CATEGORY IS 'Purchasing Category';
+COMMENT ON COLUMN LISTPRBKP.DESCRIPTION IS 'Item Description';
+COMMENT ON COLUMN LISTPRBKP.USERID IS 'User ID';
+COMMENT ON COLUMN LISTPRBKP.STATUS IS 'Status Flag (X=Excluded/Omitted)';
+COMMENT ON COLUMN LISTPRBKP.INSERTTIMESTAMP IS 'Insert Timestamp';
+COMMENT ON COLUMN LISTPRBKP.LASTCHANGESTAMP IS 'Last Change Timestamp';
