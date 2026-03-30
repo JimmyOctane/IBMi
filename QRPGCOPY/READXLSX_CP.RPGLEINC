@@ -1,0 +1,155 @@
+﻿**==================================================================
+**  READXLSX_CP - RPG Copy Member for Calling READXLSX
+**==================================================================
+**  Include this in your RPG programs to call the Excel reader
+**
+**  Usage in your RPG program:
+**    /copy qrpgcopy,readxlsx_cp
+**
+**    ReadXlsxToTable('/home/data/sales.xlsx':'MYLIB':'SALESTBL');
+**==================================================================
+
+**free
+
+//------------------------------------------------------------------
+// Prototype for READXLSX CL Program
+//------------------------------------------------------------------
+dcl-pr ReadXlsx ExtPgm('READXLSX');
+  xlsxPath char(256) const;
+  library char(10) const;
+  table char(10) const;
+  sheet char(10) const options(*nopass);
+  startRow char(5) const options(*nopass);
+end-pr;
+
+//------------------------------------------------------------------
+// Wrapper procedure with better interface
+//------------------------------------------------------------------
+dcl-proc ReadXlsxToTable;
+  dcl-pi *n ind;
+    pXlsxPath varchar(256) const;
+    pLibrary varchar(10) const;
+    pTable varchar(10) const;
+    pSheet varchar(10) const options(*nopass);
+    pStartRow int(5) const options(*nopass);
+  end-pi;
+  
+  dcl-s xlsxPath char(256);
+  dcl-s library char(10);
+  dcl-s table char(10);
+  dcl-s sheet char(10);
+  dcl-s startRow char(5);
+  dcl-s success ind inz(*off);
+  
+  // Convert parameters to fixed-length
+  xlsxPath = pXlsxPath;
+  library = pLibrary;
+  table = pTable;
+  
+  // Handle optional parameters
+  if %parms() >= 4;
+    sheet = pSheet;
+  else;
+    sheet = '0';
+  endif;
+  
+  if %parms() >= 5;
+    startRow = %char(pStartRow);
+  else;
+    startRow = '0';
+  endif;
+  
+  // Call the CL program
+  monitor;
+    ReadXlsx(xlsxPath: library: table: sheet: startRow);
+    success = *on;
+  on-error;
+    success = *off;
+  endmon;
+  
+  return success;
+end-proc;
+
+//------------------------------------------------------------------
+// SQL Stored Procedure Interface
+//------------------------------------------------------------------
+dcl-proc ReadXlsxViaSQL;
+  dcl-pi *n ind;
+    pXlsxPath varchar(256) const;
+    pLibrary varchar(10) const;
+    pTable varchar(10) const;
+    pSheet varchar(10) const options(*nopass);
+    pStartRow varchar(5) const options(*nopass);
+  end-pi;
+  
+  dcl-s sheet varchar(10);
+  dcl-s startRow varchar(5);
+  dcl-s success ind inz(*off);
+  
+  // Handle optional parameters
+  if %parms() >= 4;
+    sheet = pSheet;
+  else;
+    sheet = '0';
+  endif;
+  
+  if %parms() >= 5;
+    startRow = pStartRow;
+  else;
+    startRow = '0';
+  endif;
+  
+  // Call SQL stored procedure
+  exec sql CALL READ_XLSX_IFS(
+    :pXlsxPath,
+    :pLibrary,
+    :pTable,
+    :sheet,
+    :startRow
+  );
+  
+  if sqlcode = 0;
+    success = *on;
+  endif;
+  
+  return success;
+end-proc;
+
+//------------------------------------------------------------------
+// Example Usage in Your RPG Program:
+//------------------------------------------------------------------
+// dcl-s result ind;
+//
+// // Simple call - first sheet, first row
+// result = ReadXlsxToTable(
+//   '/home/data/sales.xlsx':
+//   'MYLIB':
+//   'SALESTBL'
+// );
+//
+// // With sheet and start row
+// result = ReadXlsxToTable(
+//   '/home/data/inventory.xlsx':
+//   'INVLIB':
+//   'INVTBL':
+//   '0':      // First sheet
+//   1         // Skip header row
+// );
+//
+// // Using SQL interface
+// result = ReadXlsxViaSQL(
+//   '/home/data/report.xlsx':
+//   'RPTLIB':
+//   'RPTTBL':
+//   'Summary':
+//   '0'
+// );
+//
+// if result;
+//   // Success
+//   dsply 'Excel import successful';
+// else;
+//   // Error
+//   dsply 'Excel import failed - check /tmp/xlsx_import.log';
+// endif;
+//------------------------------------------------------------------
