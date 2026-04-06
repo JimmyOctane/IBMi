@@ -1,0 +1,119 @@
+================================================================================
+POR0120 PROGRAM ACTIVITY ANALYSIS - Around 14:08 Error Timeframe
+================================================================================
+Job: 437610/APANETTA/QPADEV00M4
+Date: 03/30/26
+Analysis Focus: POR0120 program calls relative to 14:08 errors
+
+================================================================================
+TIMELINE OF EVENTS
+================================================================================
+
+14:01:28 - POR0120 Activity
+---------------------------------------------------------------------------
+CPF4028    Diagnostic              10   03/30/26  14:01:28.993014
+FROM PGM: QDBOPEN (QSYS)
+TO PGM:   POR0120 (HD1100PO)
+Message:  Open of member was changed to SEQONLY(*NO)
+
+Status: Normal diagnostic message (database file open)
+
+
+14:05:22 - POR0120 Activity (Multiple subfile errors)
+---------------------------------------------------------------------------
+CPF5020    Notify                  30   03/30/26  14:05:22.257053
+FROM PGM: QSFGET (QSYS)
+TO PGM:   POR0120 (HD1100PO)
+Message:  Subfile record not found
+
+CPF5020    Notify                  30   03/30/26  14:05:22.629961
+FROM PGM: QSFGET (QSYS)
+TO PGM:   POR0120 (HD1100PO)
+Message:  Subfile record not found
+
+Status: User interface issues (subfile errors) - not critical
+
+
+14:08:35 - CRITICAL ERROR #1: CPF3130
+---------------------------------------------------------------------------
+CPF3130    Escape                  40   03/30/26  14:08:35.376052
+FROM PGM: QDBCLRPF (QSYS)
+TO PGM:   OPC9990 (HD1100PO)
+Message:  Member OEPWITX already in use
+
+** NO POR0120 ACTIVITY AT THIS TIME **
+
+
+14:08:46 - CRITICAL ERROR #2: CPF0819
+---------------------------------------------------------------------------
+CPF0819    Escape                  40   03/30/26  14:08:46.844446
+FROM PGM: QCLCNVNC (QSYS)
+TO PGM:   IMC0000 (HD1100PO) at instruction 0093
+Message:  Variable or substring of variable too small to hold result
+
+** NO POR0120 ACTIVITY AT THIS TIME **
+
+
+14:08:47 - CRITICAL ERROR #3: CPF0819 (Second occurrence)
+---------------------------------------------------------------------------
+CPF0819    Escape                  40   03/30/26  14:08:47.117241
+FROM PGM: QCLCNVNC (QSYS)
+TO PGM:   IMC0000 (HD1100PO) at instruction 0093
+Message:  Variable or substring of variable too small to hold result
+
+** NO POR0120 ACTIVITY AT THIS TIME **
+
+
+14:09:03 - CRITICAL ERROR #4: SQL0811
+---------------------------------------------------------------------------
+SQL0811    Diagnostic              30   03/30/26  14:09:03.183570
+FROM MODULE: QSQFETCH
+FROM PROC:   CK_DEBUG
+Message:  Result of SELECT more than one row
+
+** NO POR0120 ACTIVITY AT THIS TIME **
+
+
+================================================================================
+ANALYSIS SUMMARY
+================================================================================
+
+1. POR0120 TIMING RELATIVE TO ERRORS:
+   - Last POR0120 activity: 14:05:22 (3 minutes 13 seconds BEFORE errors)
+   - First error occurred:  14:08:35
+   - Time gap: ~3 minutes
+
+2. POR0120 IS NOT DIRECTLY INVOLVED IN THE 14:08 ERRORS:
+   - No POR0120 program calls during the 14:08-14:09 error window
+   - The errors occurred in different programs:
+     * OPC9990 (file locking issue)
+     * IMC0000 (variable size issue)
+     * QSQFETCH/CK_DEBUG (SQL multiple rows)
+
+3. PROGRAMS INVOLVED IN THE ERRORS:
+   - OPC9990: Attempted to clear OEPWITX file but it was locked
+   - IMC0000: Data conversion issue (variable too small)
+   - QSQFETCH: SQL query returned multiple rows when one expected
+
+4. CONCLUSION:
+   POR0120 was active earlier in the job (14:01 and 14:05) but was NOT 
+   involved in the critical errors that occurred at 14:08. The errors 
+   appear to be related to:
+   - File locking conflicts (OEPWITX member in use)
+   - Data conversion problems in IMC0000
+   - SQL query design issues
+
+================================================================================
+RECOMMENDATION
+================================================================================
+
+The 14:08 errors are NOT related to POR0120. Investigation should focus on:
+
+1. Why OEPWITX member was locked at 14:08:35
+2. Why IMC0000 has a variable size mismatch at instruction 0093
+3. Why the SQL SELECT in CK_DEBUG returns multiple rows
+
+POR0120 activity at 14:05 appears to be normal user interface operations
+(subfile navigation) and is unrelated to the subsequent errors.
+
+================================================================================

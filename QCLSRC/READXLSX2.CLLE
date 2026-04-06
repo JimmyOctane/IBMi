@@ -1,0 +1,92 @@
+/* ================================================================== */
+/* CL Program: READXLSX2 - Read Excel from IFS to DB2 Table          */
+/* ================================================================== */
+/* Clean version with table clearing before import                   */
+/*                                                                    */
+/* Parameters:                                                        */
+/*   &XLSXPATH  - Full IFS path to .xlsx file (CHAR 256)            */
+/*   &LIBRARY   - Target library name (CHAR 10)                      */
+/*   &TABLE     - Target table name (CHAR 10)                        */
+/*   &SHEET     - Sheet name or index (CHAR 10) - Optional           */
+/*   &STARTROW  - Starting row number (CHAR 5) - Optional            */
+/*                                                                    */
+/* Usage:                                                             */
+/*   CALL READXLSX2 PARM('/home/data/file.xlsx' 'MYLIB' 'MYTBL')    */
+/* ================================================================== */
+
+             PGM        PARM(&XLSXPATH &LIBRARY &TABLE &SHEET +
+                             &STARTROW)
+
+             /* Parameter declarations */
+             DCL        VAR(&XLSXPATH) TYPE(*CHAR) LEN(256)
+             DCL        VAR(&LIBRARY) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&TABLE) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&SHEET) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&STARTROW) TYPE(*CHAR) LEN(5)
+
+             /* Working variables */
+             DCL        VAR(&CMD) TYPE(*CHAR) LEN(1000)
+             DCL        VAR(&PYPATH) TYPE(*CHAR) LEN(256)
+             DCL        VAR(&MSGID) TYPE(*CHAR) LEN(7)
+             DCL        VAR(&MSGDTA) TYPE(*CHAR) LEN(512)
+
+             /* Set default values for optional parameters */
+             MONMSG     MSGID(CPF0000)
+             
+             /* If SHEET not passed, default to '0' */
+             IF         COND(&SHEET *EQ ' ') THEN(DO)
+                CHGVAR     VAR(&SHEET) VALUE('0')
+             ENDDO
+
+             /* If STARTROW not passed, default to '0' */
+             IF         COND(&STARTROW *EQ ' ') THEN(DO)
+                CHGVAR     VAR(&STARTROW) VALUE('0')
+             ENDDO
+
+             /* Set Python script path */
+             CHGVAR     VAR(&PYPATH) VALUE('/home/jflanary/+
+                          read_xlsx_callable.py')
+
+             /* Display start message */
+             SNDPGMMSG  MSGID(CPF9897) MSGF(QCPFMSG) +
+                          MSGDTA('Starting Excel import from IFS...') +
+                          TOPGMQ(*EXT) MSGTYPE(*STATUS)
+
+             /* Build QSH command to run Python script */
+             /* Note: Python script will create/replace table automatically */
+             CHGVAR     VAR(&CMD) VALUE('QSH CMD(''python3 ' *CAT +
+                          %TRIM(&PYPATH) *CAT ' "' *CAT +
+                          %TRIM(&XLSXPATH) *CAT '" "' *CAT +
+                          %TRIM(&LIBRARY) *CAT '" "' *CAT +
+                          %TRIM(&TABLE) *CAT '" "' *CAT +
+                          %TRIM(&SHEET) *CAT '" "' *CAT +
+                          %TRIM(&STARTROW) *CAT '"'')')
+
+             /* Execute the Python script */
+             CALL       PGM(QCMDEXC) PARM(&CMD 1000)
+
+             /* Check for errors */
+             MONMSG     MSGID(CPF0000) EXEC(DO)
+                RCVMSG     MSGTYPE(*EXCP) MSGDTA(&MSGDTA) MSGID(&MSGID)
+                SNDPGMMSG  MSGID(CPF9897) MSGF(QCPFMSG) +
+                             MSGDTA('Import error: ' *CAT +
+                             &MSGID *CAT ' - ' *CAT &MSGDTA) +
+                             TOPGMQ(*EXT) MSGTYPE(*DIAG)
+                GOTO       CMDLBL(ERROR)
+             ENDDO
+
+             /* Display completion message */
+             SNDPGMMSG  MSGID(CPF9897) MSGF(QCPFMSG) +
+                          MSGDTA('Excel import completed. Check +
+                          /tmp/xlsx_import.log for details.') +
+                          TOPGMQ(*EXT) MSGTYPE(*COMP)
+
+             RETURN
+
+ ERROR:      /* Error handling */
+             SNDPGMMSG  MSGID(CPF9897) MSGF(QCPFMSG) +
+                          MSGDTA('Excel import FAILED. Check +
+                          /tmp/xlsx_import.log for error details.') +
+                          TOPGMQ(*EXT) MSGTYPE(*ESCAPE)
+
+             ENDPGM

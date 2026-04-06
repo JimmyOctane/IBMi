@@ -1,0 +1,129 @@
+================================================================================
+PO LINE DELETION TIMELINE ANALYSIS - 13:32:21 to 13:32:29
+================================================================================
+Job: 437610/APANETTA/QPADEV00M4
+Date: 03/30/26
+Issue: PO line deleted by POR0130, but POR0120 write-back behavior unclear
+================================================================================
+
+TIMELINE OF EVENTS:
+================================================================================
+
+13:32:21.421220 - POR0120 ACTIVE (BEFORE DELETION)
+---------------------------------------------------
+CPF5020 (Notify) - Subfile record not found error in POR0120
+- Message: "Subfile record format not found for GET or PUT operation"
+- Program: POR0120 at statement *STMT
+- This is POR0120 handling a user interaction error
+
+13:32:21.421238 - POR0120 ERROR NOTIFICATION
+---------------------------------------------------
+CPF5020 sent to POR0120 from QSFGET (subfile get operation)
+
+13:32:21.421359 - POR0120 ERROR REPLY
+---------------------------------------------------
+Reply sent from POR0120 back to QMHCHGEM (message handler)
+
+
+13:32:21.750151 - POR0130 STARTS (DELETION PROGRAM)
+---------------------------------------------------
+POR0130 begins opening PO files for deletion operation
+CPF4028 (Diagnostic) - File open diagnostics from QDBOPEN
+
+Files opened by POR0130 (13:32:21.750151 to 13:32:21.751648):
+1. POQTVOLA  - PO Volume file
+2. POPTVOHA  - PO Volume Header file
+3. POPTVTG   - PO Tag file
+4. POPTVNK   - PO Link file
+5. POPTVVL   - PO Value file
+6. POPTVOT   - PO Other file
+7. POPTVOL   - PO Line file
+8. POPTVOH   - PO Header file
+9. POPTVOA   - PO Address file
+10. POPTVNT  - PO Note file
+
+Total time for POR0130 file opens: ~1.5 milliseconds (0.0015 seconds)
+
+
+13:32:21.776702 to 13:32:25.178258 - OTHER PROGRAM ACTIVITY
+---------------------------------------------------
+Multiple programs running during POR0130's deletion operation:
+- OPC9990: CLRPF (Clear Physical File) operations
+- OEC8430: Library list changes (CHGLIBL, CHGCURLIB)
+- TRIVPMSBR: Opening multiple files (13:32:21.793747 to 13:32:24.416678)
+
+Key observation: TRIVPMSBR opened many files from 13:32:21.793747 through 
+13:32:24.416678 - this is ~2.6 seconds of file operations
+
+
+13:32:29.348228 - POR0120 CALLED AGAIN (AFTER DELETION)
+---------------------------------------------------
+CPF5020 (Notify) - Another subfile error in POR0120
+- This is 7.927 seconds AFTER POR0130 started
+- This is 7.597 seconds AFTER POR0130 finished opening files
+
+13:32:29.348798 - POR0120 ERROR REPLY
+---------------------------------------------------
+Reply sent from POR0120 back to QMHCHGEM
+
+
+================================================================================
+CRITICAL FINDINGS:
+================================================================================
+
+1. POR0130 DELETION TIMING:
+   - POR0130 started opening files at 13:32:21.750151
+   - POR0130 finished opening files at 13:32:21.751648
+   - Duration: ~1.5 milliseconds for file opens
+
+2. POR0120 CALL PATTERN:
+   - POR0120 was active BEFORE deletion: 13:32:21.421238
+   - POR0120 was called AFTER deletion: 13:32:29.348228
+   - Gap between POR0130 start and next POR0120 call: 7.598 seconds
+
+3. EXPECTED vs ACTUAL BEHAVIOR:
+   EXPECTED: POR0120 should be called immediately after POR0130 deletion
+             to write the changes back to the database
+   
+   ACTUAL:   POR0120 was NOT called immediately after POR0130
+             - 7.6 second delay before next POR0120 activity
+             - Both POR0120 calls show CPF5020 errors (subfile issues)
+             - No clear "write-back" operation visible in the log
+
+4. INTERVENING ACTIVITY:
+   Between POR0130 deletion and next POR0120 call:
+   - OPC9990 performed multiple CLRPF operations
+   - OEC8430 changed library lists
+   - TRIVPMSBR opened many files (2.6 seconds of activity)
+   - These programs may have interfered with expected POR0120 call
+
+5. SUBFILE ERRORS:
+   Both POR0120 calls show CPF5020 (subfile record not found)
+   - This suggests POR0120 is handling user interface operations
+   - NOT performing database write-back operations
+   - The write-back may not be happening at all
+
+
+================================================================================
+CONCLUSION:
+================================================================================
+
+The expected immediate call from POR0130 to POR0120 for write-back did NOT occur.
+
+Instead:
+- POR0130 opened files for deletion at 13:32:21.750151
+- 7.6 seconds passed with other program activity
+- POR0120 was called at 13:32:29.348228 with a subfile error (not write-back)
+
+This indicates a potential MISSING CALL or LOGIC ERROR where POR0130 should
+be calling POR0120 to persist the deletion, but is not doing so.
+
+RECOMMENDATION:
+Review POR0130 source code to verify it contains a call to POR0120 after
+performing the deletion operation. The call may be:
+- Missing entirely
+- Conditional and not being triggered
+- Failing silently without logging
+- Being bypassed due to an error condition
+
+================================================================================

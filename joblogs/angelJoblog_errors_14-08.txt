@@ -1,0 +1,97 @@
+================================================================================
+JOBLOG ERRORS EXTRACTED - 03/30/26 around 2:08 PM (14:08)
+Job: 437610/APANETTA/QPADEV00M4
+================================================================================
+
+ERROR #1: CPF3130 - Member Already in Use
+================================================================================
+Time:     03/30/26  14:08:35.376052
+Severity: 40 (Escape)
+Program:  QDBCLRPF (QSYS) -> OPC9990 (HD1100PO) at instruction 0037
+Message:  Member OEPWITX already in use.
+
+Cause:
+  Member OEPWITX file OEPWITX in library QTEMP is already opened or allocated.
+
+Recovery:
+  Try the request again when member OEPWITX and all logical members based on 
+  member OEPWITX are available.
+
+Context:
+  - Member OEPWITX file OEPWITX in QTEMP was just cleared (line 261817)
+  - Immediately after clearing, the file was found to be in use
+
+
+ERROR #2: CPF0819 - Variable Too Small (First Occurrence)
+================================================================================
+Time:     03/30/26  14:08:46.844446
+Severity: 40 (Escape)
+Program:  QCLCNVNC (QSYS) -> IMC0000 (HD1100PO) at instruction 0093
+Message:  Variable or substring of variable too small to hold result.
+
+Cause:
+  Result of conversion too large for receiver variable or %SUBSTRING.
+
+Recovery:
+  Increase size of variable or length on %SUBSTRING.
+
+** CRITICAL: This is a programming error in IMC0000 **
+
+
+ERROR #3: CPF0819 - Variable Too Small (Second Occurrence)
+================================================================================
+Time:     03/30/26  14:08:47.117241
+Severity: 40 (Escape)
+Program:  QCLCNVNC (QSYS) -> IMC0000 (HD1100PO) at instruction 0093
+Message:  Variable or substring of variable too small to hold result.
+
+Cause:
+  Result of conversion too large for receiver variable or %SUBSTRING.
+
+Recovery:
+  Increase size of variable or length on %SUBSTRING.
+
+** CRITICAL: Same error repeated 0.27 seconds later - same program, same instruction **
+
+
+ERROR #4: SQL0811 - SELECT Returned Multiple Rows
+================================================================================
+Time:     03/30/26  14:09:03.183570
+Severity: 30 (Diagnostic)
+Module:   QSQFETCH (QSYS) procedure CK_DEBUG at statement 25187
+Message:  Result of SELECT more than one row.
+
+Cause:
+  The result table of a SELECT INTO statement, a subquery, or a subselect 
+  of a SET statement contains more than one row. The error type is 1.
+  A SELECT INTO statement attempted to return more than one row.
+
+Recovery:
+  Change the selection so that only one result row is returned and then try 
+  the request again. The DECLARE CURSOR, OPEN, and FETCH statements must be 
+  used to process more than one result row. If one row was expected, there 
+  may be data errors, such as duplicate rows, that are causing more than 
+  one row to be returned.
+
+
+================================================================================
+SUMMARY
+================================================================================
+
+Primary Issue: Program IMC0000 at statement 0093
+  - CPF0819 error occurring twice within 0.27 seconds
+  - Variable or substring too small for conversion result
+  - This is a code defect that needs to be fixed in program IMC0000
+
+Secondary Issues:
+  - File contention on OEPWITX in QTEMP
+  - SQL SELECT returning multiple rows when only one expected
+
+Recommended Actions:
+  1. Review program IMC0000 source code at statement 0093
+  2. Identify the variable that's too small for the conversion
+  3. Increase the variable size or adjust the %SUBSTRING length
+  4. Review why OEPWITX file is locked/in use during clear operation
+  5. Review CK_DEBUG procedure for SQL SELECT that returns multiple rows
+
+================================================================================
