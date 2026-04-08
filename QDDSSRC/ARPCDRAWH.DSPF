@@ -1,0 +1,125 @@
+     A*%%TS  SD  20260407  000000  SYSTEM      REL-V7R5M0  5770-WDS
+     A*------------------------------------------------------------------------*
+     A*N FILE NAME - ARPCDRAWH                                                 *
+     A*------------------------------------------------------------------------*
+     A*P                                                                       *
+     A*------------------------------------------------------------------------*
+     A*D PAYROLL DRAW DATE HEADER MAINTENANCE                                  *
+     A*M ----------------------------------------------------------------------*
+     A*M TASK       DATE   ID  DESCRIPTION                                     *
+     A*M ---------- ------ --- ------------------------------------------------*
+     A*V 1.0        040726 JF  CREATION OF DISPLAY                             *
+     A*M ----------------------------------------------------------------------*
+     A*%%EC
+     A                                      DSPSIZ(27 132 *DS4)
+     A                                      CHGINPDFT(UL)
+     A                                      INDARA
+     A                                      CF01
+     A                                      CF03
+     A                                      CF05
+     A                                      CF12
+     A N33                                  PAGEDOWN
+     A                                      PAGEUP
+     A                                      PRINT
+     A*=============================================================
+     A*  Subfile for payroll draw date headers
+     A*=============================================================
+     A          R SUB01                     SFL
+     A*%%TS  SD  20260407  000000  SYSTEM      REL-V7R5M0  5770-WDS
+     A                                      SFLNXTCHG
+     A            S1OPT          1A  B 10  2
+     A            S1DRAWID       5S 0O 10  5
+     A            S1EFFBEG      10A  O 10 12
+     A            S1EFFEND      10A  O 10 25
+     A            S1DESC        50A  O 10 38
+     A            S1ADDUSER     10A  O 10 90
+     A            S1ADDDATE     10A  O 10102
+     A*=============================================================
+     A*  Control for subfile
+     A*=============================================================
+     A          R SUB01CTL                  SFLCTL(SUB01)
+     A*%%TS  SD  20260407  000000  SYSTEM      REL-V7R5M0  5770-WDS
+     A                                      SFLSIZ(0012)
+     A                                      SFLPAG(0012)
+     A                                      RTNCSRLOC(&#REC &#FLD)
+     A                                      OVERLAY
+     A                                      SFLCSRRRN(&WHERE)
+     A  31                                  SFLDSP
+     A  32                                  SFLDSPCTL
+     A  30                                  SFLCLR
+     A  33                                  SFLEND(*MORE)
+     A            SCRRN          4S 0H      SFLRCDNBR
+     A            #REC          10A  H
+     A            #FLD          10A  H
+     A            WHERE          5S 0H
+     A            USERID        10A  H
+     A*
+     A* Header Information
+     A                                  1  3DATE
+     A                                      EDTCDE(Y)
+     A                                      COLOR(BLU)
+     A            C1TITLE       40A  O  1 47DSPATR(HI)
+     A                                  2  3TIME
+     A                                      COLOR(BLU)
+     A            C1DISPLAY     40A  O  2 47COLOR(BLU)
+     A            C1FORMAT      10A  O  3  3COLOR(PNK)
+     A*
+     A* Instructions
+     A                                  4  3'Type options, press Enter.'
+     A                                      COLOR(BLU)
+     A                                  5  4'5=Display Details'
+     A                                      COLOR(BLU)
+     A*
+     A* Column Headers
+     A                                  8  1'Op'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A                                  8  5'ID'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A                                  8 12'Eff Begin'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A                                  8 25'Eff End'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A                                  8 38'Description'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A                                  8 90'Added By'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A                                  8102'Added Date'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A*=========================================================================
+     A* Footer record format
+     A*=========================================================================
+     A          R FOOTER
+     A*%%TS  SD  20260407  000000  SYSTEM      REL-V7R5M0  5770-WDS
+     A                                 23  2'F3=Exit'
+     A                                      COLOR(BLU)
+     A                                 23 12'F5=Refresh'
+     A                                      COLOR(BLU)
+     A                                 23 26'F12=Cancel'
+     A                                      COLOR(BLU)
+     A*=========================================================================
+     A* Message subfile
+     A*=========================================================================
+     A          R MSGSFL                    SFL
+     A                                      SFLMSGRCD(24)
+     A            MSGKEY                    SFLMSGKEY
+     A            PGMQ                      SFLPGMQ(10)
+     A*=========================================================================
+     A* Message subfile control
+     A*=========================================================================
+     A          R MSGCTL                    SFLCTL(MSGSFL)
+     A*%%TS  SD  20260407  000000  SYSTEM      REL-V7R5M0  5770-WDS
+     A                                      OVERLAY
+     A                                      SFLDSP
+     A                                      SFLDSPCTL
+     A                                      SFLINZ
+     A N03                                  SFLEND
+     A                                      SFLSIZ(0002)
+     A                                      SFLPAG(0001)
+     A            PGMQ                      SFLPGMQ(10)
