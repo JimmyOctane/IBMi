@@ -7,7 +7,7 @@
 Ctl-Opt DftActGrp(*No) ActGrp(*New) Option(*SrcStmt:*NoDebugIO);
 
 // Display File
-Dcl-F ARPCDRAWD WorkStn Sfile(SUB01:SCRRN) IndDs(Indicators) Infds(INFDS) UsrOpn;
+Dcl-F ARDCDRW01 WorkStn Sfile(SUB01:SCRRN) IndDs(Indicators) Infds(INFDS) UsrOpn;
 
 // File Information Data Structure
 Dcl-Ds INFDS Qualified;
@@ -84,7 +84,7 @@ LoadSubfile();
 
 Dow Not Done;
   DisplaySubfile();
-  
+
   // Check for function keys
   Select;
     When INFDS.choice = LeaveProgram;  // F3
@@ -106,7 +106,7 @@ Return;
 // LoadHeader - Load header record from ARPCDRAWH table
 //==============================================================================
 Dcl-Proc LoadHeader;
-  
+
   // Initialize header fields
   HeaderExists = *Off;
   HEFFBEG = *Blanks;
@@ -115,7 +115,7 @@ Dcl-Proc LoadHeader;
   HCHGUSER = *Blanks;
   HCHGDATE = *Blanks;
   HCHGTIME = *Blanks;
-  
+
   // Load header record (should only be one with DRAWID = 1)
   Exec SQL
     Select EFFBEGIN, EFFEND, DRAWDESC, CHGUSER, CHGDATE, CHGTIME
@@ -123,7 +123,7 @@ Dcl-Proc LoadHeader;
          :HeaderDS.chgUser, :HeaderDS.chgDate, :HeaderDS.chgTime
     From ARPCDRAWH
     Where DRAWID = 1;
-  
+
   If SQLSTATE = '00000';
     HeaderExists = *On;
     HEFFBEG = %Char(HeaderDS.effBegin);
@@ -133,49 +133,49 @@ Dcl-Proc LoadHeader;
     HCHGDATE = %Char(HeaderDS.chgDate);
     HCHGTIME = %Char(HeaderDS.chgTime);
   EndIf;
-  
+
 End-Proc;
 
 //==============================================================================
 // LoadAllRecords - Load all records from database into array
 //==============================================================================
 Dcl-Proc LoadAllRecords;
-  
+
   // SQL cursor to fetch all records
   Exec SQL Declare C1 Scroll Cursor For
     Select DRAWDATE, PPBEGIN, PPEND
     From ARPCDRAWD
     Order By DRAWDATE
     For Read Only;
-  
+
   Exec SQL Open C1;
-  
+
   // Fetch all records into array
   Exec SQL
     Fetch Next From C1 For 1000 Rows
     Into :PayrollDateDS;
   Exec SQL Get Diagnostics :TotalRecords = ROW_COUNT;
-  
+
   Exec SQL Close C1;
-  
+
   // Reset current index
   CurrentIndex = 0;
-  
+
 End-Proc;
 
 //==============================================================================
 // LoadSubfile - Load records from array into subfile
 //==============================================================================
 Dcl-Proc LoadSubfile;
-  
+
   // Clear subfile
   SflClr = *On;
   SflDspCtl = *On;
   Write SUB01CTL;
   SflClr = *Off;
-  
+
   SCRRN = 0;
-  
+
   // Load records from array into subfile
   For i = 1 To TotalRecords;
     SCRRN += 1;
@@ -185,7 +185,7 @@ Dcl-Proc LoadSubfile;
     S1END = %Char(PayrollDateDS(i).ppEnd);
     Write SUB01;
   EndFor;
-  
+
   // Set end of subfile
   If SCRRN = 0;
     SflDsp = *Off;
@@ -193,16 +193,18 @@ Dcl-Proc LoadSubfile;
     SflDsp = *On;
     SflEnd = *On;
   EndIf;
-  
+
 End-Proc;
 
 //==============================================================================
 // DisplaySubfile - Display the subfile control record
 //==============================================================================
 Dcl-Proc DisplaySubfile;
-  
+
   // Display subfile control and footer
   Exfmt SUB01CTL;
   Write FOOTER;
-  
+
 End-Proc;
+
+

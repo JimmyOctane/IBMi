@@ -1,0 +1,21 @@
+     A*------------------------------------------------------------------------*
+     A*N FILE NAME - ARPCDRAWD                                                 *
+     A*------------------------------------------------------------------------*
+     A*P                                                                       *
+     A*------------------------------------------------------------------------*
+     A*D PAYROLL DRAW DATES FOR COMMISSION CALCULATIONS                        *
+     A*M ----------------------------------------------------------------------*
+     A*M TASK       DATE   ID  DESCRIPTION                                     *
+     A*M ---------- ------ --- ------------------------------------------------*
+     A*M 5151       052125 CLP Initial creation                                *
+     A*M ----------------------------------------------------------------------*
+     A                                      REF(DBFREF)
+     A          R ARFCDRAWD                 TEXT('PAYROLL DRAW DATES')
+     A
+     A            DRAWDATE        L         TEXT('Payroll Draw Date')
+     A                                      COLHDG('Payroll' 'Draw ' 'Date')
+     A            PPBEGIN         L         TEXT('Payroll Begin Date')
+     A                                      COLHDG('Payroll' 'Begin ' 'Date')
+     A            PPEND           L         TEXT('Payroll End Date')
+     A                                      COLHDG('Payroll' 'End ' 'Date')
+     A          K DRAWDATE
