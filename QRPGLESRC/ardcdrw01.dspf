@@ -1,0 +1,183 @@
+     A*%%TS  SD  20260416  164238  JFLANARY    REL-V7R5M0  5770-WDS
+     A*------------------------------------------------------------------------*
+     A*N FILE NAME - ARDCDRW01                                                 *
+     A*------------------------------------------------------------------------*
+     A*P                                                                       *
+     A*------------------------------------------------------------------------*
+     A*D PAYROLL DRAW DATE MAINTENANCE                                         *
+     A*M ----------------------------------------------------------------------*
+     A*M TASK       DATE   ID  DESCRIPTION                                     *
+     A*M ---------- ------ --- ------------------------------------------------*
+     A*V 1.0        040826 JF  CREATION OF DISPLAY                             *
+     A*M ----------------------------------------------------------------------*
+     A*%%EC
+     A                                      DSPSIZ(27 132 *DS4)
+     A                                      CHGINPDFT(UL)
+     A                                      INDARA
+     A                                      CF01
+     A                                      CF03
+     A                                      CF05
+     A                                      CF06
+     A                                      CF09
+     A                                      CF12
+     A N33                                  PAGEDOWN
+     A                                      PAGEUP
+     A                                      PRINT
+     A*=============================================================
+     A*  Subfile for payroll draw dates
+     A*=============================================================
+     A          R SUB01                     SFL
+     A*%%TS  SD  20260408  000000  SYSTEM      REL-V7R5M0  5770-WDS
+     A                                      SFLNXTCHG
+     A            S1OPT          1A  B 10  2
+     A            S1DRAW         6Y 0O 10  5EDTWRD('  /  /  ')
+     A            S1DOW          9A  O 10 17
+     A            S1BEGIN        6Y 0O 10 28EDTWRD('  /  /  ')
+     A            S1END          6Y 0O 10 41EDTWRD('  /  /  ')
+     A*=============================================================
+     A*  Control for subfile
+     A*=============================================================
+     A          R SUB01CTL                  SFLCTL(SUB01)
+     A*%%TS  SD  20260408  000000  SYSTEM      REL-V7R5M0  5770-WDS
+     A                                      SFLSIZ(1000)
+     A                                      SFLPAG(0012)
+     A                                      RTNCSRLOC(&#REC &#FLD)
+     A                                      OVERLAY
+     A                                      SFLCSRRRN(&WHERE)
+     A  31                                  SFLDSP
+     A  32                                  SFLDSPCTL
+     A  30                                  SFLCLR
+     A  33                                  SFLEND(*MORE)
+     A            SCRRN          4S 0H      SFLRCDNBR
+     A            #REC          10A  H
+     A            #FLD          10A  H
+     A            WHERE          5S 0H
+     A            USERID        10A  H
+     A*
+     A* Header Information
+     A                                  1  3DATE
+     A                                      EDTCDE(Y)
+     A                                      COLOR(BLU)
+     A            C1TITLE       40A  O  1 47DSPATR(HI)
+     A                                  2  3TIME
+     A                                      COLOR(BLU)
+     A            C1DISPLAY     40A  O  2 47COLOR(BLU)
+     A            C1FORMAT      10A  O  3  3COLOR(PNK)
+     A                                  6  3'Filter Year:'
+     A                                      COLOR(BLU)
+     A            FILTERYEAR     4Y 0B  6 17EDTCDE(4)
+     A*
+     A* Instructions
+     A                                  4  3'Type options, press Enter.'
+     A                                      COLOR(BLU)
+     A                                  5  4'2=Change'
+     A                                      COLOR(BLU)
+     A*
+     A* Column Headers
+     A                                  8  1'Op'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A                                  8  5'Draw Date'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A                                  8 17'Day'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A                                  8 28'Begin Date'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A                                  8 41'End Date'
+     A                                      DSPATR(HI)
+     A                                      DSPATR(UL)
+     A*=========================================================================
+     A* Window border
+     A*=========================================================================
+     A          R WINBORDER                 WINDOW(8 25 11 60)
+     A*%%TS  SD  20260416  000000  SYSTEM      REL-V7R5M0  5770-WDS
+     A                                      WDWBORDER((*COLOR BLU))
+     A*=========================================================================
+     A* Window message subfile
+     A*=========================================================================
+     A          R WINMSGSFL                 SFL
+     A                                      SFLMSGRCD(10)
+     A            WINMSGKEY                 SFLMSGKEY
+     A            WINPGMQ                   SFLPGMQ(10)
+     A*=========================================================================
+     A* Window message subfile control
+     A*=========================================================================
+     A          R WINMSGCTL                 SFLCTL(WINMSGSFL)
+     A*%%TS  SD  20260416  000000  SYSTEM      REL-V7R5M0  5770-WDS
+     A                                      WINDOW(WINBORDER)
+     A                                      SFLDSP
+     A                                      SFLDSPCTL
+     A                                      SFLINZ
+     A                                      SFLSIZ(0002)
+     A                                      SFLPAG(0001)
+     A            WINPGMQ                   SFLPGMQ(10)
+     A*=========================================================================
+     A* Window for editing dates
+     A*=========================================================================
+     A          R EDITWIN
+     A*%%TS  SD  20260416  164238  JFLANARY    REL-V7R5M0  5770-WDS
+     A                                      WINDOW(WINBORDER)
+     A                                      OVERLAY
+     A                                  1 22'Change Dates'
+     A                                      DSPATR(HI)
+     A                                  3  2'Draw Date:'
+     A            WDRAW          6Y 0B  3 14EDTCDE(Y)
+     A                                      RANGE(10100 123199)
+     A  25                                  DSPATR(RI)
+     A  25                                  DSPATR(PC)
+     A                                  5  2'Begin Date:'
+     A            WBEGIN         6Y 0B  5 14EDTCDE(Y)
+     A                                      RANGE(10100 123199)
+     A  26                                  DSPATR(RI)
+     A  26                                  DSPATR(PC)
+     A                                  7  2'End Date:'
+     A            WEND           6Y 0B  7 14EDTCDE(Y)
+     A                                      RANGE(10100 123199)
+     A  27                                  DSPATR(RI)
+     A  27                                  DSPATR(PC)
+     A            CSRROW         5S 0H
+     A            CSRCOL         5S 0H
+     A                                  9  2'F3=Exit'
+     A                                      COLOR(BLU)
+     A                                  9 12'F12=Cancel'
+     A                                      COLOR(BLU)
+     A*=========================================================================
+     A* Footer record format
+     A*=========================================================================
+     A          R FOOTER
+     A*%%TS  SD  20260408  000000  SYSTEM      REL-V7R5M0  5770-WDS
+     A                                 23  2'F3=Exit'
+     A                                      COLOR(BLU)
+     A                                 23 12'F5=Refresh'
+     A                                      COLOR(BLU)
+     A                                 23 26'F6=Add'
+     A                                      COLOR(BLU)
+     A                                 23 36'F9=Generate Year'
+     A                                      COLOR(BLU)
+     A                                 23 55'F12=Cancel'
+     A                                      COLOR(BLU)
+     A*=========================================================================
+     A* Message subfile
+     A*=========================================================================
+     A          R MSGSFL                    SFL
+     A                                      SFLMSGRCD(24)
+     A            MSGKEY                    SFLMSGKEY
+     A            PGMQ                      SFLPGMQ(10)
+     A*=========================================================================
+     A* Message subfile control
+     A*=========================================================================
+     A          R MSGCTL                    SFLCTL(MSGSFL)
+     A*%%TS  SD  20260408  000000  SYSTEM      REL-V7R5M0  5770-WDS
+     A                                      OVERLAY
+     A                                      SFLDSP
+     A                                      SFLDSPCTL
+     A                                      SFLINZ
+     A N03                                  SFLEND
+     A                                      SFLSIZ(0002)
+     A                                      SFLPAG(0001)
+     A            PGMQ                      SFLPGMQ(10)
+
+
