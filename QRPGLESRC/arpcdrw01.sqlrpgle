@@ -230,7 +230,7 @@ Dcl-Proc DisplaySubfile;
 
   // Clear any previous messages
   If screenError = *Off;
-    $clearmsg('*' : 0 : '' : '*ALL' : ApiError);
+    $clearmsg(PSDS.PgmName : *zero : *Blanks : '*ALL' : APIError);
   EndIf;
 
   // Set program queue for message subfile
@@ -243,7 +243,7 @@ Dcl-Proc DisplaySubfile;
 
   // Reset screen error flag and clear messages after display
   Reset screenError;
-  $clearmsg('*' : 0 : '' : '*ALL' : ApiError);
+  $clearmsg(PSDS.PgmName : *zero : *Blanks : '*ALL' : APIError);
 
 End-Proc;
 
@@ -314,11 +314,17 @@ Dcl-Proc Maintenance;
   Write WINBORDER;
 
   Dow Not windowDone;
-    // Clear any previous window messages and indicators before display
-    $clearmsg('*' : 0 : '' : '*ALL' : ApiError);
-    IndDrawErr = *Off;
-    IndBeginErr = *Off;
-    IndEndErr = *Off;
+    // Clear messages and reset error indicators before displaying window
+    if not(screenError);
+     $clearmsg(PSDS.PgmName : *zero : *Blanks : '*ALL' : APIError);
+     IndDrawErr = *Off;
+     IndBeginErr = *Off;
+     IndEndErr = *Off;
+    endif;
+
+    // Reset screen error flag and message ID before validation
+    screenError = *Off;
+    messageid = '';
 
     // Set program queue for window message subfile
     WINPGMQ = PSDS.PgmName;
@@ -326,57 +332,59 @@ Dcl-Proc Maintenance;
     // Write window message control and display the window
     Write WINMSGCTL;
     Exfmt EDITWIN;
+    $clearmsg(PSDS.PgmName : *zero : *Blanks : '*ALL' : APIError);
+    reset screenError;
+    IndDrawErr = *Off;
+    IndBeginErr = *Off;
+    IndEndErr = *Off;
 
-    // Reset screen error flag after user input
-    screenError = *Off;
-    *in25 = *off;
-    *in26 = *off;
-    *in27 = *off;
 
     // Check for F3 or F12 (Cancel)
     If INFDS.choice = LeaveProgram Or INFDS.choice = Previous;  // F3 or F12
       windowDone = *On;
     Else;
       // Validate dates using TEST(DE) operation code directly on numeric fields
+      // Test all three dates independently (not nested) to catch format errors
       Test(DE) *MDY WDRAW;
       If %Error();
-        // Invalid draw date - send error message
+        // Invalid draw date format - send error message
         screenError = *On;
-        *in25 = *on;
         IndDrawErr = *On;
         CSRROW = 3;
         CSRCOL = 14;
         messageid = 'DRW0001';
-        messagedata = '';
+        messagedata = *blanks;
         messageLen = 0;
         SendMessage();
-      Else;
+      EndIf;
+
+      If Not screenError;
         Test(DE) *MDY WBEGIN;
         If %Error();
-          // Invalid begin date - send error message
+          // Invalid begin date format - send error message
           screenError = *On;
-          *in26 = *on;
           IndBeginErr = *On;
           CSRROW = 5;
           CSRCOL = 14;
           messageid = 'DRW0002';
-          messagedata = '';
+          messagedata = *blanks;
           messageLen = 0;
           SendMessage();
-        Else;
-          Test(DE) *MDY WEND;
-          If %Error();
-            // Invalid end date - send error message
-            screenError = *On;
-            *in27 = *on;
-            IndEndErr = *On;
-            CSRROW = 7;
-            CSRCOL = 14;
-            messageid = 'DRW0003';
-            messagedata = '';
-            messageLen = 0;
-            SendMessage();
-          EndIf;
+        EndIf;
+      EndIf;
+
+      If Not screenError;
+        Test(DE) *MDY WEND;
+        If %Error();
+          // Invalid end date format - send error message
+          screenError = *On;
+          IndEndErr = *On;
+          CSRROW = 7;
+          CSRCOL = 14;
+          messageid = 'DRW0003';
+          messagedata = *blanks;
+          messageLen = 0;
+          SendMessage();
         EndIf;
       EndIf;
 
@@ -384,23 +392,54 @@ Dcl-Proc Maintenance;
       If Not screenError;
         // All dates are valid - convert numeric MMDDYY fields to ISO format
         // Use Monitor to catch invalid dates like 2/35/27
+        // Convert each date separately to identify which field has the error
         Monitor;
           drawDateISO = %Char(%Date(WDRAW:*MDY):*ISO);
-          beginDateISO = %Char(%Date(WBEGIN:*MDY):*ISO);
-          endDateISO = %Char(%Date(WEND:*MDY):*ISO);
         On-Error;
-          // Date conversion failed - invalid date (e.g., 2/35/27)
+          // Draw date conversion failed - invalid date (e.g., 2/35/27)
           screenError = *On;
-          IndDrawErr = *On;  // Highlight first field by default
+          IndDrawErr = *On;
           CSRROW = 3;
           CSRCOL = 14;
-          messageid = 'GEN0010';
+          messageid = 'DRW0001';
           messagedata = *blanks;
           messageLen = %Len(%Trim(messagedata));
           SendMessage();
         EndMon;
 
-        // Only proceed if conversion was successful
+        If Not screenError;
+          Monitor;
+            beginDateISO = %Char(%Date(WBEGIN:*MDY):*ISO);
+          On-Error;
+            // Begin date conversion failed
+            screenError = *On;
+            IndBeginErr = *On;
+            CSRROW = 5;
+            CSRCOL = 14;
+            messageid = 'DRW0002';
+            messagedata = *blanks;
+            messageLen = %Len(%Trim(messagedata));
+            SendMessage();
+          EndMon;
+        EndIf;
+
+        If Not screenError;
+          Monitor;
+            endDateISO = %Char(%Date(WEND:*MDY):*ISO);
+          On-Error;
+            // End date conversion failed
+            screenError = *On;
+            IndEndErr = *On;
+            CSRROW = 7;
+            CSRCOL = 14;
+            messageid = 'DRW0003';
+            messagedata = *blanks;
+            messageLen = %Len(%Trim(messagedata));
+            SendMessage();
+          EndMon;
+        EndIf;
+
+        // Only proceed if all conversions were successful
         If Not screenError;
           // Validate dates before updating
           If ValidateDates(drawDateISO:beginDateISO:endDateISO);
@@ -430,7 +469,7 @@ Dcl-Proc Maintenance;
             screenError = *On;
             messageid = 'GEN0010';
             messagedata = *blanks;
-            messageLen = %Len(%Trim(messagedata));
+            messageLen = 0;
             SendMessage();
           EndIf;
           Else;
@@ -493,12 +532,20 @@ Dcl-Proc GenerateYearDates;
   newDrawDate = lastDrawDate + %Days(14);
 
   // Generate bi-weekly pay periods for the year
-  Dow %Subdt(newDrawDate:*Years) <= FILTERYEAR;
+  // Continue while the BEGIN date is in the filtered year or earlier
+  // This ensures we include pay periods that start in the year even if
+  // the draw date falls in the next year
+  Dow *On;
     // Calculate end date: 5 days before draw date (Sunday)
     newEndDate = newDrawDate - %Days(5);
 
     // Calculate begin date: 13 days before end date (Monday)
     newBeginDate = newEndDate - %Days(13);
+
+    // Stop if begin date is beyond the filtered year
+    If %Subdt(newBeginDate:*Years) > FILTERYEAR;
+      Leave;
+    EndIf;
 
     // Verify begin date is a Monday using SQL DAYOFWEEK (2=Monday)
     beginDateISO = %Char(newBeginDate:*ISO);
@@ -559,11 +606,13 @@ Dcl-Proc AddNewRecord;
   Write WINBORDER;
 
   Dow Not windowDone;
-    // Clear any previous window messages and indicators before display
-    $clearmsg('*' : 0 : '' : '*ALL' : ApiError);
-    IndDrawErr = *Off;
-    IndBeginErr = *Off;
-    IndEndErr = *Off;
+    // Clear any previous messages and reset error indicators before display
+    If Not screenError;
+      $clearmsg(PSDS.PgmName : *zero : *Blanks : '*ALL' : APIError);
+      IndDrawErr = *Off;
+      IndBeginErr = *Off;
+      IndEndErr = *Off;
+    EndIf;
 
     // Set program queue for window message subfile
     WINPGMQ = PSDS.PgmName;
@@ -572,56 +621,56 @@ Dcl-Proc AddNewRecord;
     Write WINMSGCTL;
     Exfmt EDITWIN;
 
-    // Reset screen error flag after user input
+    // Reset screen error flag and message ID after user input
     screenError = *Off;
-    *in25 = *off;
-    *in26 = *off;
-    *in27 = *off;
+    messageid = '';
 
     // Check for F3 or F12 (Cancel)
     If INFDS.choice = LeaveProgram Or INFDS.choice = Previous;  // F3 or F12
       windowDone = *On;
     Else;
       // Validate dates using TEST(DE) operation code directly on numeric fields
+      // Test all three dates independently (not nested) to catch format errors
       Test(DE) *MDY WDRAW;
       If %Error();
-        // Invalid draw date - send error message
+        // Invalid draw date format - send error message
         screenError = *On;
-        *in25 = *on;
         IndDrawErr = *On;
         CSRROW = 3;
         CSRCOL = 14;
         messageid = 'DRW0001';
-        messagedata = '';
+        messagedata = *blanks;
         messageLen = 0;
         SendMessage();
-      Else;
+      EndIf;
+
+      If Not screenError;
         Test(DE) *MDY WBEGIN;
         If %Error();
-          // Invalid begin date - send error message
+          // Invalid begin date format - send error message
           screenError = *On;
-          *in26 = *on;
           IndBeginErr = *On;
           CSRROW = 5;
           CSRCOL = 14;
           messageid = 'DRW0002';
-          messagedata = '';
+          messagedata = *blanks;
           messageLen = 0;
           SendMessage();
-        Else;
-          Test(DE) *MDY WEND;
-          If %Error();
-            // Invalid end date - send error message
-            screenError = *On;
-            *in27 = *on;
-            IndEndErr = *On;
-            CSRROW = 7;
-            CSRCOL = 14;
-            messageid = 'DRW0003';
-            messagedata = '';
-            messageLen = 0;
-            SendMessage();
-          EndIf;
+        EndIf;
+      EndIf;
+
+      If Not screenError;
+        Test(DE) *MDY WEND;
+        If %Error();
+          // Invalid end date format - send error message
+          screenError = *On;
+          IndEndErr = *On;
+          CSRROW = 7;
+          CSRCOL = 14;
+          messageid = 'DRW0003';
+          messagedata = *blanks;
+          messageLen = 0;
+          SendMessage();
         EndIf;
       EndIf;
 
@@ -629,23 +678,54 @@ Dcl-Proc AddNewRecord;
       If Not screenError;
         // All dates are valid - convert numeric MMDDYY fields to ISO format
         // Use Monitor to catch invalid dates like 2/35/27
+        // Convert each date separately to identify which field has the error
         Monitor;
           drawDateISO = %Char(%Date(WDRAW:*MDY):*ISO);
-          beginDateISO = %Char(%Date(WBEGIN:*MDY):*ISO);
-          endDateISO = %Char(%Date(WEND:*MDY):*ISO);
         On-Error;
-          // Date conversion failed - invalid date (e.g., 2/35/27)
+          // Draw date conversion failed - invalid date (e.g., 2/35/27)
           screenError = *On;
-          IndDrawErr = *On;  // Highlight first field by default
+          IndDrawErr = *On;
           CSRROW = 3;
           CSRCOL = 14;
-          messageid = 'GEN0010';
+          messageid = 'DRW0001';
           messagedata = *blanks;
           messageLen = %Len(%Trim(messagedata));
           SendMessage();
         EndMon;
 
-        // Only proceed if conversion was successful
+        If Not screenError;
+          Monitor;
+            beginDateISO = %Char(%Date(WBEGIN:*MDY):*ISO);
+          On-Error;
+            // Begin date conversion failed
+            screenError = *On;
+            IndBeginErr = *On;
+            CSRROW = 5;
+            CSRCOL = 14;
+            messageid = 'DRW0002';
+            messagedata = *blanks;
+            messageLen = %Len(%Trim(messagedata));
+            SendMessage();
+          EndMon;
+        EndIf;
+
+        If Not screenError;
+          Monitor;
+            endDateISO = %Char(%Date(WEND:*MDY):*ISO);
+          On-Error;
+            // End date conversion failed
+            screenError = *On;
+            IndEndErr = *On;
+            CSRROW = 7;
+            CSRCOL = 14;
+            messageid = 'DRW0003';
+            messagedata = *blanks;
+            messageLen = %Len(%Trim(messagedata));
+            SendMessage();
+          EndMon;
+        EndIf;
+
+        // Only proceed if all conversions were successful
         If Not screenError;
           // Validate dates before inserting
           If ValidateDates(drawDateISO:beginDateISO:endDateISO);
@@ -659,7 +739,7 @@ Dcl-Proc AddNewRecord;
             Else;
               // SQL error - send error message
               screenError = *On;
-              messageid = 'GEN0010';
+              messageid = 'GEN0013';
               messagedata = *blanks;
               messageLen = %Len(%Trim(messagedata));
               SendMessage();
@@ -697,7 +777,7 @@ Dcl-Proc ValidateDates;
     isValid = *Off;
     screenError = *On;
     messageid = 'DRW0001';
-    messagedata = '';
+    messagedata = *blanks;
     messageLen = 0;
     SendMessage();
     Return isValid;
@@ -710,7 +790,7 @@ Dcl-Proc ValidateDates;
     isValid = *Off;
     screenError = *On;
     messageid = 'DRW0002';
-    messagedata = '';
+    messagedata = *blanks;
     messageLen = 0;
     SendMessage();
     Return isValid;
@@ -723,7 +803,7 @@ Dcl-Proc ValidateDates;
     isValid = *Off;
     screenError = *On;
     messageid = 'DRW0003';
-    messagedata = '';
+    messagedata = *blanks;
     messageLen = 0;
     SendMessage();
     Return isValid;
@@ -734,7 +814,7 @@ Dcl-Proc ValidateDates;
     isValid = *Off;
     screenError = *On;
     messageid = 'DRW0002';
-    messagedata = '';
+    messagedata = *blanks;
     messageLen = 0;
     SendMessage();
     Return isValid;
@@ -747,8 +827,8 @@ Dcl-Proc ValidateDates;
   If dayOfWeek <> 2;
     isValid = *Off;
     screenError = *On;
-    messageid = 'CPF9999';
-    messagedata = 'Begin date must be a Monday unless it is a holiday';
+    messageid = 'DRW0004';
+    messagedata = *blanks;
     messageLen = %Len(%Trim(messagedata));
     SendMessage();
     Return isValid;
@@ -759,7 +839,7 @@ Dcl-Proc ValidateDates;
     isValid = *Off;
     screenError = *On;
     messageid = 'DRW0001';
-    messagedata = '';
+    messagedata = *blanks;
     messageLen = 0;
     SendMessage();
     Return isValid;
@@ -769,187 +849,6 @@ Dcl-Proc ValidateDates;
 
 End-Proc;
 
-//==============================================================================
-// EditDateWindow - Handle edit window display and validation
-// Parameters: pDrawDate, pBeginDate, pEndDate (in/out)
-//             pOldDrawDate (for updates, blank for adds)
-// Returns: *On if saved, *Off if cancelled
-//==============================================================================
-Dcl-Proc EditDateWindow;
-  Dcl-Pi *N Ind;
-    pDrawDate Char(10);
-    pBeginDate Char(10);
-    pEndDate Char(10);
-    pOldDrawDate Char(10) Const Options(*NoPass);
-  End-Pi;
-
-  Dcl-S windowDone Ind Inz(*Off);
-  Dcl-S drawDateISO Char(10);
-  Dcl-S beginDateISO Char(10);
-  Dcl-S endDateISO Char(10);
-  Dcl-S drawDateNum Packed(6:0);
-  Dcl-S beginDateNum Packed(6:0);
-  Dcl-S endDateNum Packed(6:0);
-  Dcl-S isUpdate Ind;
-  Dcl-S oldDrawDate Char(10);
-  Dcl-S tempDayOfWeek Char(9);
-  Dcl-S savedSuccessfully Ind Inz(*Off);
-
-  // Determine if this is an update or add
-  isUpdate = (%Parms() >= 4 And pOldDrawDate <> '');
-  If isUpdate;
-    oldDrawDate = pOldDrawDate;
-  EndIf;
-
-  // Convert ISO dates to numeric MMDDYY for display
-  If pDrawDate <> '';
-    drawDateNum = %Dec(%Char(%Date(pDrawDate:*ISO):*MDY0):6:0);
-    beginDateNum = %Dec(%Char(%Date(pBeginDate:*ISO):*MDY0):6:0);
-    endDateNum = %Dec(%Char(%Date(pEndDate:*ISO):*MDY0):6:0);
-  Else;
-    drawDateNum = 0;
-    beginDateNum = 0;
-    endDateNum = 0;
-  EndIf;
-
-  WDRAW = drawDateNum;
-  WBEGIN = beginDateNum;
-  WEND = endDateNum;
-
-  // Write window border once before loop
-  Write WINBORDER;
-
-  Dow Not windowDone;
-    // Clear any previous window messages and indicators before display
-    $clearmsg('*' : 0 : '' : '*ALL' : ApiError);
-    IndDrawErr = *Off;
-    IndBeginErr = *Off;
-    IndEndErr = *Off;
-
-    // Set program queue for window message subfile
-    WINPGMQ = PSDS.PgmName;
-
-    // Write window message control and display the window
-    Write WINMSGCTL;
-    Exfmt EDITWIN;
-
-    // Reset screen error flag after user input
-    screenError = *Off;
-    *in25 = *off;
-    *in26 = *off;
-    *in27 = *off;
-
-    // Check for F3 or F12 (Cancel)
-    If INFDS.choice = LeaveProgram Or INFDS.choice = Previous;
-      windowDone = *On;
-      savedSuccessfully = *Off;
-    Else;
-      // Validate dates using TEST(DE) operation code
-      Test(DE) *MDY WDRAW;
-      If %Error();
-        screenError = *On;
-        *in25 = *on;
-        IndDrawErr = *On;
-        CSRROW = 3;
-        CSRCOL = 14;
-        messageid = 'DRW0001';
-        messagedata = '';
-        messageLen = 0;
-        SendMessage();
-      Else;
-        Test(DE) *MDY WBEGIN;
-        If %Error();
-          screenError = *On;
-          *in26 = *on;
-          IndBeginErr = *On;
-          CSRROW = 5;
-          CSRCOL = 14;
-          messageid = 'DRW0002';
-          messagedata = '';
-          messageLen = 0;
-          SendMessage();
-        Else;
-          Test(DE) *MDY WEND;
-          If %Error();
-            screenError = *On;
-            *in27 = *on;
-            IndEndErr = *On;
-            CSRROW = 7;
-            CSRCOL = 14;
-            messageid = 'DRW0003';
-            messagedata = '';
-            messageLen = 0;
-            SendMessage();
-          EndIf;
-        EndIf;
-      EndIf;
-
-      // Only proceed if all dates are valid
-      If Not screenError;
-        // Convert numeric MMDDYY fields to ISO format
-        Monitor;
-          drawDateISO = %Char(%Date(WDRAW:*MDY):*ISO);
-          beginDateISO = %Char(%Date(WBEGIN:*MDY):*ISO);
-          endDateISO = %Char(%Date(WEND:*MDY):*ISO);
-        On-Error;
-          screenError = *On;
-          IndDrawErr = *On;
-          CSRROW = 3;
-          CSRCOL = 14;
-          messageid = 'GEN0010';
-          messagedata = 'Invalid date entered';
-          messageLen = %Len(%Trim(messagedata));
-          SendMessage();
-        EndMon;
-
-        // Only proceed if conversion was successful
-        If Not screenError;
-          // Validate dates before saving
-          If ValidateDates(drawDateISO:beginDateISO:endDateISO);
-            // Save to database
-            If isUpdate;
-              // Update existing record
-              Exec SQL
-                Update ARPCDRAWD
-                Set DRAWDATE = :drawDateISO,
-                    PPBEGIN = :beginDateISO,
-                    PPEND = :endDateISO
-                Where DRAWDATE = :oldDrawDate;
-            Else;
-              // Insert new record
-              Exec SQL
-                Insert Into ARPCDRAWD (DRAWDATE, PPBEGIN, PPEND)
-                Values (:drawDateISO, :beginDateISO, :endDateISO);
-            EndIf;
-
-            If SQLCODE = 0;
-              // Save successful - return values
-              pDrawDate = drawDateISO;
-              pBeginDate = beginDateISO;
-              pEndDate = endDateISO;
-              savedSuccessfully = *On;
-              // Stay in window - user must press F3/F12 to exit
-            Else;
-              // SQL error
-              screenError = *On;
-              messageid = 'GEN0010';
-              If isUpdate;
-                messagedata = 'Database update failed - SQLCODE: ' + %Char(SQLCODE);
-              Else;
-                messagedata = 'Database insert failed - SQLCODE: ' + %Char(SQLCODE);
-              EndIf;
-              messageLen = %Len(%Trim(messagedata));
-              SendMessage();
-            EndIf;
-          EndIf;
-        EndIf;
-      EndIf;
-    EndIf;
-  EndDo;
-
-  Return savedSuccessfully;
-
-End-Proc;
 
 //==============================================================================
 // SendMessage - Send program message to message subfile
