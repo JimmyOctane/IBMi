@@ -1,0 +1,182 @@
+**FREE
+//==============================================================================
+// Program: APCHKRPT
+// Description: Extract outstanding checks and populate table in HD1100PD
+// Author: Generated
+// Date: 2026-04-23
+//==============================================================================
+
+Ctl-Opt DftActGrp(*No) ActGrp(*New) Option(*SrcStmt:*NoDebugIO);
+
+// Program parameters
+Dcl-Pi *N;
+  ParmDate Packed(15:5);
+End-Pi;
+
+// Declare variables for SQL result set
+Dcl-S CheckNum      Packed(7:0);
+Dcl-S CheckDate     Int(10);
+Dcl-S VendorNum     Packed(6:0);
+Dcl-S VendorName    Char(30);
+Dcl-S Amount        Packed(11:2);
+
+Dcl-S RowCount      Int(10);
+Dcl-S SqlState      Char(5);
+Dcl-S SqlCode       Int(10);
+Dcl-S CutoffDate    Packed(8:0);
+Dcl-S WorkDate      Date;
+Dcl-S LastDayPrevMonth Packed(8:0);
+Dcl-S IfsPath       Varchar(256);
+Dcl-S FileName      Varchar(50);
+Dcl-S SqlStmt       Varchar(1000);
+Dcl-S Result        Varchar(1000);
+
+// SQL communication area
+Exec SQL
+  Include SQLCA;
+
+// Main processing
+Main();
+*INLR = *On;
+Return;
+
+//==============================================================================
+// Main procedure
+//==============================================================================
+Dcl-Proc Main;
+
+  // Check if parameter was passed and convert to 8,0 format
+  If %Parms() >= 1;
+    CutoffDate = %Dec(ParmDate:8:0);
+  Else;
+    // Calculate last day of previous month
+    WorkDate = %Date();  // Current date
+    WorkDate = %Date(%Subdt(WorkDate:*Years) + '-' +
+                     %Char(%Subdt(WorkDate:*Months)) + '-01');  // First of current month
+    WorkDate = WorkDate - %Days(1);  // Last day of previous month
+    LastDayPrevMonth = %Dec(%Char(WorkDate:*ISO0):8:0);
+    CutoffDate = LastDayPrevMonth;
+  EndIf;
+
+  Dsply ('Using cutoff date: ' + %Char(CutoffDate));
+
+  // Drop table if it exists
+  Exec SQL
+    Drop Table HD1100PD.APCHKRPT;
+  
+  // Create the table to store results
+  Exec SQL
+    Create Table HD1100PD.APCHKRPT (
+      CHECK_NUM     Decimal(7, 0) Not Null,
+      CHECK_DATE    Integer       Not Null,
+      VENDOR_NUM    Decimal(6, 0) Not Null,
+      VENDOR_NAME   Char(30)      Not Null,
+      AMOUNT        Decimal(11, 2) Not Null
+    );
+
+  If SQLCODE < 0 And SQLCODE <> -601;  // Ignore "already exists" error
+    Dsply ('Error creating table: ' + %Char(SQLCODE));
+    Return;
+  EndIf;
+
+  // Insert data from the query
+  Exec SQL
+    Insert Into HD1100PD.APCHKRPT
+    (CHECK_NUM, CHECK_DATE, VENDOR_NUM, VENDOR_NAME, AMOUNT)
+    
+    Select Check_Num, CheckDate, Vendor_Num, Name, Amount
+    From (
+      Select
+        APNO14 As Check_Num,
+        a.APNO01 As Vendor_Num,
+        APNM02 As Name,
+        APCD27 As CheckType,
+        APAM11 As Amount,
+        
+        Case
+          When apmo08 Between 1 And 12
+           And apdy08 Between 1 And 31
+           And apyr08 Between 0 And 99
+          Then Int(Date(apcc08 Concat Digits(apyr08) Concat '-' 
+                        Concat Digits(apmo08) Concat '-' 
+                        Concat Digits(apdy08)))
+          Else 0
+        End As CheckDate,
+        
+        Case
+          When apmo13 Between 1 And 12
+           And apdy13 Between 1 And 31
+           And apyr13 Between 0 And 99
+          Then Int(Date(apcc13 Concat Digits(apyr13) Concat '-' 
+                        Concat Digits(apmo13) Concat '-' 
+                        Concat Digits(apdy13)))
+          Else 0
+        End As VoidDate,
+        
+        Case
+          When apmo09 Between 1 And 12
+           And apdy09 Between 1 And 31
+           And apyr09 Between 0 And 99
+          Then Int(Date(apcc09 Concat Digits(apyr09) Concat '-' 
+                        Concat Digits(apmo09) Concat '-' 
+                        Concat Digits(apdy09)))
+          Else 0
+        End As ClearDate
+        
+      From APPHCK a
+      Join APPMVEN b On a.APNO01 = b.APNO01
+      Where APCD27 <> 'A'
+    ) As SubQuery
+    
+    Where
+      (CheckDate <= :CutoffDate
+       And VoidDate > :CutoffDate
+       And ClearDate <= VoidDate
+       And CheckType <> 'A')
+      
+      Or (CheckDate <= :CutoffDate
+          And ClearDate > :CutoffDate
+          And CheckType <> 'A')
+      
+      Or (CheckDate <= :CutoffDate
+          And VoidDate = 0
+          And ClearDate = 0
+          And CheckType <> 'A')
+    
+    Order By Check_Num;
+
+  If SQLCODE < 0;
+    Dsply ('Error inserting data: ' + %Char(SQLCODE));
+    Return;
+  EndIf;
+
+  // Get row count
+  Exec SQL
+    Select Count(*) Into :RowCount
+    From HD1100PD.APCHKRPT;
+
+  Dsply ('Records inserted: ' + %Char(RowCount));
+
+  // Export to Excel file in IFS
+  FileName = 'APCHKRPT_' + %Char(CutoffDate) + '.xlsx';
+  IfsPath = '/tmp/' + %Trim(FileName);
+
+  // Create Excel spreadsheet using SYSTOOLS with dynamic SQL
+  SqlStmt = 'SELECT SYSTOOLS.GENERATE_SPREADSHEET(' +
+            '''SELECT * FROM HD1100PD.APCHKRPT'', ' +
+            '''' + %Trim(IfsPath) + ''') ' +
+            'FROM SYSIBM.SYSDUMMY1';
+
+  Exec SQL
+    Prepare DynStmt From :SqlStmt;
+
+  Exec SQL
+    Execute DynStmt Into :Result;
+
+  If SQLCODE = 0;
+    Dsply ('Excel file created: ' + %Trim(IfsPath));
+  Else;
+    Dsply ('Error creating Excel: ' + %Char(SQLCODE));
+  EndIf;
+
+End-Proc;

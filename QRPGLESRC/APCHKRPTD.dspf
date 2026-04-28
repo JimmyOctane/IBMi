@@ -1,0 +1,46 @@
+     A*------------------------------------------------------------------------*
+     A*N FILE NAME - APCHKRPTD                                              *
+     A*------------------------------------------------------------------------*
+     A*D AP CHECK REPORT PARAMETER SCREEN                                    *
+     A*------------------------------------------------------------------------*
+     A*M TASK       DATE   ID  DESCRIPTION                                   *
+     A*M ---------- ------ --- ----------------------------------------------*
+     A*M            042426 JJF INITIAL CREATION                              *
+     A*------------------------------------------------------------------------*
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      PRINT
+     A                                      CF03(03 'Exit')
+     A                                      CF12(12 'Cancel')
+     A          R MSGSFL                    SFL
+     A                                      SFLMSGRCD(24)
+     A            MSGKEY                    SFLMSGKEY
+     A            PGMQ                      SFLPGMQ(10)
+     A          R MSGCTL                    SFLCTL(MSGSFL)
+     A                                      SFLDSP
+     A                                      SFLDSPCTL
+     A                                      SFLINZ
+     A N03                                  SFLEND
+     A                                      SFLSIZ(0002)
+     A                                      SFLPAG(0001)
+     A            PGMQ                      SFLPGMQ(10)
+     A          R APCHKRPTF
+     A                                      OVERLAY
+     A                                      CHANGE(51 'A Field Was Changed')
+     A                                  1  2'APCHKRPTF'
+     A                                      COLOR(BLU)
+     A                                  1 25'AP Check Report Parameters'
+     A                                      DSPATR(HI)
+     A                                  5  2'Company'
+     A            COMPANY        3S 0B  5 15
+     A                                      CHECK(RB)
+     A  25                                  DSPATR(RI)
+     A  25                                  DSPATR(PC)
+     A                                  7  2'Cutoff Date (MMDDYY)'
+     A            CUTDATE        6Y 0B  7 25CHECK(RB)
+     A                                      EDTWRD('  /  /  ')
+     A  26                                  DSPATR(RI)
+     A  26                                  DSPATR(PC)
+     A                                 23  2'F3=Exit'
+     A                                      COLOR(BLU)
+     A                                 23 12'F12=Cancel'
+     A                                      COLOR(BLU)
