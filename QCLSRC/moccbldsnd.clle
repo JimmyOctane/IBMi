@@ -1,0 +1,297 @@
+/******************************************************************************/
+/*                                                                            */
+/* MOCCBLDSND                                                                 */
+/*                                                                            */
+/* This program will send the daily export files to AWS                       */
+/*       Important                                                          */
+/* This program requires that the job runs under AWSSVC user due to           */
+/* AWS config setup in the /home/awssvc/.aws folder                           */
+/*       End Of Important:                                                  */
+/*                                                                            */
+/*  IFS Directory:  /B2B/Out                                                  */
+/*                                                                            */
+/*  Files Transferred                                                         */
+/*   Desc        HD1100PD File    IFS File Name                               */
+/*   Branch        MEBRNF         BRANCHES_EC.csv                             */
+/*   Products      MEITMF         PRODUCTS_EC.csv                             */
+/*   Inventory     MEBITMF        AVAILABILITY_EC.csv                         */
+/*   Aliases       MEALIASF       PRODUCT_ALIASES_EC.csv                      */
+/*   Barcodes      MEUPCF         PRODUCT_BARCODES_EC.csv                     */
+/*   Products V2   MEITMN         PRODUCTS_EC_NEW.csv                         */
+/*   Inventory V2  MEBITMN        AVAILABILITY_EC_NEW.csv                     */
+/*   Inventory     MEBITMN        AVAILABILITY_EC_V3.csv                      */
+/*   Slow inventory *NONE         slowInventory.csv                           */
+/*                                                                            */
+/*   AWS Prod Bucket:  s3://ecm.production.erp.productdata                    */
+/*   AWS Dev  Bucket:  s3://ecm.dev.erp.productdata                           */
+/*                                                                            */
+/*   AWS User for Production:  awspdprd                                       */
+/*   AWS User for Development: awspddev                                       */
+/******************************************************************************/
+/* Modification History                                                       */
+/******************************************************************************/
+/* Tag Id  Task       Date     Description                                    */
+/* --- --- ---------- -------- ---------------------------------------------- */
+/*     KSB 8087       20200817 Initial pgm                                    */
+/*¢A   CLP 6970       20210418 Renamed from MOCCBLDSN1 when data FTP to       */
+/*¢A                           Watsco became obsolete                         */
+/*¢B   APB 9275       20220328 Changed Availability_ec.csv to                 */
+/*¢B                           AVAILABILITY_EC_V3.csv                         */
+/*¢C   APB 9298       20220907 Send SUPERSEDES.csv to ecomm                   */
+/*¢D   APB 9310       20221101 Send ITEM_UOM.csv to ecomm                     */
+/*¢E *M JJF   3018 070723 JJF make addenvvar unique by adding program name    */
+/*¢F   JJF            20260429 Added new table for slow and excessive items   */
+/* -------------------------------------------------------------------------- */
+/*                                                                            */
+/******************************************************************************/
+             PGM
+
+             DCL        VAR(&SYSNAME) TYPE(*CHAR) LEN(8)
+             DCL        VAR(&CMD) TYPE(*CHAR) LEN(500)
+             DCL        VAR(&IFSDIR) TYPE(*CHAR) LEN(100)
+             DCL        VAR(&FULLPATH) TYPE(*CHAR) LEN(100)
+             DCL        VAR(&FILENAME) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&LIB) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&CSVNAME) TYPE(*CHAR) LEN(100)
+             DCL        VAR(&PRF) TYPE(*CHAR) LEN(8)
+             DCL        VAR(&PRDPRF) TYPE(*CHAR) LEN(8) +
+                          VALUE('awspdprd')
+             DCL        VAR(&DEVPRF) TYPE(*CHAR) LEN(8) +
+                          VALUE('awspddev')
+             DCL        VAR(&PRODTEST) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&LOCALDRV) TYPE(*CHAR) LEN(50) +
+                          VALUE('/home/awssvc/.local/bin/aws +
+                          --profile')
+             DCL        VAR(&BUCKET) TYPE(*CHAR) LEN(50)
+             DCL        VAR(&PRDBUCKET) TYPE(*CHAR) LEN(50) +
+                          VALUE('s3://ecm.production.erp.productdata')
+             DCL        VAR(&DEVBUCKET) TYPE(*CHAR) LEN(50) +
+                          VALUE('s3://ecm.dev.erp.productdata')
+             DCL        VAR(&GOODFILE) TYPE(*CHAR) LEN(100)
+             DCL        VAR(&JOBNAME) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&JOBUSER) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&JOBNBR) TYPE(*CHAR) LEN(6)
+             DCL        VAR(&EMLNOTE) TYPE(*CHAR) LEN(400)
+             DCL        VAR(&EMLSUBJ) TYPE(*CHAR) LEN(60)
+             DCL        VAR(&B) TYPE(*CHAR) LEN(59)
+             DCL        VAR(&DIR) TYPE(*CHAR) LEN(100) +
+                          VALUE('/B2B/Out/')
+             DCL        VAR(&DIRBU) TYPE(*CHAR) LEN(100)
+
+             CHGVAR     VAR(&GOODFILE) VALUE(' ')
+             CHGVAR     VAR(&DIRBU) VALUE(%TRIM(&DIR) |< 'Backup/')
+             RTVOBJD    OBJ(ARPMCUS) OBJTYPE(*FILE) RTNLIB(&LIB)
+
+/******************************************************************************/
+/*   Copy files to IFS and send to S3 bucket.                                 */
+/*                                                                            */
+/*   Following is a naming translation from Mincron to the Watsco name.       */
+/*                                                                            */
+/*   MEBRNF      BRANCHES_EC.csv                                              */
+/*   MEITM       PRODUCTS_EC.csv                                              */
+/*   MEBITMF     AVAILABILITY_EC.csv                                          */
+/*   MEALIASF    PRODUCT_ALIASES_EC.csv                                       */
+/*   MEUPCF      PRODUCT_BARCODES_EC.csv                                      */
+/*   MEBITMN     AVAILABILITY_NEW_EC.csv                                      */
+/*   MEITMN      PRODUCTS_NEW_EC.csv                                          */
+/*   MEBSUP      SUPERSEDES.csv                                               */
+/*   MEUOM       ITEM_UOM.csv                                                 */
+/*                                                                            */
+/******************************************************************************/
+
+/******************************************************************************/
+/* Use Environment Variable to set QSH commands to Escape vs Completion       */
+/* messages.  Remove them first and then add them back                        */
+/******************************************************************************/
+
+             RMVENVVAR  ENVVAR(QIBM_QSH_CMD_ESCAPE_MSG)
+             MONMSG     MSGID(CPFA981)
+
+             ADDENVVAR  ENVVAR(QIBM_QSH_CMD_ESCAPE_MSG) VALUE(Y)
+
+/******************************************************************************/
+/* Use Environment Variable to log QSH commands to IFS                        */
+/******************************************************************************/
+
+             RMVENVVAR  ENVVAR(QIBM_QSH_CMD_OUTPUT)
+             MONMSG     MSGID(CPFA981)
+
+/*¢E         ADDENVVAR  ENVVAR(QIBM_QSH_CMD_OUTPUT) +
+                          VALUE('FILE=/home/awssvc/qshell_output') +
+                          LEVEL(*JOB) */
+/*¢E*/       ADDENVVAR  ENVVAR(QIBM_QSH_CMD_OUTPUT) +
+                          VALUE('FILE=/home/awssvc/qshell_output_MOCCBLDSND') +
+                          LEVEL(*JOB)
+
+/******************************************************************************/
+/* Adjust the bucket name & AWS profile based upon the system name            */
+/* We can run upload on TEST since we have a development AWS system           */
+/* Prod website should not be used on Dev and vice versa                      */
+/******************************************************************************/
+             RTVNETA    SYSNAME(&SYSNAME)
+             RTVDTAARA  DTAARA(QGPL/PRODTEST) RTNVAR(&PRODTEST)
+
+/* Production settings */
+
+             IF         COND(&PRODTEST *EQ 'PROD') THEN(DO)
+             CHGVAR     VAR(&PRF) VALUE(&PRDPRF)
+             CHGVAR     VAR(&BUCKET) VALUE(&PRDBUCKET)
+             enddo
+
+/* Development settings */
+
+             IF         COND(&PRODTEST *NE 'PROD') THEN(DO)
+             CHGVAR     VAR(&PRF) VALUE(&DEVPRF)
+             CHGVAR     VAR(&BUCKET) VALUE(&DEVBUCKET)
+             enddo
+
+/******************************************************************************/
+/* Copy the files to the IFS and send to the S3 bucket.                       */
+/******************************************************************************/
+             CHGVAR     VAR(&FILENAME) VALUE('MEBRN')
+             CHGVAR     VAR(&CSVNAME)  VALUE('BRANCHES_EC.csv')
+             CALLSUBR   SUBR(CPYTOIFS)
+             CALLSUBR   SUBR(SENDTOS3)
+
+             CHGVAR     VAR(&FILENAME) VALUE('MEITM')
+             CHGVAR     VAR(&CSVNAME)  VALUE('PRODUCTS_EC.csv')
+             CALLSUBR   SUBR(CPYTOIFS)
+             CALLSUBR   SUBR(SENDTOS3)
+
+             CHGVAR     VAR(&FILENAME) VALUE('MEBITM')
+/* ¢B        CHGVAR     VAR(&CSVNAME)  VALUE('AVAILABILITY_EC.csv')  */
+/*¢B*/       CHGVAR     VAR(&CSVNAME)  VALUE('AVAILABILITY_EC.V3.csv')
+             CALLSUBR   SUBR(CPYTOIFS)
+             CALLSUBR   SUBR(SENDTOS3)
+
+/*¢C*/       CHGVAR     VAR(&FILENAME) VALUE('MEBSUP')
+/*¢C*/       CHGVAR     VAR(&CSVNAME)  VALUE('SUPERSEDES.csv')
+/*¢C*/       CALLSUBR   SUBR(CPYTOIFS)
+/*¢C*/       CALLSUBR   SUBR(SENDTOS3)
+
+/*¢D*/       CHGVAR     VAR(&FILENAME) VALUE('MEUOM')
+/*¢D*/       CHGVAR     VAR(&CSVNAME)  VALUE('ITEM_UOM.csv')
+/*¢D*/       CALLSUBR   SUBR(CPYTOIFS)
+/*¢D*/       CALLSUBR   SUBR(SENDTOS3)
+
+             CHGVAR     VAR(&FILENAME) VALUE('MEALIAS')
+             CHGVAR     VAR(&CSVNAME)  VALUE('PRODUCT_ALIASES_EC.csv')
+             CALLSUBR   SUBR(CPYTOIFS)
+             CALLSUBR   SUBR(SENDTOS3)
+
+             CHGVAR     VAR(&FILENAME) VALUE('MEUPC')
+             CHGVAR     VAR(&CSVNAME)  VALUE('PRODUCT_BARCODES_EC.csv')
+             CALLSUBR   SUBR(CPYTOIFS)
+             CALLSUBR   SUBR(SENDTOS3)
+
+             CHGVAR     VAR(&FILENAME) VALUE('MEBITMN')
+             CHGVAR     VAR(&CSVNAME) VALUE('AVAILABILITY_EC_NEW.csv')
+             CALLSUBR   SUBR(CPYTOIFS)
+             CALLSUBR   SUBR(SENDTOS3)
+
+/*¢F*/       CHGVAR     VAR(&CSVNAME) VALUE('slowItems.csv')
+/*¢F*/       CALLSUBR   SUBR(SENDTOS3)
+
+/******************************************************************************/
+/* Create the new format availability file.                                   */
+
+             GOTO       CMDLBL(END)
+
+/******************************************************************************/
+/******************************************************************************/
+/* Subroutine to copy file to the IFS.                                        */
+/******************************************************************************/
+/******************************************************************************/
+             SUBR       SUBR(CPYTOIFS)
+
+             CHGVAR     VAR(&FULLPATH) VALUE(&DIR |< &CSVNAME)
+
+             CPYTOIMPF  FROMFILE(&LIB/&FILENAME) TOSTMF(&FULLPATH) +
+                          MBROPT(*REPLACE) STMFCCSID(*PCASCII) +
+                          RCDDLM(*CRLF) DTAFMT(*DLM) +
+                          RMVBLANK(*TRAILING)
+
+             ENDSUBR
+/******************************************************************************/
+/* END of Subroutine for CPYTOIFS                                             */
+/******************************************************************************/
+
+/******************************************************************************/
+
+/******************************************************************************/
+/******************************************************************************/
+/* Subroutine to send IFS file to the S3 bucket.                              */
+/*                                                                            */
+/*  Production - Branch File it should look like this                         */
+/*    /home/awssvc/.local/bin/aws --profile AWSPDPRD s3 cp                    */
+/*    /B2B/Out/BRANCHES_EC.csv  s3://ecm.production.erp.productdata           */
+/*                                                                            */
+/*  Development - Product Aliases, it should look like this                   */
+/*    /home/awssvc/.local/bin/aws --profile AWSPDDEV s3 cp                    */
+/*    /B2B/Out/PRODUCT_ALIASES_EC.csv                                         */
+/*    s3://ecm.dev.erp.productdata                                            */
+/*                                                                            */
+/******************************************************************************/
+/******************************************************************************/
+             SUBR       SUBR(SENDTOS3)
+
+             CHGVAR     VAR(&FULLPATH) VALUE(&DIR |< &CSVNAME)
+             CHGVAR     VAR(&CMD) VALUE('exec' |> %TRIM(&LOCALDRV) +
+            |> %TRIM(&PRF) |> 's3 cp' |> %TRIM(&FULLPATH) |> +
+            %TRIM(&BUCKET))
+
+             QSH        CMD(&CMD)
+             MONMSG     MSGID(QSH0005 QSH0006 QSH0007) EXEC(DO)
+
+/* Error occurred on QSH command */
+
+ ERROR:      RTVJOBA    JOB(&JOBNAME) USER(&JOBUSER) NBR(&JOBNBR)
+
+/* Format email subject and text */
+
+             CHGVAR     VAR(&EMLNOTE) VALUE('Mobile App Files not +
+                          loaded to AWS S3.  See the attached QSH +
+                          joblog for details.' |> 'Job' |> &JOBNBR +
+                          |< '/' |< &JOBUSER |< '/' |< &JOBNAME)
+
+             CHGVAR     VAR(&EMLSUBJ) VALUE('Mobile App Files not +
+                          LOADED to AWS S3 Bucket')
+
+/* If error occurred on Development, note it in subject */
+
+             IF         COND(&PRODTEST *NE 'PROD') THEN(DO)
+             CHGVAR     VAR(&EMLSUBJ) +
+                          VALUE(&SYSNAME *BCAT &EMLSUBJ)
+             ENDDO
+
+/* Send email */
+
+/*¢E         SNDSMTPEMM RCP((ISDEPT@ECMDI.COM)) SUBJECT(&EMLSUBJ) +
+                          NOTE(&EMLNOTE) +
+                          ATTACH(('/home/awssvc/qshell_output' +
+                          *HTML *TXT)) */
+/*¢E*/       SNDSMTPEMM RCP((ISDEPT@ECMDI.COM)) SUBJECT(&EMLSUBJ) +
+                          NOTE(&EMLNOTE) +
+                          ATTACH(('/home/awssvc/qshell_output_MOCCBLDSND' +
+                          *HTML *TXT))
+
+/* If on PROD, it should alert someone via text of error */
+
+             IF         COND(&PRODTEST = 'PROD') THEN(DO)
+
+/* Setup the variables needed to send pgm message to qsysopr */
+
+             CHGVAR     VAR(&B) VALUE(&SYSNAME)
+             SNDPGMMSG  MSGID(B2B0004) MSGF(ECMMSGF) MSGDTA(&B) +
+                          TOMSGQ(QSYS/QSYSOPR)
+
+             ENDDO
+             ENDDO
+/* End of Error on QSH command */
+
+             ENDSUBR
+/******************************************************************************/
+/* END of Subroutine for AWS                                                  */
+/******************************************************************************/
+
+ END:        ENDPGM
