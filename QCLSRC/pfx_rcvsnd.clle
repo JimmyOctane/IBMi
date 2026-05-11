@@ -1,0 +1,919 @@
+/********************************************************************/
+/* Program : PFX_RCVSND (Copied from RCVMGTXML1)                    */
+/* Author  : Kelli Beckham                                          */
+/* Purpose : Bring the PriceFX files in and apply the updates to    */
+/*           Mincron                                                */
+/*                                                                  */
+/*       Important                                                          */
+/* This program requires that the job runs under AWSSVC user due to           */
+/* AWS config setup in the /home/awssvc/.aws folder                           */
+/*       End Of Important:                                                  */
+/*                                                                            */
+/*  IFS Directory:  /pricefx/in/                                              */
+
+/*  Files Picked up                                                           */
+/*    Date/Time     Sub File Type                                             */
+/*   20210801_000100_EC_Matrix.csv                                            */
+/*   20210801_000100_EC_DiscountProfileCodes.csv                              */
+/*   20210801_000100_EC_CustomerProfileRecords.csv                            */
+/*   20210801_000100_EC_DiscountProfileCodeToCustomer.csv                     */
+/*   20210801_000100_EC_MatrixCustomer.csv                                    */
+/*   20210801_000100_EC_Matrix.csv                                            */
+/*   pfx_export_DMDS_CONTRACT_SUBHEADER_PRPMCPS_EXPORT_2022-11-30T153000_0.csv*/
+/*   pfx_export_DMDS_CONTRACT_DETAIL_PRPMCPD_EXPORT_2022-11-30T153000_0.csv   */
+/*   pfx_export_DMDS_CONTRACT_HEADER_PRPMCPH_EXPORT_2022-11-30T153000_0.csv   */
+
+/*   Reformat CONTRACT files to new file name on IFS                          */
+/*   2022-11-30-T153000_0_EC_ContractAHeader.csv                              */
+/*   2022-11-30-T153000_0_EC_ContractSubheader.csv                            */
+/*   2022-11-30-T153000_0_EC_ContractDetail.csv                               */
+/*                                                                            */
+/*   AWS M2 Prod Bucket  s3://watsco-pricefx/Production/EC/Export             */
+/*   AWS M2 Test Bucket: s3://watsco-pricefx/Development/EC/Export            */
+/*                                                                            */
+/*   AWS User for Production:  awspdprd                                       */
+/*   AWS User for Development: awspddev                                       */
+/*                                                                            */
+/********************************************************************/
+/* Created : 09/01/2021    8146 ksb initial program created based   */
+/*                                  upon logic for picking up B2B   */
+/*                                  orders                          */
+/********************************************************************/
+/********************************************************************/
+/* Changed : 12/01/2022    5056 ksb modified to include contract    */
+/* ¢A                               profile header and detail       */
+/*¢B *M JJF   3018 070723 JJF make addenvvar unique/program name    */
+/*¢C *M APB   9346 080323 APB Allow email to send to pricing dept   */
+/*                            on test                               */
+/*¢D *M APB   7358 080923 APB Add pricing dept to test email        */
+/********************************************************************/
+/********************************************************************/
+/* To reprocess a file, copy file back to ifs folder                */
+/* /pricefx/in from the backup folder.  Then update the PRICEFXFN   */
+/* file with the name of the file to reprocess and run this program */
+/* with a parm of FTPYN = 'N'                                       */
+/********************************************************************/
+
+             PGM        parm(&FTPYN)
+
+/* FTPYN Y=Yes, blank = No and N = No */
+
+             DCL        VAR(&FTPYN) TYPE(*CHAR) LEN(1)
+             DCL        VAR(&PGMNME) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&CMD) TYPE(*CHAR) LEN(500)
+             DCL        VAR(&SUBJECT) TYPE(*CHAR) LEN(100)
+             DCL        VAR(&SUBJ) TYPE(*CHAR) LEN(25)
+             DCL        VAR(&Message) TYPE(*CHAR) LEN(500)
+             DCL        VAR(&PRODTEST) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&A) TYPE(*CHAR) LEN(1) VALUE('''')
+             DCL        VAR(&SQLSTMT) TYPE(*CHAR) LEN(1024)
+             DCL        VAR(&SQLSTMT1) TYPE(*CHAR) LEN(1024)
+             DCL        VAR(&IFSPATH) TYPE(*CHAR) LEN(100) +
+                          VALUE('/pricefx/in/')
+             DCL        VAR(&IFSPATHBU) TYPE(*CHAR) LEN(100) +
+                          VALUE('/pricefx/in/backup/')
+             DCL        VAR(&IFSPATHEM) TYPE(*CHAR) LEN(100)
+             DCL        VAR(&IFSPATHEM1) TYPE(*CHAR) LEN(100) +
+                          VALUE('/pricefx/email/')
+             DCL        VAR(&LOC) TYPE(*CHAR) LEN(100)
+             DCL        VAR(&BCKUPLOC) TYPE(*CHAR) LEN(100)
+/*¢A         DCL        VAR(&FNAME) TYPE(*CHAR) LEN(75)       */
+             DCL        VAR(&FNAMEAWS) TYPE(*CHAR) LEN(75) /*¢A*/
+             DCL        VAR(&FNAMEIFS) TYPE(*CHAR) LEN(75) /*¢A*/
+             DCL        VAR(&GOODFILE) TYPE(*CHAR) LEN(75)
+             DCL        VAR(&ERRORCODE) TYPE(*CHAR) LEN(2)
+             DCL        VAR(&ORDER) TYPE(*CHAR) LEN(7) VALUE(*BLANKS)
+             DCL        VAR(&B2BORDER) TYPE(*CHAR) LEN(20) +
+                          VALUE(*BLANKS)
+             DCL        VAR(&FNAMEID) TYPE(*CHAR) LEN(75) +
+                          VALUE(*BLANKS)
+             DCL        VAR(&EMAIL) TYPE(*CHAR) STG(*AUTO) LEN(80)
+             DCL        VAR(&EMAILT) TYPE(*CHAR) STG(*AUTO) LEN(80)
+             DCL        VAR(&EMAILU) TYPE(*CHAR) STG(*AUTO) LEN(80)
+             DCL        VAR(&LIB) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&JOB) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&USER) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&NBR) TYPE(*CHAR) LEN(6)
+             DCL        VAR(&B) TYPE(*CHAR) LEN(36)
+             DCL        VAR(&SYSNAME) TYPE(*CHAR) LEN(8)
+             DCL        VAR(&DOWNDELAY) TYPE(*CHAR) LEN(4)
+             DCL        VAR(&UPDELAY) TYPE(*CHAR) LEN(4)
+             DCL        VAR(&RETRYN) TYPE(*DEC) LEN(1 0)
+             DCL        VAR(&RETRYA) TYPE(*CHAR) LEN(1)
+             DCL        VAR(&BUCKET) TYPE(*CHAR) LEN(100)
+             DCL        VAR(&BUCKETPRD) TYPE(*CHAR) LEN(100) +
+                          VALUE('s3://watsco-pricefx/Production/EC/+
+                          Export/')
+             DCL        VAR(&BUCKETDEV) TYPE(*CHAR) LEN(100) +
+                          VALUE('s3://watsco-pricefx/Development/EC/+
+                          Export/')
+             DCL        VAR(&BUCKETPRC) TYPE(*CHAR) LEN(100)
+             DCL        VAR(&BUCKETPPRD) TYPE(*CHAR) LEN(100) +
+                          VALUE('s3://watsco-pricefx/Production/EC/Pr+
+                          ocessing/')
+             DCL        VAR(&BUCKETPDEV) TYPE(*CHAR) LEN(100) +
+                          VALUE('s3://watsco-pricefx/Development/EC/P+
+                          rocessing/')
+             DCL        VAR(&BUCKETARC) TYPE(*CHAR) LEN(100)
+             DCL        VAR(&BUCKETAPRD) TYPE(*CHAR) LEN(100) +
+                          VALUE('s3://watsco-pricefx/Production/EC/Ar+
+                          chive/')
+             DCL        VAR(&BUCKETADEV) TYPE(*CHAR) LEN(100) +
+                          VALUE('s3://watsco-pricefx/Development/EC/A+
+                          rchive/')
+             DCL        VAR(&PRF) TYPE(*CHAR) LEN(8)
+             DCL        VAR(&PRDPRF) TYPE(*CHAR) LEN(8) +
+                          VALUE('awspdprd')
+             DCL        VAR(&DEVPRF) TYPE(*CHAR) LEN(8) +
+                          VALUE('awspddev')
+             DCL        VAR(&LOCALDRV) TYPE(*CHAR) LEN(50) +
+                          VALUE('/home/awssvc/.local/bin/aws +
+                          --profile')
+             DCL        VAR(&INFINITE)   TYPE(*LGL)  VALUE('1')
+             DCL        VAR(&SPLFILE)    TYPE(*CHAR) LEN(100)
+             DCL        VAR(&SPLUPPER)   TYPE(*CHAR) LEN(100)
+             DCL        VAR(&EMLNOTE) TYPE(*CHAR) LEN(1000)
+             DCL        VAR(&FNAME1)    TYPE(*CHAR) LEN(10)
+             DCL        VAR(&FNAMEHDG)    TYPE(*CHAR) LEN(10)
+             DCL        VAR(&FNAMEHST)  TYPE(*CHAR) LEN(10)
+             DCL        VAR(&CPYTYPE)  TYPE(*CHAR) LEN(1)  /*¢A*/
+             DCL        VAR(&NBRCURRCDS) TYPE(*DEC) LEN(10 0) VALUE(0)
+
+/* ¢A        DCLF       FILE(PRICEFXFN) OPNID(PRX)     */
+             DCLF       FILE(PRICEFXFN1) OPNID(PRX)  /*¢A*/
+             DCLF       FILE(SPOOLFLAT1) OPNID(SPL)
+
+
+/*********************************************************************/
+/*********************************************************************/
+/* Phase 1 - Retrieve Basic Info ALWAYS regardless of FTP Y/N Flag   */
+/*********************************************************************/
+/*********************************************************************/
+
+/* Retrieve basic info */
+
+             RTVDTAARA  DTAARA(QGPL/PRODTEST) RTNvar(&PRODTEST)
+             RTVNETA    SYSNAME(&SYSNAME)
+             RTVJOBA    JOB(&JOB) USER(&USER) NBR(&NBR)
+             CHGVAR     VAR(&B) VALUE(&SYSNAME || &JOB || &USER || +
+                          &NBR)
+
+/* Get the PD data library name on the library list */
+
+             RTVOBJD    OBJ(ARPMCUS) OBJTYPE(*FILE) RTNLIB(&LIB)
+
+/*------------------------------------------------------------------------------------------------*/
+/*  Make sure directories exist on IFS and create if missing                                      */
+/*------------------------------------------------------------------------------------------------*/
+
+             MKDIR      DIR('/pricefx')
+             MONMSG     MSGID(CPFA0A0)
+
+             MKDIR      DIR('/pricefx/in/')
+             MONMSG     MSGID(CPFA0A0)
+
+             MKDIR      DIR('/pricefx/in/backup/')
+             MONMSG     MSGID(CPFA0A0)
+
+             MKDIR      DIR('/pricefx/out/')
+             MONMSG     MSGID(CPFA0A0)
+
+             MKDIR      DIR('/pricefx/out/backup/')
+             MONMSG     MSGID(CPFA0A0)
+
+             MKDIR      DIR('/pricefx/email/')
+             MONMSG     MSGID(CPFA0A0)
+
+
+/* Retrieve Up/Down time delay and retry count */
+
+/*           RTVDTAARA  DTAARA(B2BCOMXML (35 4)) RTNvar(&UPDELAY) */
+/*           RTVDTAARA  DTAARA(B2BCOMXML (40 4)) RTNvar(&DOWNDELAY) */
+/*           RTVDTAARA  DTAARA(B2BCOMXML (47 1)) RTNvar(&RETRYA)    */
+             IF         COND(&RETRYA = ' ') THEN(CHGvar var(&RETRYA) +
+                          VALUE('0'))
+
+ /* Add Libs Needed */
+
+             ADDLIBLE   LIB(TAATOOL)
+             MONMSG     MSGID(CPF0000)
+
+ /* Get user name and email that is running the job */
+
+             CALL       PGM(ECC9996) PARM(&USER)
+             CALL       PGM(ECC9997) PARM(&USER &EMAILT)
+
+ /* Set email address for test and prod   */
+
+             IF         COND(&PRODTEST *EQ 'PROD') THEN(DO)
+             CHGVAR     VAR(&EMAIL) VALUE('isdept@ecmdi.com')
+             CHGVAR     VAR(&EMAILU) VALUE('pricingdept@ecmdi.com')
+             ENDDO
+             ELSE       CMD(DO)
+             CHGVAR     VAR(&EMAIL) VALUE(&EMAILT)
+/* ¢C        CHGVAR     VAR(&EMAILU) VALUE(&EMAILT)  */
+/*¢D*/       CHGVAR     VAR(&EMAILU) VALUE('pricingdept@ecmdi.com')
+             ENDDO
+
+/******************************************************************************/
+/* Adjust the bucket name & AWS profile based upon the system name            */
+/* We can run upload on TEST since we have a development AWS system           */
+/* Prod website should not be used on Dev and vice versa                      */
+/******************************************************************************/
+
+             IF         COND(&PRODTEST *NE 'PROD') THEN(DO)
+/* Test */
+             CHGVAR     VAR(&BUCKET) VALUE(&BUCKETDEV)
+             CHGVAR     VAR(&BUCKETPRC) VALUE(&BUCKETPDEV)
+             CHGVAR     VAR(&BUCKETARC) VALUE(&BUCKETADEV)
+             CHGVAR     VAR(&PRF) VALUE(&DEVPRF)
+             ENDDO
+ /* Prod */
+             ELSE       CMD(DO)
+             CHGVAR     VAR(&BUCKET) VALUE(&BUCKETPRD)
+             CHGVAR     VAR(&BUCKETPRC) VALUE(&BUCKETPPRD)
+             CHGVAR     VAR(&BUCKETARC) VALUE(&BUCKETAPRD)
+             CHGVAR     VAR(&PRF) VALUE(&PRDPRF)
+             ENDDO
+
+/******************************************************************************/
+/* Use Environment variable to set QSH commands to Escape vs Completion       */
+/* messages.  Remove them first and then add them back                        */
+/******************************************************************************/
+
+             RMVENVVAR  ENVVAR(QIBM_QSH_CMD_ESCAPE_MSG)
+             MONMSG     MSGID(CPFA981)
+
+             ADDENVVAR  ENVVAR(QIBM_QSH_CMD_ESCAPE_MSG) VALUE(Y)
+
+/******************************************************************************/
+/* Use Environment variable to log QSH commands to IFS                        */
+/******************************************************************************/
+
+             RMVENVVAR  ENVVAR(QIBM_QSH_CMD_OUTPUT)
+             MONMSG     MSGID(CPFA981)
+
+/*¢B         ADDENVVAR  ENVVAR(QIBM_QSH_CMD_OUTPUT) +
+                          VALUE('FILE=/home/awssvc/qshell_output1') +
+                          LEVEL(*JOB) */
+/*¢B*/       ADDENVVAR  ENVVAR(QIBM_QSH_CMD_OUTPUT) +
+                          VALUE('FILE=/home/awssvc/qshell_output_PFX_RCVSND') +
+                          LEVEL(*JOB)
+
+/*********************************************************************/
+/*********************************************************************/
+/* End Phase 1 - Always RUN                                          */
+/*********************************************************************/
+/*********************************************************************/
+
+/*********************************************************************/
+/*********************************************************************/
+/*       Phase 2 - AWS data moved to AS400                           */
+/*                                                                   */
+/* Run this section IF FTPYN = Y                                     */
+/*                                                                   */
+/* Get list of files from AWS Bucket Export and copy to SPOOLFLAT1   */
+/* Read SPOOLFLAT1 file to get first file name                       */
+/*   If Contract Profile data, reformat new IFS result name          */
+/*   Copy file from AWS Export to IFS /pricefx/in                    */
+/*   Add the file name to PRICEFXFN DB2 file                         */
+/*   Copy IFS file from pricefx/in to pricefx/in/backup              */
+/*   Move file from AWS Export to AWS Processing                     */
+/* Read SPOOLFLAT1 for next file and repeat loop                     */
+/* EOF on Spoolflat1, copy PRICEFXFN to PRICEFXFBK with *ADD option  */
+/*                                                                   */
+/*********************************************************************/
+/*********************************************************************/
+
+ /* Skip FTP if FTPYN <> 'Y' */
+             IF         COND(&FTPYN *NE 'Y') THEN(GOTO +
+                          CMDLBL(LOOP1))
+
+/******************************************************************************/
+/* Get all files by using CP Recursive option temporarily for testing         */
+/******************************************************************************/
+
+             CHGVAR     VAR(&CMD) VALUE('exec' |> %TRIM(&LOCALDRV) +
+                          |> %TRIM(&PRF) |> 's3 ls' |> %TRIM(&BUCKET))
+
+             QSH        CMD(&CMD)
+             MONMSG     MSGID(QSH0005 QSH0006 QSH0007) EXEC(GOTO +
+                          CMDLBL(ERROR))
+
+             CHKOBJ     OBJ(QTEMP/SPOOLFLAT1) OBJTYPE(*FILE)
+             MONMSG     MSGID(CPF9801) EXEC(CRTDUPOBJ OBJ(SPOOLFLAT) +
+                          FROMLIB(&LIB) OBJTYPE(*FILE) TOLIB(QTEMP) +
+                          NEWOBJ(SPOOLFLAT1))
+
+             CALL       PGM(OPC9990) PARM('0' 'SPOOLFLAT1')
+
+/*¢B         CPYFRMIMPF FROMSTMF('/home/awssvc/qshell_output1') +
+                          TOFILE(QTEMP/SPOOLFLAT1) MBROPT(*REPLACE) +
+                          RCDDLM(*ALL) DTAFMT(*DLM) STRDLM(*NONE) +
+                          STRESCCHR(*NONE) RMVBLANK(*NONE) FLDDLM(*TAB)*/
+/*¢B*/       CPYFRMIMPF FROMSTMF('/home/awssvc/qshell_output_PFX_RCVSND') +
+                          TOFILE(QTEMP/SPOOLFLAT1) MBROPT(*REPLACE) +
+                          RCDDLM(*ALL) DTAFMT(*DLM) STRDLM(*NONE) +
+                          STRESCCHR(*NONE) RMVBLANK(*NONE) FLDDLM(*TAB)
+             MONMSG     MSGID(CPF2817)
+
+/******************************************************************************/
+/* Loop through Files on AWS and load to IFS                                  */
+/******************************************************************************/
+LOOP:
+             DOWHILE    COND(&INFINITE)
+
+             RCVF       OPNID(SPL)
+             MONMSG     MSGID(CPF0864) EXEC(LEAVE)
+
+             CHGVAR     VAR(&SPLFILE) VALUE(%SST(&SPL_SPDATA 32 100))
+             CHGVAR     VAR(&SPLUPPER) VALUE(%UPPER(&SPLFILE))
+
+/* See if the file is identified as a CSV file. If not then get the next      */
+/* record.                                                                    */
+             IF         COND(%SCAN('.CSV' &SPLUPPER) = 0) THEN(ITERATE)
+
+/* ¢A        CHGVAR     VAR(&FNAME) VALUE(%SST(&SPL_SPDATA 32 75)) */
+/*¢A */      CHGVAR     VAR(&FNAMEAWS) VALUE(%SST(&SPL_SPDATA 32 75))
+/*¢A */      CHGVAR     VAR(&FNAMEIFS) VALUE(%SST(&SPL_SPDATA 32 75))
+
+/* reformat result IFS name if the file contains PRPMCPH data     */
+/*   2022-11-30-T153000_0_EC_ContractHeader.csv                               */
+/*¢A */      IF         COND(%SCAN('PRPMCPH' &SPLUPPER) *NE 0) THEN(DO)
+/*¢A */      CHGVAR     VAR(&FNAMEIFS) VALUE(*BLANKS)
+/*¢A */      CHGVAR     VAR(&FNAMEIFS) VALUE((%SST(&SPL_SPDATA 79 +
+                          19)) || '_EC_ContractAHeader.csv')
+                          ENDDO
+
+/* reformat result IFS name if the file contains PRPMCPD data     */
+/*   2022-11-30-T153000_0_EC_ContractDetail.csv                               */
+/*¢A */      IF         COND(%SCAN('PRPMCPD' &SPLUPPER) *NE 0) THEN(DO)
+/*¢A */      CHGVAR     VAR(&FNAMEIFS) VALUE(*BLANKS)
+/*¢A */      CHGVAR     VAR(&FNAMEIFS) VALUE((%SST(&SPL_SPDATA 79 +
+                          19)) || '_EC_ContractDetail.csv')
+ /*¢A */                  ENDDO
+
+/* reformat result IFS name if the file contains PRPMCPS data     */
+/*   2022-11-30-T153000_0_EC_ContractSubheader.csv                            */
+ /*¢A */     IF         COND(%SCAN('PRPMCPS' &SPLUPPER) *NE 0) THEN(DO)
+ /*¢A */     CHGVAR     VAR(&FNAMEIFS) VALUE(*BLANKS)
+ /*¢A */     CHGVAR     VAR(&FNAMEIFS) VALUE((%SST(&SPL_SPDATA 82 +
+                          19)) || '_EC_ContractSubheader.csv')
+ /*¢A */                  ENDDO
+
+
+/******************************************************************************/
+/* Copy the Good CSV file to IFS Directory                                    */
+
+/*  Production -                                                              */
+/*    /home/awssvc/.local/bin/aws --profile awspdprd s3 cp                    */
+/*    s3://watsco-pricefx/Production/EC/Export/20210702_000100_EC_Matrix.csv  */
+/*   /pricefx/in/20210702_000100_EC_Matrix.csv                                */
+
+/*  Development -    it should look like this                                 */
+/*    /home/awssvc/.local/bin/aws --profile awspddev s3 cp                    */
+/*   s3://watsco-pricefx/Development/EC/Export/20210702_000100_EC_Matrix.csv  */
+/*   /pricefx/in/20210702_000100_EC_Matrix.csv                                */
+
+/******************************************************************************/
+
+/*¢A         CHGVAR     VAR(&CMD) VALUE('exec' |> %TRIM(&LOCALDRV) +
+                          |> %TRIM(&PRF) |> 's3 cp' |> +
+                          %TRIM(&BUCKET) |< &FNAME |> &IFSPATH |< +
+                          &FNAME)                   */
+/*¢A */      CHGVAR     VAR(&CMD) VALUE('exec' |> %TRIM(&LOCALDRV) +
+                          |> %TRIM(&PRF) |> 's3 cp' |> +
+                          %TRIM(&BUCKET) |< &FNAMEAWS |> &IFSPATH +
+                          |< &FNAMEIFS) /*  */
+
+             QSH        CMD(&CMD)
+             MONMSG     MSGID(QSH0005 QSH0006 QSH0007) EXEC(GOTO +
+                          CMDLBL(ERROR))
+
+ /* Add the file name to PRICEFXFN file for processing                   */
+
+    /* check to see if the file exists.  If not create it */
+
+             CHKOBJ     OBJ(&LIB/PRICEFXFN) OBJTYPE(*FILE)
+             MONMSG     MSGID(CPF9801) EXEC(CRTDUPOBJ OBJ(MGTORDERS) +
+                          FROMLIB(&LIB) OBJTYPE(*FILE) TOLIB(&LIB) +
+                          NEWOBJ(PRICEFXFN))
+
+/*¢A         CHGVAR     VAR(&SQLSTMT) VALUE('INSERT INTO ' *CAT &LIB +
+                          *TCAT '.PRICEFXFN VALUES ' *CAT &A *CAT +
+                          &FNAME *TCAT &A)    */
+/*¢A */      CHGVAR     VAR(&SQLSTMT) VALUE('INSERT INTO ' *CAT &LIB +
+                          *TCAT '.PRICEFXFN VALUES ' *CAT &A *CAT +
+                          &FNAMEIFS *TCAT &A)
+             RUNSQL     SQL(&SQLSTMT) COMMIT(*NONE) NAMING(*SQL)
+
+ /* Copy the file and put it in the IFS for backup                       */
+
+/*¢A         CHGVAR     VAR(&LOC) VALUE(%TRIM(&IFSPATH) || &FNAME) */
+/*¢A */      CHGVAR     VAR(&LOC) VALUE(%TRIM(&IFSPATH) || &FNAMEIFS)
+/*¢A         CHGVAR     VAR(&BCKUPLOC) VALUE(%TRIM(&IFSPATHBU) || +
+                          &FNAME)   */
+/*¢A */      CHGVAR     VAR(&BCKUPLOC) VALUE(%TRIM(&IFSPATHBU) || +
+                          &FNAMEIFS)
+             CPY        OBJ(&LOC) TOOBJ(&BCKUPLOC) REPLACE(*YES)
+
+/******************************************************************************/
+/* Move File from Export to Processing folder on AWS                          */
+
+/*  Production -                                                              */
+/*    /home/awssvc/.local/bin/aws --profile awspdprd s3 mv                    */
+/*    s3://watsco-pricefx/Production/EC/Export/20210702_000100_EC_Matrix.csv  */
+/* s3://watsco-pricefx/Production/EC/Processing/20210702_000100_EC_Matrix.csv */
+
+/*  Development -    it should look like this                                 */
+/*    /home/awssvc/.local/bin/aws --profile awspddev s3 mv                    */
+/*    s3://watsco-pricefx/Development/EC/Export/20210702_000100_EC_Matrix.csv */
+/* s3://watsco-pricefx/Development/EC/Processing/20210702_000100_EC_Matrix.csv */
+
+/******************************************************************************/
+
+/*¢A         CHGVAR     VAR(&CMD) VALUE('exec' |> %TRIM(&LOCALDRV) +
+                          |> %TRIM(&PRF) |> 's3 mv' |> +
+                          %TRIM(&BUCKET) |< &FNAME |> +
+                          %TRIM(&BUCKETPRC) |< &FNAME)     */
+
+/*¢A */      CHGVAR     VAR(&CMD) VALUE('exec' |> %TRIM(&LOCALDRV) +
+                          |> %TRIM(&PRF) |> 's3 mv' |> +
+                          %TRIM(&BUCKET) |< &FNAMEAWS |> +
+                          %TRIM(&BUCKETPRC) |< &FNAMEIFS)
+
+             QSH        CMD(&CMD)
+             MONMSG     MSGID(QSH0005 QSH0006 QSH0007) EXEC(GOTO +
+                          CMDLBL(ERROR))
+
+ END_LOOP:
+             ENDDO
+/******************************************************************************/
+/* END Loop for getting files from AWS to IFS                                 */
+/******************************************************************************/
+
+
+/* Copy the PRICEFXFN file to PRICEFXFBK         */
+
+             CPYF       FROMFILE(&LIB/PRICEFXFN) +
+                          TOFILE(&LIB/PRICEFXFBK) MBROPT(*ADD) +
+                          CRTFILE(*YES) INCREL((*IF LSOUTPUT *NE +
+                          'Backup'))
+
+
+/*********************************************************************/
+/*********************************************************************/
+/* Phase 2 - End of Section to run only if FTPYN = 'Y'               */
+/*********************************************************************/
+/*********************************************************************/
+
+
+
+
+/*********************************************************************/
+/*********************************************************************/
+/* Phase 3 - Load the data from IFS to DB2 and execute updates       */
+/*                                                                   */
+/*** Note FNAMEIFS is IFS file name, FNAME1 is DB2 file name         */
+/*   FNAMEAWS if AWS File name                                       */
+/*                                                                   */
+/* Read PRICEFXFN file to get IFS file name                          */
+/*   Based on FNAME, set the default values for files, headings      */
+/*   If FNAME1 is not blank, clear appropriate DB2 input file        */
+/*   Copy IFS pricefx/in file to appropriate DB2 file name FNAME1    */
+/*   Update appropriate DB2 file record data with IFS file name      */
+/*   Call appropriate RPG pgm to perform updates                     */
+/*   Check DB2 file to see if any errors FXFLAG=E                    */
+/*     If errors exist, copy DB2 data to IFS file /pricefx/email     */
+/*     Send email to user with IFS attachment of errors only         */
+/*   Copy data from DB2 FNAME1 to appropriate DB2 History file *ADD  */
+/*   Move file from AWS Processing to AWS Archive                    */
+/*   Delete file from IFS /pricefx/in folder                         */
+/*   Remove FNAME  from PRICEFXFN DB2 file since it's proceseed      */
+/* Read next record on PRICEFXFN                                     */
+/*********************************************************************/
+/*********************************************************************/
+
+/******************************************************************************/
+/* Loop through Files on PRICEFXFN                                            */
+/******************************************************************************/
+LOOP1:
+             DOWHILE    COND(&INFINITE)
+
+/* Get XML Doc Names                                                     */
+
+             RCVF       opnid(PRX)
+             MONMSG     MSGID(CPF0864) EXEC(LEAVE)
+
+ /* Clear the AS400 DB2 file names and pgm name                          */
+
+             CHGVAR     VAR(&FNAME1) VALUE('          ')
+             CHGVAR     VAR(&FNAMEHDG) VALUE('          ')
+             CHGVAR     VAR(&FNAMEHST) VALUE('          ')
+             CHGVAR     VAR(&PGMNME) VALUE('          ')
+             CHGVAR     VAR(&SQLSTMT) VALUE(' ')
+             CHGVAR     VAR(&SQLSTMT1) VALUE(' ')
+             CHGVAR     VAR(&CPYTYPE) VALUE(' ')
+
+ /* Isolate the file name                                                */
+
+/*¢A         CHGVAR     VAR(&FNAME) VALUE(%SST(&PRX_LSOUTPUT 1 75)) */
+/*¢A */      CHGVAR     VAR(&FNAMEIFS) VALUE(%SST(&PRX_LSOUTPUT 1 75))
+
+/*¢A         CHGVAR     VAR(&LOC) VALUE(&IFSPATH *TCAT &FNAME)  */
+/*¢A */      CHGVAR     VAR(&LOC) VALUE(&IFSPATH *TCAT &FNAMEIFS)
+
+/* Copy the data from IFS to DB2 file for processing */
+
+             SELECT
+
+/*     Process Discount Profile Header to PRPFXPHDR  */
+
+             WHEN       COND(%SST(&PRX_LSOUTPUT 20 20) *EQ +
+                          'DiscountProfileCodes') THEN(DO)
+
+             CHGVAR     VAR(&FNAME1) VALUE('PRPFXPHDR')
+             CHGVAR     VAR(&FNAMEHDG) VALUE('PRPFXPHD_H')
+             CHGVAR     VAR(&FNAMEHST) VALUE('FXPACPHDR ')
+             CHGVAR     VAR(&PGMNME) VALUE('PRRFXPH')
+             CHGVAR     VAR(&SUBJ) VALUE('Disc Prf Header')
+             CHGVAR     VAR(&SQLSTMT1) VALUE(', fxno03 = +
+                          upper(fxno03), fxdn02 = upper(fxdn02), +
+                          fxcd40 = upper(fxcd40)')
+/*¢A */      CHGVAR     VAR(&FNAMEAWS) VALUE(&FNAMEIFS)
+/*¢A */      CHGVAR     VAR(&CPYTYPE) VALUE('1')
+             ENDDO
+
+/*     Process Discount Profile Detail to PRPFXPDTL  */
+
+             WHEN       COND(%SST(&PRX_LSOUTPUT 20 21) *EQ +
+                          'DiscountProfileRecords') THEN(DO)
+
+             CHGVAR     VAR(&FNAME1) VALUE('PRPFXPDTL')
+             CHGVAR     VAR(&FNAMEHDG) VALUE('PRPFXPDT_H')
+             CHGVAR     VAR(&FNAMEHST) VALUE('FXPACPDTL ')
+             CHGVAR     VAR(&PGMNME) VALUE('PRRFXPD')
+             CHGVAR     VAR(&SUBJ) VALUE('Disc Prf Details')
+             CHGVAR     VAR(&SQLSTMT1) VALUE(', fxno03 = +
+                          upper(fxno03), fxcd17 = upper(fxcd17), +
+                          fxcd18 = upper(fxcd18), +
+                          fxcd19 = upper(fxcd19), +
+                          fxcd04 = upper(fxcd04), +
+                          fxcd03 = upper(fxcd03)')
+/*¢A */      CHGVAR     VAR(&FNAMEAWS) VALUE(&FNAMEIFS)
+/*¢A */      CHGVAR     VAR(&CPYTYPE) VALUE('1')
+
+             ENDDO
+
+/*     Process Cust assigned to Disc Prf to PRPFXCP  */
+
+             WHEN       COND(%SST(&PRX_LSOUTPUT 20 29) *EQ +
+                          'DiscountProfileCodeToCustomer') THEN(DO)
+
+             CHGVAR     VAR(&FNAME1) VALUE('PRPFXCP')
+             CHGVAR     VAR(&FNAMEHDG) VALUE('PRPFXCP_H')
+             CHGVAR     VAR(&FNAMEHST) VALUE('FXPACCP  ')
+             CHGVAR     VAR(&PGMNME) VALUE('PRRFXCP')
+             CHGVAR     VAR(&SUBJ) VALUE('Disc Prf Customers')
+             CHGVAR     VAR(&SQLSTMT1) VALUE(', fxno03 = +
+                          upper(fxno03)')
+/*¢A */      CHGVAR     VAR(&FNAMEAWS) VALUE(&FNAMEIFS)
+/*¢A */      CHGVAR     VAR(&CPYTYPE) VALUE('1')
+             ENDDO
+
+/*     Process Cust Disc (aka Spc Ltr) to   PRPFXCD  */
+
+             WHEN       COND(%SST(&PRX_LSOUTPUT 20 22) *EQ +
+                          'CustomerProfileRecords') THEN(DO)
+
+             CHGVAR     VAR(&FNAME1) VALUE('PRPFXCD')
+             CHGVAR     VAR(&FNAMEHDG) VALUE('PRPFXCD_H')
+             CHGVAR     VAR(&FNAMEHST) VALUE('FXPACCD')
+             CHGVAR     VAR(&PGMNME) VALUE('PRRFXCD')
+             CHGVAR     VAR(&SUBJ) VALUE('Customer Discounts')
+             CHGVAR     VAR(&SQLSTMT1) VALUE(', fxcd17 = +
+                          upper(fxcd17), fxcd18 = upper(fxcd18), +
+                          fxcd19 = upper(fxcd19), fxcd04 = +
+                          upper(fxcd04), fxcd03 = upper(fxcd03)')
+/*¢A */      CHGVAR     VAR(&FNAMEAWS) VALUE(&FNAMEIFS)
+/*¢A */      CHGVAR     VAR(&CPYTYPE) VALUE('1')
+
+             ENDDO
+
+/*     Process Matrix File Updates to PRPFXMX        */
+
+             WHEN       COND(%SST(&PRX_LSOUTPUT 20 10) *EQ +
+                          'Matrix.csv') THEN(DO)
+
+             CHGVAR     VAR(&FNAME1) VALUE('PRPFXMX')
+             CHGVAR     VAR(&FNAMEHDG) VALUE('PRPFXMX_H')
+             CHGVAR     VAR(&FNAMEHST) VALUE('FXPACMX   ')
+             CHGVAR     VAR(&PGMNME) VALUE('PRRFXMX')
+             CHGVAR     VAR(&SUBJ) VALUE('Matrix Master')
+             CHGVAR     VAR(&SQLSTMT1) VALUE(', fxcd01 = +
+                          upper(fxcd01), fxcd17 = upper(fxcd17), +
+                          fxcd18 = upper(fxcd18), +
+                          fxcd19 = upper(fxcd19), +
+                          fxcd02 = upper(fxcd02)')
+/*¢A */      CHGVAR     VAR(&FNAMEAWS) VALUE(&FNAMEIFS)
+/*¢A */      CHGVAR     VAR(&CPYTYPE) VALUE('1')
+             ENDDO
+
+/*     Process Customer Mtx File Updates to PRPFXCMX */
+
+             WHEN       COND(%SST(&PRX_LSOUTPUT 20 14) *EQ +
+                          'MatrixCustomer') THEN(DO)
+
+             CHGVAR     VAR(&FNAME1) VALUE('PRPFXCMX')
+             CHGVAR     VAR(&FNAMEHDG) VALUE('PRPFXCMX_H')
+             CHGVAR     VAR(&FNAMEHST) VALUE('FXPACCMX   ')
+             CHGVAR     VAR(&PGMNME) VALUE('PRRFXCMX')
+             CHGVAR     VAR(&SUBJ) VALUE('Matrix Customer Levels')
+             CHGVAR     VAR(&SQLSTMT1) VALUE(' ')
+/*¢A */      CHGVAR     VAR(&FNAMEAWS) VALUE(&FNAMEIFS)
+/*¢A */      CHGVAR     VAR(&CPYTYPE) VALUE('1')
+             ENDDO
+
+/*     Process Contract Profile Header to PRPFXCPH  */
+
+/*¢A */      WHEN       COND(%SST(&PRX_LSOUTPUT 24 15) *EQ +
+                          'ContractAHeader') THEN(DO)
+
+/*¢A */      CHGVAR     VAR(&FNAME1) VALUE('PRPFXCPH')
+/*¢A */      CHGVAR     VAR(&FNAMEHDG) VALUE('PRPFXCPH_H')
+/*¢A */      CHGVAR     VAR(&FNAMEHST) VALUE('FXPACPH ')
+/*¢A */      CHGVAR     VAR(&PGMNME) VALUE('PRRFXCPH')
+/*¢A */      CHGVAR     VAR(&SUBJ) VALUE('Contract Prf Header')
+/*¢A */      CHGVAR     VAR(&SQLSTMT1) VALUE(', fxprdn07 = +
+                          upper(fxprdn07), fxprno13 = +
+                          upper(fxprno13), fxprnm01 = upper(fxprnm01)')
+/*¢A */      CHGVAR     VAR(&FNAMEAWS) +
+                          VALUE('pfx_export_DMDS_CONTRACT_HEADER_PRPM+
+                          CPH_EXPORT_' || (%SST(&FNAMEIFS 1 19)) || +
+                          '.csv') /* */
+/*¢A */      CHGVAR     VAR(&CPYTYPE) VALUE('2')
+/*¢A */      ENDDO
+
+/*     Process Contract Profile SubHeader to PRPFXCPSH  */
+
+/*¢A */      WHEN       COND(%SST(&PRX_LSOUTPUT 24 17) *EQ +
+                          'ContractSubheader') THEN(DO)
+
+/*¢A */      CHGVAR     VAR(&FNAME1) VALUE('PRPFXCPSH')
+/*¢A */      CHGVAR     VAR(&FNAMEHDG) VALUE('PRPFXCPSH_H')
+/*¢A */      CHGVAR     VAR(&FNAMEHST) VALUE('FXPACPSH')
+/*¢A */      CHGVAR     VAR(&PGMNME) VALUE('PRRFXCPSH')
+/*¢A */      CHGVAR     VAR(&SUBJ) VALUE('Contract Prf SubHeader')
+/*¢A */      CHGVAR     VAR(&SQLSTMT1) VALUE(', fxprno12 = +
+                          upper(fxprno12), fxarno06 = +
+                          upper(fxarno06), fxprnm01 = upper(fxprnm01)')
+/*¢A */      CHGVAR     VAR(&FNAMEAWS) +
+                          VALUE('pfx_export_DMDS_CONTRACT_SUBHEADER_P+
+                          RPMCPS_EXPORT_' || (%SST(&FNAMEIFS 1 19)) +
+                          || '.csv') /* */
+/* */        CHGVAR     VAR(&CPYTYPE) VALUE('2')
+/*¢A */      ENDDO
+
+/*     Process Contract Profile Detail to PRPFXCPD  */
+
+/*¢A */      WHEN       COND(%SST(&PRX_LSOUTPUT 24 14) *EQ +
+                          'ContractDetail') THEN(DO)
+
+/*¢A */      CHGVAR     VAR(&FNAME1) VALUE('PRPFXCPD')
+/*¢A */      CHGVAR     VAR(&FNAMEHDG) VALUE('PRPFXCPD_H')
+/*¢A */      CHGVAR     VAR(&FNAMEHST) VALUE('FXPACPD ')
+/*¢A */      CHGVAR     VAR(&PGMNME) VALUE('PRRFXCPD')
+/*¢A */      CHGVAR     VAR(&SUBJ) VALUE('Contract Prf Details')
+/*¢A */      CHGVAR     VAR(&SQLSTMT1) VALUE(', fxivcd17 = +
+                          upper(fxivcd17), fxivcd18 = +
+                          upper(fxivcd18), fxivcd19 = +
+                          upper(fxivcd19), fxprcd74 = +
+                          upper(fxprcd74), fxprno15 = +
+                          upper(fxprno15), fxprnm01 = +
+                          upper(fxprnm01), fxprno13 = upper(fxprno13)')
+/*¢A */      CHGVAR     VAR(&FNAMEAWS) +
+                          VALUE('pfx_export_DMDS_CONTRACT_DETAIL_PRPM+
+                          CPD_EXPORT_' || (%SST(&FNAMEIFS 1 19)) || +
+                          '.csv') /* */
+/*¢A */      CHGVAR     VAR(&CPYTYPE) VALUE('2')
+
+/*¢A */      ENDDO
+
+             ENDSELECT
+
+/* if FNAME1 is not blank, then execute clear, cpy and update pgm */
+
+             IF         COND(&FNAME1 *NE '          ') THEN(DO)
+
+   /* clear file */
+
+             CALL       PGM(OPC9990) PARM('1' &FNAME1)
+
+   /* copy from ifs file to db2 file  for tab delimited         */
+/*¢A */      IF         COND(&CPYTYPE = '1') THEN(DO)
+             CPYFRMIMPF FROMSTMF(&LOC) TOFILE(&LIB/&FNAME1) +
+                          MBROPT(*REPLACE) RCDDLM(*CRLF) +
+                          STRDLM(*NONE) FLDDLM(*TAB) +
+                          RPLNULLVAL(*FLDDFT)
+/*¢A */      enddo
+
+   /* copy from ifs file to db2 file for CSV delimited          */
+/*¢A */      IF         COND(&CPYTYPE = '2') THEN(DO)
+/*¢A */      CPYFRMIMPF FROMSTMF(&LOC) TOFILE(&LIB/&FNAME1) +
+                          MBROPT(*REPLACE) RCDDLM(*LF) +
+                          STRDLM(*DBLQUOTE) FLDDLM(',') +
+                          RPLNULLVAL(*FLDDFT) RMVCOLNAM(*YES)
+/*¢A */      enddo
+
+/* update the records with their IFS filename                */
+
+/*¢A         CHGVAR     VAR(&SQLSTMT) VALUE('UPDATE ' *CAT &LIB +
+                          *TCAT '.' *TCAT &FNAME1 *CAT ' SET FXFILE +
+                          = ' *CAT &A *CAT &FNAME *TCAT &A)    */
+
+/*¢A */      CHGVAR     VAR(&SQLSTMT) VALUE('UPDATE ' *CAT &LIB +
+                          *TCAT '.' *TCAT &FNAME1 *CAT ' SET FXFILE +
+                          = ' *CAT &A *CAT &FNAMEIFS *TCAT &A)
+
+             CHGVAR     VAR(&SQLSTMT) VALUE((%TRIM(&SQLSTMT)) *CAT +
+                         (%TRIM(&SQLSTMT1)))
+
+             RUNSQL     SQL(&SQLSTMT) COMMIT(*NONE) NAMING(*SQL)
+
+   /* process the data into Mincron Add/Update/Delete           */
+   /* update the field FXFLAG with the results of Errors         */
+
+             CALL       PGM(&PGMNME)
+
+             DLTF       FILE(QTEMP/TESTIT)
+             MONMSG     MSGID(CPF0000)
+
+   /* check FXFLAG = 'E' for any errors                         */
+
+             CPYF       FROMFILE(&FNAME1) TOFILE(QTEMP/TESTIT) +
+                          MBROPT(*REPLACE) CRTFILE(*YES) +
+                          INCREL((*IF FXFLAG *EQ 'E'))
+
+             RTVMBRD    FILE(QTEMP/TESTIT) NBRCURRCD(&NBRCURRCDS)
+
+   /* if any errors existed, send an email with the error report */
+
+             IF         COND(&NBRCURRCDS *GT 0) THEN(DO)
+
+     /* set IFS path name of copy of the failed data */
+
+/*¢A         CHGVAR     VAR(&IFSPATHEM) VALUE(%TRIM(&IFSPATHEM1) || +
+                          %TRIM(&FNAME))    */
+/*¢A */      CHGVAR     VAR(&IFSPATHEM) VALUE(%TRIM(&IFSPATHEM1) || +
+                          %TRIM(&FNAMEIFS))
+
+       /* Copy column headings to excel file */
+
+             CPYTOIMPF  FROMFILE(&FNAMEHDG) TOSTMF(&IFSPATHEM) +
+                          MBROPT(*REPLACE) STMFCODPAG(*PCASCII) +
+                          RCDDLM(*CRLF) STRDLM(*NONE) +
+                          RMVBLANK(*TRAILING)
+             MONMSG     MSGID(CPF0000)
+
+       /* Copy data records to excel file */
+
+             CPYTOIMPF  FROMFILE(QTEMP/TESTIT) TOSTMF(&IFSPATHEM) +
+                          MBROPT(*ADD) STMFCODPAG(*PCASCII) +
+                          RCDDLM(*CRLF) STRDLM(*NONE) +
+                          RMVBLANK(*TRAILING)
+             MONMSG     MSGID(CPF0000)
+
+             CHGVAR     VAR(&SUBJECT) VALUE('PriceFX Records not +
+                          updated for ' || %TRIM(&SUBJ))
+
+/*¢C*/       IF         COND(&PRODTEST *EQ 'TEST') THEN(CHGVAR +
+                          VAR(&SUBJECT) VALUE(%TRIM(&PRODTEST) +
+                          *BCAT &SUBJECT))
+
+/*¢A         CHGVAR     VAR(&MESSAGE) VALUE('See the attached CSV +
+                          file for the records that failed.  ' || +
+                          'Pricefx File Name is ' || %TRIM(&FNAME)) */
+
+/*¢A */      CHGVAR     VAR(&MESSAGE) VALUE('See the attached CSV +
+                          file for the records that failed.  ' || +
+                          'Pricefx File Name is ' || %TRIM(&FNAMEIFS))
+
+             SNDSMTPEMM RCP((&EMAILU)) SUBJECT(&SUBJECT) +
+                          NOTE(&MESSAGE) ATTACH((&IFSPATHEM *PLAIN))
+
+             ENDDO
+
+ /* Add to History File                                            */
+
+             CPYF       FROMFILE(&FNAME1) TOFILE(&LIB/&FNAMEHST) +
+                          MBROPT(*ADD) CRTFILE(*YES)
+
+/******************************************************************************/
+/* Move File from Processing to Archive  on AWS                               */
+
+/*  Production -                                                              */
+/*    /home/awssvc/.local/bin/aws --profile awspdprd s3 mv                    */
+/* s3://watsco-pricefx/Production/EC/Processing/20210702_000100_EC_Matrix.csv  */
+/* s3://watsco-pricefx/Production/EC/Archive/20210702_000100_EC_Matrix.csv  */
+
+/*  Development -    it should look like this                                 */
+/*    /home/awssvc/.local/bin/aws --profile awspddev s3 mv                    */
+/* s3://watsco-pricefx/Development/EC/Processing/20210702_000100_EC_Matrix.csv */
+/* s3://watsco-pricefx/Development/EC/Archive/20210702_000100_EC_Matrix.csv */
+
+/******************************************************************************/
+
+/*¢A         CHGVAR     VAR(&CMD) VALUE('exec' |> +
+                          %TRIM(&LOCALDRV) |> %TRIM(&PRF) |> 's3 +
+                          mv' |> %TRIM(&BUCKETPRC) |< +
+                          %TRIM(&FNAME) |> %TRIM(&BUCKETARC) +
+                          |< %TRIM(&FNAME))           */
+
+/*¢A */      CHGVAR     VAR(&CMD) VALUE('exec' |> +
+                          %TRIM(&LOCALDRV) |> %TRIM(&PRF) |> 's3 +
+                          mv' |> %TRIM(&BUCKETPRC) |< +
+                          %TRIM(&FNAMEIFS) |> %TRIM(&BUCKETARC) +
+                          |< %TRIM(&FNAMEIFS))
+
+/* only error out on mv command for file if FTPYN = 'Y' */
+
+             IF         COND(&FTPYN = 'Y') THEN(DO)
+
+             QSH        CMD(&CMD)
+             MONMSG     MSGID(QSH0005 QSH0006 QSH0007) EXEC(GOTO +
+                          CMDLBL(ERROR))
+
+             ENDDO
+             ELSE       CMD(DO)
+             QSH        CMD(&CMD)
+             MONMSG     MSGID(QSH0005 QSH0006 QSH0007)
+
+             ENDDO
+
+ /* Remove file from IFS In folder                                 */
+
+/*¢A         CHGVAR     VAR(&LOC) VALUE(%TRIM(&IFSPATH)  || +
+                         %TRIM(&FNAME))    */
+/*¢A */      CHGVAR     VAR(&LOC) VALUE(%TRIM(&IFSPATH)  || +
+                         %TRIM(&FNAMEIFS))
+             DEL        OBJLNK(&LOC)
+             MONMSG     MSGID(CPFA0A9)
+
+ /* Remove file name from PRICEFXFN since it's processed           */
+
+/*¢A         CHGVAR     VAR(&SQLSTMT) VALUE('DELETE FROM ' *CAT &LIB +
+                     *TCAT '.PRICEFXFN WHERE LSOUTPUT = ' *CAT +
+                          &A *CAT &FNAME *TCAT &A)    */
+/*¢A */      CHGVAR     VAR(&SQLSTMT) VALUE('DELETE FROM ' *CAT &LIB +
+                     *TCAT '.PRICEFXFN WHERE LSOUTPUT = ' *CAT +
+                          &A *CAT &FNAMEIFS *TCAT &A)
+             RUNSQL     SQL(&SQLSTMT) COMMIT(*NONE) NAMING(*SQL)
+
+             ENDDO
+
+
+             ENDDO
+             GOTO       CMDLBL(ENDPGM)
+/******************************************************************************/
+/* End Loop through Files on PRICEFXFN                                        */
+/******************************************************************************/
+
+/*********************************************************************/
+/*********************************************************************/
+/* Phase 3 - End of Section updating DB2 data                        */
+/*********************************************************************/
+/*********************************************************************/
+/******************************************************************************/
+/* Error occurred on QSH command                                              */
+/******************************************************************************/
+
+/* If FTP fails, notify IT department                                    */
+
+ ERROR:      CHGVAR     VAR(&SUBJECT) VALUE('PriceFX File Pickup +
+                          Connection Failure')
+
+             IF         COND(&PRODTEST *EQ 'TEST') THEN(CHGVAR +
+                          VAR(&SUBJECT) VALUE(%TRIM(&PRODTEST) +
+                          *BCAT &SUBJECT))
+
+/* Format email subject and text */
+
+             CHGVAR     VAR(&EMLNOTE) VALUE('System was unable to +
+                          access PriceFX AWS bucket for a list of +
+                          files to pickup.  See the  attached log.' +
+                          |> 'Job' |> &NBR |< '/' |< &USER |< '/' +
+                          |< &JOB |> 'Cmd' |> %TRIM(&CMD))
+
+/* Send email with joblog attached from QSHELL Output                    */
+
+/*¢B         SNDSMTPEMM RCP((ISDEPT@ECMDI.COM)) SUBJECT(&SUBJECT) +
+                          NOTE(&EMLNOTE) +
+                          ATTACH(('/home/awssvc/qshell_output1' +
+                          *HTML *TXT)) */
+/*¢B*/       SNDSMTPEMM RCP((ISDEPT@ECMDI.COM)) SUBJECT(&SUBJECT) +
+                          NOTE(&EMLNOTE) +
+                          ATTACH(('/home/awssvc/qshell_output_PFX_RCVSND' +
+                          *HTML *TXT))
+
+
+ ENDPGM:     ENDPGM

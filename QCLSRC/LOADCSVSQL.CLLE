@@ -1,0 +1,30 @@
+             PGM
+
+             /* ============================================== */
+             /* Program: LOADCSVSQL - Compile and Run         */
+             /* Description: Loads CSV data using SQL         */
+             /* ============================================== */
+
+             MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(ERROR))
+
+             /* Compile the SQLRPGLE program */
+             CRTSQLRPGI OBJ(JAMIEDEV/LOADCSVSQL) +
+                          SRCFILE(JIMMYOCTANE/QRPGLESRC) +
+                          SRCMBR(LOADCSVSQL) +
+                          COMMIT(*NONE) +
+                          CLOSQLCSR(*ENDMOD) +
+                          DBGVIEW(*SOURCE) +
+                          REPLACE(*YES)
+
+             /* Run the program */
+             CALL       PGM(JAMIEDEV/LOADCSVSQL)
+
+             SNDPGMMSG  MSG('CSV load completed successfully') +
+                          TOPGMQ(*EXT)
+
+             GOTO       CMDLBL(ENDPGM)
+
+ ERROR:      SNDPGMMSG  MSG('Error occurred during CSV load') +
+                          TOPGMQ(*EXT)
+
+ ENDPGM:     ENDPGM

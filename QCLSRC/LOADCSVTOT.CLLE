@@ -1,0 +1,38 @@
+             PGM
+
+             /* ============================================== */
+             /* Program: LOADCSVTOT - Compile and Run         */
+             /* Description: Creates table and loads CSV data */
+             /* ============================================== */
+
+             MONMSG     MSGID(CPF0000) EXEC(GOTO CMDLBL(ERROR))
+
+             /* Create the table if it doesn't exist */
+             RUNSQL     SQL('CREATE TABLE JAMIEDEV.CUSTOMER_TOTALS +
+                          (CUST_NBR DECIMAL(11, 0) NOT NULL, +
+                          TOTAL_AMT DECIMAL(15, 2) NOT NULL, +
+                          LOAD_DATE TIMESTAMP DEFAULT CURRENT_TIMESTAMP, +
+                          PRIMARY KEY (CUST_NBR))') COMMIT(*NONE)
+             MONMSG     MSGID(SQL0601) /* Table already exists */
+
+             /* Compile the SQLRPGLE program */
+             CRTSQLRPGI OBJ(JAMIEDEV/LOADCSVTOT) +
+                          SRCFILE(JIMMYOCTANE/QRPGLESRC) +
+                          SRCMBR(LOADCSVTOT) +
+                          COMMIT(*NONE) +
+                          CLOSQLCSR(*ENDMOD) +
+                          DBGVIEW(*SOURCE) +
+                          REPLACE(*YES)
+
+             /* Run the program */
+             CALL       PGM(JAMIEDEV/LOADCSVTOT)
+
+             SNDPGMMSG  MSG('CSV load completed successfully') +
+                          TOPGMQ(*EXT)
+
+             GOTO       CMDLBL(ENDPGM)
+
+ ERROR:      SNDPGMMSG  MSG('Error occurred during CSV load') +
+                          TOPGMQ(*EXT)
+
+ ENDPGM:     ENDPGM
