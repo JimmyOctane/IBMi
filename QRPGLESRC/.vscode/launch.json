@@ -5,6 +5,16 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "type": "IBMiDebug",
+            "request": "attach",
+            "name": "IBM i Debug: Attach to a running job",
+            "user": "",
+            "password": "${command:AskForPassword}",
+            "host": "",
+            "port": 8005,
+            "jobId": ""
+        },
+        {
             "name": "Launch Chrome",
             "request": "launch",
             "type": "chrome",
