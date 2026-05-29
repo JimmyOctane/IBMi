@@ -1,0 +1,106 @@
+ /*---------------------------------------------------------------------------*/
+ /*   *N PROGRAM NAME - GLCC001                                               */
+ /*---------------------------------------------------------------------------*/
+ /*   *P                                                                      */
+ /*---------------------------------------------------------------------------*/
+ /*   *D DRIVER FOR CREATE REVERSING JE FOR VENDOR RETURNS                    */
+ /*---------------------------------------------------------------------------*/
+ /*   *S PURPOSE:                                                             */
+ /*   *S                                                                      */
+ /*   *S SPECIAL NOTES:                                                       */
+ /*   *S                                                                      */
+ /*   *M ---------------------------------------------------------------------*/
+ /*   *M TASK       DATE   ID  DESCRIPTION                                    */
+ /*   *M ---------- ------ --- -----------------------------------------------*/
+ /*   *V DCB   7228 041320 DCB ADD REVERSING JE FOR VENDOR RETURNS            */
+ /*¢A *V KSB   8084 070220 KSB move files to GLPMTRN                          */
+ /*¢B *C DCB   7330 071522 DCB GL AUDIT PHASE II - GLM/2                      */
+ /*¢C *U CLP   5061 032823 CLP Reordered incoming parms for consistency       */
+ /*¢D *U VLG   2044 051923 VLG Added QMQRY to create data file for RUNQRY     */
+ /*¢D *U                       to select by company being passed as parameter */
+ /*¢D *U                       and include email standards                    */
+/*¢E *V JJF   3043 103023 JJF Padding test to email process                  */
+/*¢F *V JJF        052926 JJF Added Hydros email routing by company           */
+/*   *-----------------------------------------------------------------------*/
+/*¢C*/       PGM        PARM(&CO &YR &MO)
+             DCL        VAR(&CO) TYPE(*CHAR) LEN(3)
+             DCL        VAR(&YR) TYPE(*CHAR) LEN(2)
+             DCL        VAR(&MO) TYPE(*CHAR) LEN(2)
+
+             DCL        VAR(&PRODTEST) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&OPUSER) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&EMAILT) TYPE(*CHAR) STG(*AUTO) LEN(80)
+/*¢D*/       DCL        VAR(&EMAIL)  TYPE(*CHAR) STG(*AUTO) LEN(80)
+/*¢D*/       DCL        VAR(&LIB) TYPE(*CHAR) LEN(10)
+/*¢D¢E       DCL        VAR(&SUBJECT) TYPE(*CHAR) LEN(150) */
+/*¢E*/       DCL        VAR(&SUBJECT) TYPE(*CHAR) LEN(150) +
+                           VALUE('Vendor Return Accrual')
+/*¢F*/       DCL        VAR(&HYDROSEML) TYPE(*CHAR) LEN(80) +
+                           VALUE('ap@hydrosdist.com')
+
+             RTVDTAARA  DTAARA(QGPL/PRODTEST) RTNVAR(&PRODTEST)
+/*¢D*/       RTVOBJD    OBJ(ARPMCUS) OBJTYPE(*FILE) RTNLIB(&LIB)
+
+             ADDLIBLE   LIB(SPLTOOL)
+             MONMSG     MSGID(CPF0000)
+             ADDLIBLE   LIB(MAILTOOL)
+             MONMSG     MSGID(CPF0000)
+
+             CALL       PGM(ECC9996) PARM(&OPUSER)
+             CALL       PGM(ECC9997) PARM(&OPUSER &EMAILT)
+
+/* Clear GLPWTRN                                                              */
+/*¢B*/       CALL       PGM(OPC9990) PARM('1' 'GLPWTRNZ')
+
+/* Create Reversing JE                                                        */
+/* This option is dependent on the last run of the Open VR report             */
+/* which builds file POPOPENVR.  ME Job IVC0901 runs the VR report            */
+/* prior to calling this program to create the JE.                            */
+             CALL       PGM(GLRC001) PARM(&CO &MO &YR)
+
+/*      Create Reversing JE data file to select by company                    */
+/*¢D*/       STRQMQRY   QMQRY(GLQ_VRACCP) OUTPUT(*OUTFILE) +
+                          OUTFILE(&LIB/VRACCP) SETVAR((CO &CO))
+
+/* Print  Reversing JE                                                        */
+             RUNQRY     QRY(GLQ_VRACCR) OUTTYPE(*PRINTER) +
+                          OUTFORM(*DETAIL)
+
+/* Clear GLPWTRN                                                              */
+/*¢B*/       CALL       PGM(OPC9990) PARM('1' 'GLPWTRNZ')
+
+/* Send   Reversing JE via email to GL department                             */
+/* PROD */
+             IF         COND(&PRODTEST *EQ 'PROD') THEN(DO)
+/*¢F*/       CHGVAR     VAR(&EMAIL)   VALUE('glreports@ecmdi.com')
+/*¢F*/       IF         COND(&CO *EQ '002') THEN(DO)
+/*¢F*/       CHGVAR     VAR(&EMAIL)   VALUE(&HYDROSEML)
+/*¢F*/       ENDDO
+/*¢D¢E       CHGVAR     VAR(&SUBJECT) VALUE('Vendor Return Accrual') */
+/*¢D*/       SPL2EMAIL  FILE(QPQUPRFIL) JOB(*) SPLNBR(*LAST) +
+                          FROM(*FIRST) TO(*LAST) +
+                          TOADDR(&EMAIL) +
+                          FROMADDR(itdept@ecmdi.com) +
+                          ATTACHMENT(vraccrual.pdf) SUBJECT(&SUBJECT) +
+                          MESSAGE('Attached is +
+                          journal entry created for vendor +
+                          return accrual.  This journal entry is +
+                          ready for review and posting.')
+             ENDDO
+
+/* TEST */
+             ELSE       CMD(DO)
+/*¢D¢E       CHGVAR     VAR(&SUBJECT) VALUE(%TRIM(&PRODTEST) *BCAT +
+                          &SUBJECT) */
+/*¢E*/       CHGVAR     VAR(&SUBJECT) VALUE(%TRIM(&PRODTEST) *TCAT +
+                          '_' *TCAT &SUBJECT)
+/*¢D*/       SPL2EMAIL  FILE(QPQUPRFIL) JOB(*) SPLNBR(*LAST) +
+                          FROM(*FIRST) TO(*LAST) TOADDR(&EMAILT) +
+                          FROMADDR(itdept@ecmdi.com) +
+                          ATTACHMENT(vraccrual.pdf) SUBJECT(&SUBJECT) +
+                          MESSAGE('Attached +
+                          is journal entry created for vendor +
+                          return accrual.  This journal entry is +
+                          ready for review and posting.')
+
+             ENDDO

@@ -2,7 +2,7 @@
 -- Procedure: GET_PRODUCT_URL
 -- Description: Returns the product URL for a given item number
 -- Parameter: P_ITEM_NBR - 6 numeric item number (PMNO07)
--- Returns: Product URL string
+-- Returns: Product URL string or 'Item not found'
 -- =====================================================================
 
 CREATE OR REPLACE PROCEDURE GET_PRODUCT_URL (
@@ -12,9 +12,12 @@ CREATE OR REPLACE PROCEDURE GET_PRODUCT_URL (
 LANGUAGE SQL
 SPECIFIC GET_PRODUCT_URL
 BEGIN
-    DECLARE V_IMAGE VARCHAR(255);
+    DECLARE V_IMAGE VARCHAR(255) DEFAULT '';
     DECLARE V_BASE_URL VARCHAR(255);
     DECLARE V_IMAGE_NO_EXT VARCHAR(255);
+    DECLARE V_NOT_FOUND INTEGER DEFAULT 0;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND
+        SET V_NOT_FOUND = 1;
     
     -- Set the base URL
     SET V_BASE_URL = 'https://resource.ecmdi.com/is/image/Watscocom/';
@@ -25,9 +28,14 @@ BEGIN
     FROM PIMITEMCHK
     WHERE PMNO07 = P_ITEM_NBR;
     
-    -- Remove the .jpg extension from the image filename
+    -- If item was not found in the table
+    IF V_NOT_FOUND = 1 THEN
+        SET P_PRODUCT_URL = 'Item not found';
+        RETURN;
+    END IF;
+    
+    -- Remove the file extension and build the URL
     IF V_IMAGE <> '' THEN
-        -- Remove file extension (.jpg, .png, etc.)
         SET V_IMAGE_NO_EXT = REGEXP_REPLACE(V_IMAGE, '\.[^.]*$', '');
         SET P_PRODUCT_URL = V_BASE_URL || V_IMAGE_NO_EXT;
     ELSE
@@ -46,12 +54,15 @@ CREATE OR REPLACE FUNCTION GET_PRODUCT_URL_FN (
 RETURNS VARCHAR(500)
 LANGUAGE SQL
 SPECIFIC GET_PRODUCT_URL_FN
-DETERMINISTIC
+NOT DETERMINISTIC
 BEGIN
-    DECLARE V_IMAGE VARCHAR(255);
+    DECLARE V_IMAGE VARCHAR(255) DEFAULT '';
     DECLARE V_BASE_URL VARCHAR(255);
     DECLARE V_PRODUCT_URL VARCHAR(500);
     DECLARE V_IMAGE_NO_EXT VARCHAR(255);
+    DECLARE V_NOT_FOUND INTEGER DEFAULT 0;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND
+        SET V_NOT_FOUND = 1;
     
     -- Set the base URL
     SET V_BASE_URL = 'https://resource.ecmdi.com/is/image/Watscocom/';
@@ -62,9 +73,13 @@ BEGIN
     FROM PIMITEMCHK
     WHERE PMNO07 = P_ITEM_NBR;
     
-    -- Remove the .jpg extension from the image filename
+    -- If item was not found in the table
+    IF V_NOT_FOUND = 1 THEN
+        RETURN 'Item not found';
+    END IF;
+    
+    -- Remove the file extension and build the URL
     IF V_IMAGE <> '' THEN
-        -- Remove file extension (.jpg, .png, etc.)
         SET V_IMAGE_NO_EXT = REGEXP_REPLACE(V_IMAGE, '\.[^.]*$', '');
         SET V_PRODUCT_URL = V_BASE_URL || V_IMAGE_NO_EXT;
     ELSE
