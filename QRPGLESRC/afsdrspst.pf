@@ -1,0 +1,72 @@
+     A*  ----------------------------------------------------------------------*
+     A*                                                                        *
+     A*         AFS - STOP ADDRESS & CONTACTS DETAIL - SHIPMENT                *
+     A*                                                                        *
+     A*                                                                        *
+     A*  TASK       DATE   ID  DESCRIPTION                                     *
+     A*  ---------- ------ --- ------------------------------------------------*
+     A*  JF003180   010626 JJF [     ] INITIAL CREATION                        *
+     A*  ----------------------------------------------------------------------*
+     A          R RAFSDRSPST
+     A            UID           15  0       TEXT('Request Unique Id')
+     A                                      COLHDG('Request Unique Id')
+     A                                      ALIAS(UNIQUEID)
+     A            SHIPID        10          TEXT('Shipment Id')
+     A                                      COLHDG('Shipment Id')
+     A                                      ALIAS(SHIPMENTID)
+     A            STOPID         9B 0       TEXT('Stop Id')
+     A                                      COLHDG('Stop Id')
+     A            NAME          50          TEXT('Name')
+     A                                      VARLEN
+     A                                      COLHDG('Name')
+     A            ADDR1        100          TEXT('Address1')
+     A                                      VARLEN
+     A                                      COLHDG('Address1')
+     A                                      ALIAS(ADDRESS1)
+     A            CITY          60          TEXT('City')
+     A                                      VARLEN
+     A                                      COLHDG('City')
+     A            STATE          2          TEXT('State')
+     A                                      COLHDG('State')
+     A            POSTCD        15          TEXT('Postal Code')
+     A                                      VARLEN
+     A                                      COLHDG('Postal Code')
+     A                                      ALIAS(POSTALCODE)
+     A            COUNTRY       30          TEXT('Country')
+     A                                      VARLEN
+     A                                      COLHDG('Country')
+     A            CTNAME        30          TEXT('Contact Name')
+     A                                      VARLEN
+     A                                      COLHDG('Contact Name')
+     A                                      ALIAS(CONTACTNAME)
+     A            CTPH          20          TEXT('Contact Phone')
+     A                                      VARLEN
+     A                                      COLHDG('Contact Phone')
+     A                                      ALIAS(CONTACTPHONE)
+     A            CTPHEXT       10          TEXT('Contact Phone Ext')
+     A                                      VARLEN
+     A                                      COLHDG('Contact Phone Ext')
+     A                                      ALIAS(CONTACTPHONEEXT)
+     A            CTEML        255          TEXT('Contact Email')
+     A                                      VARLEN
+     A                                      COLHDG('Contact Email')
+     A                                      ALIAS(CONTACTEMAIL)
+     A            CTFAX         20          TEXT('Contact Fax')
+     A                                      VARLEN
+     A                                      COLHDG('Contact Fax')
+     A                                      ALIAS(CONTACTFAX)
+     A            SEQNBR        30          TEXT('Seq Number')
+     A                                      VARLEN
+     A                                      COLHDG('Seq Number')
+     A                                      ALIAS(SEQNUMBER)
+     A            OPENTM        10          TEXT('Open Time')
+     A                                      VARLEN
+     A                                      COLHDG('Open Time')
+     A                                      ALIAS(OPENTIME)
+     A            CLOSETM       10          TEXT('Close Time')
+     A                                      VARLEN
+     A                                      COLHDG('Close Time')
+     A                                      ALIAS(CLOSETIME)
+     A          K UID
+     A          K SHIPID
+     A          K STOPID

@@ -1,0 +1,36 @@
+     A*  ----------------------------------------------------------------------*
+     A*                                                                        *
+     A*         AFS - ERROR DETAIL - SHIPMENT                                  *
+     A*                                                                        *
+     A*                                                                        *
+     A*  TASK       DATE   ID  DESCRIPTION                                     *
+     A*  ---------- ------ --- ------------------------------------------------*
+     A*  JF003180   010626 JJF [     ] INITIAL CREATION                        *
+     A*  ----------------------------------------------------------------------*
+     A          R RAFSERR
+     A            UID           15  0       TEXT('Request Unique Id')
+     A                                      COLHDG('Request Unique Id')
+     A                                      ALIAS(UNIQUEID)
+     A            RSPTS           Z         TEXT('Response Timestamp')
+     A                                      COLHDG('Response Timestamp')
+     A                                      ALIAS(RESPONSETIMESTAMP)
+     A            ERRDESC      100          TEXT('Error Description')
+     A                                      VARLEN
+     A                                      COLHDG('Error Description')
+     A                                      ALIAS(ERRORDESCRIPTION)
+     A            ERRCD         10          TEXT('Error Code')
+     A                                      COLHDG('Error Code')
+     A                                      ALIAS(ERRORCODE)
+     A            ERRTYPE       20          TEXT('Error Type')
+     A                                      COLHDG('Error Type')
+     A                                      ALIAS(ERRORTYPE)
+     A            ENDPOINT     100          TEXT('Endpoint')
+     A                                      COLHDG('Endpoint')
+     A            TRNSID        50          TEXT('Transaction Id')
+     A                                      COLHDG('Transaction Id')
+     A                                      ALIAS(TRANSACTIONID)
+     A            SRVTS         50          TEXT('Server Timestamp')
+     A                                      COLHDG('Server Timestamp')
+     A                                      ALIAS(SERVERTIMESTAMP)
+     A          K UID
+     A          K RSPTS

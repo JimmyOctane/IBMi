@@ -322,13 +322,13 @@
         endif;
 
         ResponseJson = RXS_Transmit( *Omit : TransmitDS );
- 
+
         // Move ResponseJson to VARCHAR(32740) field for IFS write
         ResponseJsonIFS = %Subst(ResponseJson:1:%Len(%TrimR(ResponseJson)));
         if %Len(%TrimR(ResponseJson)) > 32740;
           ResponseJsonIFS = %Subst(ResponseJson:1:32740);
         endif;
- 
+
         // Write ResponseJsonIFS to IFS document
         Exec SQL
           CALL QSYS2.IFS_WRITE('/home/afs/documents/response_'
@@ -1211,3 +1211,4 @@
        endmon;
 
        End-Proc;
+

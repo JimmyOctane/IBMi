@@ -1,0 +1,42 @@
+     A*  ----------------------------------------------------------------------*
+     A*                                                                        *
+     A*         AFS - SHIPPER CONTACTS DETAIL - SHIPMENT                       *
+     A*                                                                        *
+     A*                                                                        *
+     A*  TASK       DATE   ID  DESCRIPTION                                     *
+     A*  ---------- ------ --- ------------------------------------------------*
+     A*  JF003180   010626 JJF [     ] INITIAL CREATION                        *
+     A*  ----------------------------------------------------------------------*
+     A          R RAFSDRSPCN
+     A            UID           15  0       TEXT('Request Unique Id')
+     A                                      COLHDG('Request Unique Id')
+     A                                      ALIAS(UNIQUEID)
+     A            SHIPID        10          TEXT('Shipment Id')
+     A                                      COLHDG('Shipment Id')
+     A                                      ALIAS(SHIPMENTID)
+     A            ASID           9B 0       TEXT('Addl Service Id')
+     A                                      COLHDG('Addl Service Id')
+     A                                      ALIAS(ADDITIONALSERVICEID)
+     A            CONTID         9B 0       TEXT('Contact Id')
+     A                                      COLHDG('Contact Id')
+     A                                      ALIAS(CONTACTID)
+     A            CONTCARRID    30          TEXT('Contact Carrier Id')
+     A                                      VARLEN
+     A                                      COLHDG('Contact Carrier Id')
+     A                                      ALIAS(CONTACTCARRIERID)
+     A            CONTNAME      30          TEXT('Contact Name')
+     A                                      VARLEN
+     A                                      COLHDG('Contact Name')
+     A                                      ALIAS(CONTACTNAME)
+     A            CONTPH        20          TEXT('Contact Phone')
+     A                                      VARLEN
+     A                                      COLHDG('Contact Phone')
+     A                                      ALIAS(CONTACTPHONE)
+     A            CONTEML      255          TEXT('Contact Email')
+     A                                      VARLEN
+     A                                      COLHDG('Contact Email')
+     A                                      ALIAS(CONTACTEMAIL)
+     A          K UID
+     A          K SHIPID
+     A          K ASID
+     A          K CONTID

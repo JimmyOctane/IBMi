@@ -119,7 +119,7 @@
         // set keys to grab credentials and URL's
         reset oepmgtky1;
         oepmgtky1 = 'AFS';
-        oepmgtky2 = '01';
+        oepmgtky2 = '02';
         reset oepmgtky3;
         if prodTest = 'TEST';
         oepmgtKy3 = 'T';
@@ -142,7 +142,7 @@
         // Grab the URL
         reset AFS_API_BASE_PATH;
         exec sql
-        select MG06LS, MG06SA, MG06DS
+        select MG06LS
         into :AFS_API_BASE_PATH
         from OEPMGT06
         where MG06CH = :oepmgtky1 and

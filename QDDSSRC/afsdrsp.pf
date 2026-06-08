@@ -1,0 +1,223 @@
+     A*  ----------------------------------------------------------------------*
+     A*                                                                        *
+     A*         AFS SHIPMENT ADDRESS HEADER                                    *
+     A*                                                                        *
+     A*                                                                        *
+     A*  TASK       DATE   ID  DESCRIPTION                                     *
+     A*  ---------- ------ --- ------------------------------------------------*
+     A*  JF003180   010626 JJF [     ] INITIAL CREATION                        *
+     A*  ----------------------------------------------------------------------*
+     A          R RAFSDRSP
+     A            UID           15  0       TEXT('Request Unique Id')
+     A                                      COLHDG('Request Unique Id')
+     A                                      ALIAS(UNIQUEID)
+     A            SHIPID        10          TEXT('Shipment Id')
+     A                                      COLHDG('Shipment Id')
+     A                                      ALIAS(SHIPMENTID)
+     A            RSPTS           Z         TEXT('Response Timestamp')
+     A                                      COLHDG('Response Timestamp')
+     A                                      ALIAS(RESPONSETIMESTAMP)
+     A            CARRSCAC      30          TEXT('Carrier Scac')
+     A                                      VARLEN
+     A                                      COLHDG('Carrier Scac')
+     A                                      ALIAS(CARRIERSCAC)
+     A            CARRNAME      60          TEXT('Carrier Name')
+     A                                      VARLEN
+     A                                      COLHDG('Carrier Name')
+     A                                      ALIAS(CARRIERNAME)
+     A            STATUS        50          TEXT('Status')
+     A                                      VARLEN
+     A                                      COLHDG('Status')
+     A            ENTITYTYPE    50          TEXT('Entity Type')
+     A                                      VARLEN
+     A                                      COLHDG('Entity Type')
+     A            OGCITY        60          TEXT('Origin City')
+     A                                      VARLEN
+     A                                      COLHDG('Origin City')
+     A                                      ALIAS(ORIGINCITY)
+     A            OGSTATE        2          TEXT('Origin State')
+     A                                      COLHDG('Origin State')
+     A                                      ALIAS(ORIGINSTATE)
+     A            OGPOSTCD      15          TEXT('Origin Postal Code')
+     A                                      VARLEN
+     A                                      COLHDG('Origin Postal Code')
+     A                                      ALIAS(ORIGINPOSTALCODE)
+     A            OGCOUNTRY     30          TEXT('Origin Country')
+     A                                      VARLEN
+     A                                      COLHDG('Origin Country')
+     A                                      ALIAS(ORIGINCOUNTRY)
+     A            OGADDR1      100          TEXT('Origin Address 1')
+     A                                      VARLEN
+     A                                      COLHDG('Origin Address 1')
+     A                                      ALIAS(ORIGINADDRESS1)
+     A            OGCOMPANY     60          TEXT('Origin Company')
+     A                                      VARLEN
+     A                                      COLHDG('Origin Company')
+     A                                      ALIAS(ORIGINCOMPANY)
+     A            DTCITY        60          TEXT('Destination City')
+     A                                      VARLEN
+     A                                      COLHDG('Dest. City')
+     A                                      ALIAS(DESTINATIONCITY)
+     A            DTSTATE        2          TEXT('Destination State')
+     A                                      COLHDG('Dest. State')
+     A                                      ALIAS(DESTINATIONSTATE)
+     A            DTPOSTCD      15          TEXT('Destination Postal Code')
+     A                                      VARLEN
+     A                                      COLHDG('Dest. Postal Code')
+     A                                      ALIAS(DESTINATIONPOSTALCODE)
+     A            DTCOUNTRY     30          TEXT('Destination Country')
+     A                                      VARLEN
+     A                                      COLHDG('Dest. Country')
+     A                                      ALIAS(DESTINATIONCOUNTRY)
+     A            DTADDR1      100          TEXT('Destination Address 1')
+     A                                      VARLEN
+     A                                      COLHDG('Dest. Address 1')
+     A                                      ALIAS(DESTINATIONADDRESS1)
+     A            DTCOMPANY     60          TEXT('Destination Company')
+     A                                      VARLEN
+     A                                      COLHDG('Dest. Company')
+     A                                      ALIAS(DESTINATIONCOMPANY)
+     A            ESTDLVDT      10          TEXT('Est Delivery Date')
+     A                                      VARLEN
+     A                                      COLHDG('Est Delivery Date')
+     A                                      ALIAS(ESTDELIVERYDATE)
+     A            ESTPKUPDT     10          TEXT('Est Pickup Date')
+     A                                      VARLEN
+     A                                      COLHDG('Est Pickup Date')
+     A                                      ALIAS(ESTPICKUPDATE)
+     A            PRONBR        50          TEXT('Pro Number')
+     A                                      VARLEN
+     A                                      COLHDG('Pro Number')
+     A                                      ALIAS(PRONUMBER)
+     A            TOTWGT        30          TEXT('Total Weight')
+     A                                      VARLEN
+     A                                      COLHDG('Total Weight')
+     A                                      ALIAS(TOTALWEIGHT)
+     A            REVENUE       30          TEXT('Revenue')
+     A                                      VARLEN
+     A                                      COLHDG('Revenue')
+     A            STOPSCT       10          TEXT('Stops Count')
+     A                                      VARLEN
+     A                                      COLHDG('Stops Count')
+     A                                      ALIAS(STOPSCOUNT)
+     A            TRNDAYS       10          TEXT('Transit Days')
+     A                                      VARLEN
+     A                                      COLHDG('Transit Days')
+     A                                      ALIAS(TRANSITDAYS)
+     A            SVCDESC       50          TEXT('Service Type Desc')
+     A                                      VARLEN
+     A                                      COLHDG('Service Type Desc')
+     A                                      ALIAS(SERVICETYPEDESC)
+     A            DLVDT         10          TEXT('Delivery Date')
+     A                                      VARLEN
+     A                                      COLHDG('Delivery Date')
+     A                                      ALIAS(DELIVERYDATE)
+     A            PKUPDT        10          TEXT('Pickup Date')
+     A                                      VARLEN
+     A                                      COLHDG('Pickup Date')
+     A                                      ALIAS(PICKUPDATE)
+     A            ORIGCRTDT     10          TEXT('Original Created Date')
+     A                                      VARLEN
+     A                                      COLHDG('Original Created' +
+     A                                      'Date')
+     A                                      ALIAS(ORIGINALCREATEDDATE)
+     A            USERID        30          TEXT('User Id')
+     A                                      VARLEN
+     A                                      COLHDG('User Id')
+     A            USERNAME      30          TEXT('Username')
+     A                                      VARLEN
+     A                                      COLHDG('Username')
+     A            ACCID         50          TEXT('Account Id')
+     A                                      VARLEN
+     A                                      COLHDG('Account Id')
+     A                                      ALIAS(ACCOUNTID)
+     A            ACCNAME       30          TEXT('Account Name')
+     A                                      VARLEN
+     A                                      COLHDG('Account Name')
+     A                                      ALIAS(ACCOUNTNAME)
+     A            TOTCUBE       50          TEXT('Total Cube')
+     A                                      VARLEN
+     A                                      COLHDG('Total Cube')
+     A                                      ALIAS(TOTALCUBE)
+     A            CRTDTTM       30          TEXT('Created Date Time')
+     A                                      VARLEN
+     A                                      COLHDG('Created Date Time')
+     A                                      ALIAS(CREATEDDATETIME)
+     A            ISDELETED      1          TEXT('Is Deleted_')
+     A                                      COLHDG('Is Deleted?')
+     A            TOTCOST       50          TEXT('Total Cost')
+     A                                      VARLEN
+     A                                      COLHDG('Total Cost')
+     A                                      ALIAS(TOTALCOST)
+     A            CARRIERID     30          TEXT('Carrier Id')
+     A                                      VARLEN
+     A                                      COLHDG('Carrier Id')
+     A            SVCTYPEID     30          TEXT('Service Type Id')
+     A                                      VARLEN
+     A                                      COLHDG('Service Type Id')
+     A                                      ALIAS(SERVICETYPEID)
+     A            SVCINC        10          TEXT('Service Incidents')
+     A                                      VARLEN
+     A                                      COLHDG('Service Incidents')
+     A                                      ALIAS(SERVICEINCIDENTS)
+     A            ISMERGED       1          TEXT('Is Merged_')
+     A                                      COLHDG('Is Merged?')
+     A            PUBCOMMENT  1024          TEXT('Public Comments')
+     A                                      VARLEN
+     A                                      COLHDG('Public Comments')
+     A                                      ALIAS(PUBLICCOMMENTS)
+     A            FRTTRMDESC    50          TEXT('Freight Charges Term Desc')
+     A                                      VARLEN
+     A                                      COLHDG('Freight Charges Term' +
+     A                                      'Desc')
+     A                                      ALIAS(FREIGHTCHARGESTERMDESC)
+     A            FRTTRMID      30          TEXT('Freight Charges Term Id')
+     A                                      VARLEN
+     A                                      COLHDG('Freight Charges Term' +
+     A                                      'Id')
+     A                                      ALIAS(FREIGHTCHARGESTERMID)
+     A            BLCOMPANY     60          TEXT('Bill Company')
+     A                                      VARLEN
+     A                                      COLHDG('Bill Company')
+     A                                      ALIAS(BILLCOMPANY)
+     A            BLCTNAME      30          TEXT('Bill Contact Name')
+     A                                      VARLEN
+     A                                      COLHDG('Bill Contact Name')
+     A                                      ALIAS(BILLCONTACTNAME)
+     A            BLEML        255          TEXT('Bill Email')
+     A                                      VARLEN
+     A                                      COLHDG('Bill Email')
+     A                                      ALIAS(BILLEMAIL)
+     A            BLADDR1      100          TEXT('Bill Address 1')
+     A                                      VARLEN
+     A                                      COLHDG('Bill Address 1')
+     A                                      ALIAS(BILLADDRESS1)
+     A            CITY          60          TEXT('Bill City')
+     A                                      VARLEN
+     A                                      COLHDG('Bill City')
+     A                                      ALIAS(BILLCITY)
+     A            STATE          2          TEXT('Bill State')
+     A                                      COLHDG('Bill State')
+     A                                      ALIAS(BILLSTATE)
+     A            BLPOSTCD      15          TEXT('Bill Postal Code')
+     A                                      VARLEN
+     A                                      COLHDG('Bill Postal Code')
+     A                                      ALIAS(BILLPOSTALCODE)
+     A            BLPH          20          TEXT('Bill Phone')
+     A                                      VARLEN
+     A                                      COLHDG('Bill Phone')
+     A                                      ALIAS(BILLPHONE)
+     A            BLCOUNTRY     30          TEXT('Bill Country')
+     A                                      VARLEN
+     A                                      COLHDG('Bill Country')
+     A                                      ALIAS(BILLCOUNTRY)
+     A            NOTIFS      1024          TEXT('Notifications')
+     A                                      VARLEN
+     A                                      COLHDG('Notifications')
+     A                                      ALIAS(NOTIFICATIONS)
+     A            CURR          10          TEXT('Currency')
+     A                                      VARLEN
+     A                                      COLHDG('Currency')
+     A                                      ALIAS(CURRENCY)
+     A          K UID
+     A          K RSPTS

@@ -1,0 +1,79 @@
+     A*  ----------------------------------------------------------------------*
+     A*                                                                        *
+     A*         AFS - DIMENSIONS & WEIGHTS DETAIL - SHIPMENT                   *
+     A*                                                                        *
+     A*                                                                        *
+     A*  TASK       DATE   ID  DESCRIPTION                                     *
+     A*  ---------- ------ --- ------------------------------------------------*
+     A*  JF003180   010626 JJF [     ] INITIAL CREATION                        *
+     A*  ----------------------------------------------------------------------*
+     A          R RAFSDRSPPC
+     A            UID           15  0       TEXT('Request Unique Id')
+     A                                      COLHDG('Request Unique Id')
+     A                                      ALIAS(UNIQUEID)
+     A            SHIPID        10          TEXT('Shipment Id')
+     A                                      COLHDG('Shipment Id')
+     A                                      ALIAS(SHIPMENTID)
+     A            PIECEID        9B 0       TEXT('Piece Id')
+     A                                      COLHDG('Piece Id')
+     A            PIECES        10          TEXT('Pieces')
+     A                                      VARLEN
+     A                                      COLHDG('Pieces')
+     A            LENGTH        30          TEXT('Length')
+     A                                      VARLEN
+     A                                      COLHDG('Length')
+     A            HEIGHT        30          TEXT('Height')
+     A                                      VARLEN
+     A                                      COLHDG('Height')
+     A            WIDTH         30          TEXT('Width')
+     A                                      VARLEN
+     A                                      COLHDG('Width')
+     A            WEIGHT        30          TEXT('Weight')
+     A                                      VARLEN
+     A                                      COLHDG('Weight')
+     A            FRTCLS        30          TEXT('Freight Class')
+     A                                      VARLEN
+     A                                      COLHDG('Freight Class')
+     A                                      ALIAS(FREIGHTCLASS)
+     A            NMFC          30          TEXT('Nmfc')
+     A                                      VARLEN
+     A                                      COLHDG('Nmfc')
+     A            NMFCSUB       30          TEXT('Nmfc Sub')
+     A                                      VARLEN
+     A                                      COLHDG('Nmfc Sub')
+     A            DESC          50          TEXT('Description')
+     A                                      VARLEN
+     A                                      COLHDG('Description')
+     A                                      ALIAS(DESCRIPTION)
+     A            CUBE          30          TEXT('Cube')
+     A                                      VARLEN
+     A                                      COLHDG('Cube')
+     A            CNTNRID       30          TEXT('Container Id')
+     A                                      VARLEN
+     A                                      COLHDG('Container Id')
+     A                                      ALIAS(CONTAINERID)
+     A            ISHAZMAT       1          TEXT('Is Hazmat_')
+     A                                      COLHDG('Is Hazmat?')
+     A            HAZMATCD      10          TEXT('Hazmat Code')
+     A                                      VARLEN
+     A                                      COLHDG('Hazmat Code')
+     A                                      ALIAS(HAZMATCODE)
+     A            HAZMATCLS     10          TEXT('Hazmat Class Code')
+     A                                      VARLEN
+     A                                      COLHDG('Hazmat Class Code')
+     A                                      ALIAS(HAZMATCLASSCODE)
+     A            HAZMATPGRP    10          TEXT('Hazmat Packing Group')
+     A                                      VARLEN
+     A                                      COLHDG('Hazmat Packing Group')
+     A                                      ALIAS(HAZMATPACKINGGROUP)
+     A            HNDLUNITS     30          TEXT('Handling Units')
+     A                                      VARLEN
+     A                                      COLHDG('Handling Units')
+     A                                      ALIAS(HANDLINGUNITS)
+     A            PRODLID       30          TEXT('Produc List Id')
+     A                                      VARLEN
+     A                                      COLHDG('Produc List Id')
+     A                                      ALIAS(PRODUCTLISTID)
+     A          K UID
+     A          K SHIPID
+     A          K PIECEID

@@ -1,0 +1,38 @@
+     A*  ----------------------------------------------------------------------*
+     A*                                                                        *
+     A*         AFS - EQUIPMENT DETAIL - SHIPMENT                              *
+     A*                                                                        *
+     A*                                                                        *
+     A*  TASK       DATE   ID  DESCRIPTION                                     *
+     A*  ---------- ------ --- ------------------------------------------------*
+     A*  JF003180   010626 JJF [     ] INITIAL CREATION                        *
+     A*  ----------------------------------------------------------------------*
+     A          R RAFSDRSPET
+     A            UID           15  0       TEXT('Request Unique Id')
+     A                                      COLHDG('Request Unique Id')
+     A                                      ALIAS(UNIQUEID)
+     A            SHIPID        10          TEXT('Shipment Id')
+     A                                      COLHDG('Shipment Id')
+     A                                      ALIAS(SHIPMENTID)
+     A            ASID           9B 0       TEXT('Addl Service Id')
+     A                                      COLHDG('Addl Service Id')
+     A                                      ALIAS(ADDITIONALSERVICEID)
+     A            ETID           9B 0       TEXT('Equipment Type Id')
+     A                                      COLHDG('Equipment Type Id')
+     A                                      ALIAS(EQUIPMENTTYPEID)
+     A            CARRID        30          TEXT('Carrier Id')
+     A                                      VARLEN
+     A                                      COLHDG('Carrier Id')
+     A                                      ALIAS(CARRIERID)
+     A            EQUIPID       30          TEXT('Eqiupment Id')
+     A                                      VARLEN
+     A                                      COLHDG('Eqiupment Id')
+     A                                      ALIAS(EQUIPMENTID)
+     A            DESC          50          TEXT('Desc')
+     A                                      VARLEN
+     A                                      COLHDG('Desc')
+     A                                      ALIAS(DESCRIPTION)
+     A          K UID
+     A          K SHIPID
+     A          K ASID
+     A          K ETID

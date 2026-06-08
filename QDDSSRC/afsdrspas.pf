@@ -1,0 +1,106 @@
+     A*  ----------------------------------------------------------------------*
+     A*                                                                        *
+     A*         AFS BREAKDOWN OF CHARGES DETAIL                                *
+     A*                                                                        *
+     A*                                                                        *
+     A*  TASK       DATE   ID  DESCRIPTION                                     *
+     A*  ---------- ------ --- ------------------------------------------------*
+     A*  JF003180   010626 JJF [     ] INITIAL CREATION                        *
+     A*  ----------------------------------------------------------------------*
+     A          R RAFSDRSPAS
+     A            UID           15  0       TEXT('Request Unique Id')
+     A                                      COLHDG('Request Unique Id')
+     A                                      ALIAS(UNIQUEID)
+     A            SHIPID        10          TEXT('Shipment Id')
+     A                                      COLHDG('Shipment Id')
+     A                                      ALIAS(SHIPMENTID)
+     A            ASID           9B 0       TEXT('Addl Service Id')
+     A                                      COLHDG('Addl Service Id')
+     A                                      ALIAS(ADDITIONALSERVICEID)
+     A            STOPID        30          TEXT('Stop Id')
+     A                                      VARLEN
+     A                                      COLHDG('Stop Id')
+     A            ASCID         30          TEXT('Addl Service Contract Id')
+     A                                      VARLEN
+     A                                      COLHDG('Addl Service' +
+     A                                      'Contract Id')
+     A                                      ALIAS(ADDITIONALSERVICECONTRACTID)
+     A            RTTYPE        50          TEXT('Rate Type')
+     A                                      VARLEN
+     A                                      COLHDG('Rate Type')
+     A                                      ALIAS(RATETYPE)
+     A            ACCCGID       30          TEXT('Acc Charge Id')
+     A                                      VARLEN
+     A                                      COLHDG('Acc Charge Id')
+     A                                      ALIAS(ACCCHARGEID)
+     A            DESC          50          TEXT('Description')
+     A                                      VARLEN
+     A                                      COLHDG('Description')
+     A                                      ALIAS(DESCRIPTION)
+     A            CG            50          TEXT('Charge')
+     A                                      VARLEN
+     A                                      COLHDG('Charge')
+     A                                      ALIAS(CHARGE)
+     A            MOD           50          TEXT('Modifier')
+     A                                      VARLEN
+     A                                      COLHDG('Modifier')
+     A                                      ALIAS(MODIFIER)
+     A            SELLCG        50          TEXT('Sell Charge')
+     A                                      VARLEN
+     A                                      COLHDG('Sell Charge')
+     A                                      ALIAS(SELLCHARGE)
+     A            SVCLVL        50          TEXT('Service Level')
+     A                                      VARLEN
+     A                                      COLHDG('Service Level')
+     A                                      ALIAS(SERVICELEVEL)
+     A            CRTBY         50          TEXT('Created By')
+     A                                      VARLEN
+     A                                      COLHDG('Created By')
+     A                                      ALIAS(CREATEDBY)
+     A            CRTDTTM       50          TEXT('Created Date Time')
+     A                                      VARLEN
+     A                                      COLHDG('Created Date Time')
+     A                                      ALIAS(CREATEDDATETIME)
+     A            CID           30          TEXT('Contract Id')
+     A                                      VARLEN
+     A                                      COLHDG('Contract Id')
+     A                                      ALIAS(CONTRACTID)
+     A            CARRID        30          TEXT('Carrier Id')
+     A                                      VARLEN
+     A                                      COLHDG('Carrier Id')
+     A                                      ALIAS(CARRIERID)
+     A            CDESC         50          TEXT('Contract Description')
+     A                                      VARLEN
+     A                                      COLHDG('Contract Description')
+     A                                      ALIAS(CONTRACTDESCRIPTION)
+     A            CTYPE         50          TEXT('Contract Type')
+     A                                      VARLEN
+     A                                      COLHDG('Contract Type')
+     A                                      ALIAS(CONTRACTTYPE)
+     A            CCARRID       30          TEXT('Contract Carrier Id')
+     A                                      VARLEN
+     A                                      COLHDG('Contract Carrier Id')
+     A                                      ALIAS(CONTRACTCARRIERID)
+     A            CCARRNAME     50          TEXT('Contract Carrier Name')
+     A                                      VARLEN
+     A                                      COLHDG('Contract Carrier' +
+     A                                      'Name')
+     A                                      ALIAS(CONTRACTCARRIERNAME)
+     A            CCARRSCAC     50          TEXT('Contract Carrier Scac')
+     A                                      VARLEN
+     A                                      COLHDG('Contract Carrier' +
+     A                                      'Scac')
+     A                                      ALIAS(CONTRACTCARRIERSCAC)
+     A            CCARRMAPID    30          TEXT('Contract Carrier Map Id')
+     A                                      VARLEN
+     A                                      COLHDG('Contract Carrier' +
+     A                                      'Map Id')
+     A                                      ALIAS(CONTRACTCARRIERMAPID)
+     A            CCARREML      50          TEXT('Contract Carrier Email')
+     A                                      VARLEN
+     A                                      COLHDG('Contract Carrier' +
+     A                                      'Email')
+     A                                      ALIAS(CONTRACTCARRIEREMAIL)
+     A          K UID
+     A          K SHIPID
+     A          K ASID

@@ -29,7 +29,7 @@
 
        Dcl-S ShipmentID Char(10);
 
-       ShipmentID = 'SM03641054';
+       ShipmentID = 'SM03840799';
 
        // Not using AFSRREQAC or AFSRREQRC currently
 

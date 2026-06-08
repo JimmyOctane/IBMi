@@ -1,0 +1,40 @@
+     A*  ----------------------------------------------------------------------*
+     A*                                                                        *
+     A*         AFS - REFERENCE DETAIL - SHIPMENT                              *
+     A*                                                                        *
+     A*                                                                        *
+     A*  TASK       DATE   ID  DESCRIPTION                                     *
+     A*  ---------- ------ --- ------------------------------------------------*
+     A*  JF003180   010626 JJF [     ] INITIAL CREATION                        *
+     A*  ----------------------------------------------------------------------*
+     A          R RAFSDRSPRF
+     A            UID           15  0       TEXT('Request Unique Id')
+     A                                      COLHDG('Request Unique Id')
+     A                                      ALIAS(UNIQUEID)
+     A            SHIPID        10          TEXT('Shipment Id')
+     A                                      COLHDG('Shipment Id')
+     A                                      ALIAS(SHIPMENTID)
+     A            REFID          9B 0       TEXT('Reference Id')
+     A                                      COLHDG('Reference Id')
+     A                                      ALIAS(REFERENCEID)
+     A            TYPEID        30          TEXT('Type Id')
+     A                                      VARLEN
+     A                                      COLHDG('Type Id')
+     A            DESC          50          TEXT('Description')
+     A                                      VARLEN
+     A                                      COLHDG('Description')
+     A                                      ALIAS(DESCRIPTION)
+     A            VALUE        200          TEXT('Value')
+     A                                      VARLEN
+     A                                      COLHDG('Value')
+     A            CRTDTTM       50          TEXT('Created Date Time')
+     A                                      VARLEN
+     A                                      COLHDG('Created Date Time')
+     A                                      ALIAS(CREATEDDATETIME)
+     A            CRTBY         50          TEXT('Created By')
+     A                                      VARLEN
+     A                                      COLHDG('Created By')
+     A                                      ALIAS(CREATEDBY)
+     A          K UID
+     A          K SHIPID
+     A          K REFID
