@@ -504,19 +504,35 @@
 
           when pPath = '/data/totalWeight'
            and pType = RXS_JSON_STRING;
-            RSP.TotalWeight = ParsedData;
+            monitor;
+              RSP.TotalWeight = %Dec( %Trim(ParsedData) : 15 : 2 );
+            on-error;
+              RSP.TotalWeight = 0;
+            endmon;
 
           when pPath = '/data/revenue'
            and pType = RXS_JSON_STRING;
-            RSP.Revenue = ParsedData;
+            monitor;
+              RSP.Revenue = %Dec( %Trim(ParsedData) : 15 : 2 );
+            on-error;
+              RSP.Revenue = 0;
+            endmon;
 
           when pPath = '/data/stopsCount'
            and pType = RXS_JSON_STRING;
-            RSP.StopsCount = ParsedData;
+            monitor;
+              RSP.StopsCount = %Int( %Trim(ParsedData) );
+            on-error;
+              RSP.StopsCount = 0;
+            endmon;
 
           when pPath = '/data/transitDays'
            and pType = RXS_JSON_STRING;
-            RSP.TransitDays = ParsedData;
+            monitor;
+              RSP.TransitDays = %Int( %Trim(ParsedData) );
+            on-error;
+              RSP.TransitDays = 0;
+            endmon;
 
           when pPath = '/data/serviceTypeDesc'
            and pType = RXS_JSON_STRING;
@@ -552,7 +568,11 @@
 
           when pPath = '/data/totalCube'
            and pType = RXS_JSON_STRING;
-            RSP.TotalCube = ParsedData;
+            monitor;
+              RSP.TotalCube = %Dec( %Trim(ParsedData) : 15 : 2 );
+            on-error;
+              RSP.TotalCube = 0;
+            endmon;
 
           when pPath = '/data/createdDateTime'
            and pType = RXS_JSON_STRING;
@@ -568,7 +588,11 @@
 
           when pPath = '/data/totalCost'
            and pType = RXS_JSON_STRING;
-            RSP.TotalCost = ParsedData;
+            monitor;
+              RSP.TotalCost = %Dec( %Trim(ParsedData) : 15 : 2 );
+            on-error;
+              RSP.TotalCost = 0;
+            endmon;
 
           when pPath = '/data/carrierId'
            and pType = RXS_JSON_STRING;
@@ -799,7 +823,11 @@
 
           when pPath = '/data/additionalServices[*]/charge'
            and pType = RXS_JSON_STRING;
-            RSPAS.Charge = ParsedData;
+            monitor;
+              RSPAS.Charge = %Dec( %Trim(ParsedData) : 9 : 2 );
+            on-error;
+              RSPAS.Charge = 0;
+            endmon;
 
           when pPath = '/data/additionalServices[*]/modifier'
            and pType = RXS_JSON_STRING;
@@ -807,7 +835,11 @@
 
           when pPath = '/data/additionalServices[*]/sellCharge'
            and pType = RXS_JSON_STRING;
-            RSPAS.SellCharge = ParsedData;
+            monitor;
+              RSPAS.SellCharge = %Dec( %Trim(ParsedData) : 9 : 2 );
+            on-error;
+              RSPAS.SellCharge = 0;
+            endmon;
 
           when pPath = '/data/additionalServices[*]/serviceLevel'
            and pType = RXS_JSON_STRING;

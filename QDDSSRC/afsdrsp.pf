@@ -89,19 +89,15 @@
      A                                      VARLEN
      A                                      COLHDG('Pro Number')
      A                                      ALIAS(PRONUMBER)
-     A            TOTWGT        30          TEXT('Total Weight')
-     A                                      VARLEN
+     A            TOTWGT        15  2       TEXT('Total Weight')
      A                                      COLHDG('Total Weight')
      A                                      ALIAS(TOTALWEIGHT)
-     A            REVENUE       30          TEXT('Revenue')
-     A                                      VARLEN
+     A            REVENUE       15  2       TEXT('Revenue')
      A                                      COLHDG('Revenue')
-     A            STOPSCT       10          TEXT('Stops Count')
-     A                                      VARLEN
+     A            STOPSCT        5  0       TEXT('Stops Count')
      A                                      COLHDG('Stops Count')
      A                                      ALIAS(STOPSCOUNT)
-     A            TRNDAYS       10          TEXT('Transit Days')
-     A                                      VARLEN
+     A            TRNDAYS        5  0       TEXT('Transit Days')
      A                                      COLHDG('Transit Days')
      A                                      ALIAS(TRANSITDAYS)
      A            SVCDESC       50          TEXT('Service Type Desc')
@@ -135,8 +131,7 @@
      A                                      VARLEN
      A                                      COLHDG('Account Name')
      A                                      ALIAS(ACCOUNTNAME)
-     A            TOTCUBE       50          TEXT('Total Cube')
-     A                                      VARLEN
+     A            TOTCUBE       15  2       TEXT('Total Cube')
      A                                      COLHDG('Total Cube')
      A                                      ALIAS(TOTALCUBE)
      A            CRTDTTM       30          TEXT('Created Date Time')
@@ -145,8 +140,7 @@
      A                                      ALIAS(CREATEDDATETIME)
      A            ISDELETED      1          TEXT('Is Deleted_')
      A                                      COLHDG('Is Deleted?')
-     A            TOTCOST       50          TEXT('Total Cost')
-     A                                      VARLEN
+     A            TOTCOST       15  2       TEXT('Total Cost')
      A                                      COLHDG('Total Cost')
      A                                      ALIAS(TOTALCOST)
      A            CARRIERID     30          TEXT('Carrier Id')

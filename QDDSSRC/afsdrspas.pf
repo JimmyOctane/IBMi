@@ -37,16 +37,14 @@
      A                                      VARLEN
      A                                      COLHDG('Description')
      A                                      ALIAS(DESCRIPTION)
-     A            CG            50          TEXT('Charge')
-     A                                      VARLEN
+     A            CG             9  2       TEXT('Charge')
      A                                      COLHDG('Charge')
      A                                      ALIAS(CHARGE)
      A            MOD           50          TEXT('Modifier')
      A                                      VARLEN
      A                                      COLHDG('Modifier')
      A                                      ALIAS(MODIFIER)
-     A            SELLCG        50          TEXT('Sell Charge')
-     A                                      VARLEN
+     A            SELLCG         9  2       TEXT('Sell Charge')
      A                                      COLHDG('Sell Charge')
      A                                      ALIAS(SELLCHARGE)
      A            SVCLVL        50          TEXT('Service Level')
