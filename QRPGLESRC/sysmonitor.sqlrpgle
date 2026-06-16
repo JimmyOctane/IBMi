@@ -1,7 +1,7 @@
        //-------------------------------------------------------------------
        // PROGRAM NAME - SYSMONITOR
        //
-       //  System Monitor Pgm - test
+       //  System Monitor Pgm
        //
        //-------------------------------------------------------------------
        // TASK       DATE   ID  DESCRIPTION
