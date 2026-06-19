@@ -10,6 +10,18 @@
        // 3133      042925 JJF Rewritten to add better process for jobqueues
        // 3133      050625 JJF Rewritten to reduce messages during backups
        // 3140      062525 JJF ReWritten to add in monitor flag for job scheduler
+       // 3208      061725 JJF Changed alert from MAILTOOL email to ATSNDSMS SMS
+       //                      Removed bigEmailString, emailAddress variables,
+       //                      helpDeskEmail loop, and ADDLIBLE MAILTOOL block
+       // 3208      061825 JJF Added dsplyMessage char(52) to sendMessage proc
+       //                      Added DSPLY to display message on send
+       //                      Fixed OBJECT_STATISTICS - replaced with
+       //                      DATA_AREA_INFO to avoid 01xxx lock warnings
+       //                      Fixed overrideEmail/jobQueueQuantity/messageResendDelay
+       //                      selects - removed invalid dec(substr()) cast
+       // 3208      061925 JJF Removed duplicate exec SQL close WorkCursor
+       //                      in checkOutQueues, checkwrkactjob,
+       //                      checkScheduledJobs - cursor not open errors
        //------------------------------------------------------------------------
          ctl-opt option(*srcstmt: *nodebugio) debug(*yes) dftactgrp(*no)
           bnddir('SHBIND':'WMBIND':'HDBIND':'WKBIND':'MNBIND':'YAJL');
@@ -347,8 +359,6 @@
 
           endfor;
 
-          exec SQL close WorkCursor;
-
          Return  wValuesDS;
 
          end-proc checkOutQueues;
@@ -475,8 +485,6 @@
            endif;
 
           endfor;
-
-          exec SQL close WorkCursor2;
 
          Return  wValuesDS;
 
@@ -759,8 +767,6 @@
 
           endfor;
 
-          exec SQL close WorkCursor4;
-
          Return  wValuesDS;
 
          end-proc checkScheduledJobs;
@@ -904,8 +910,6 @@
 
           endfor;
 
-          exec SQL close WorkCursor7;
-
           Return  wValuesDS;
 
          end-proc checkQsysopr;
@@ -920,15 +924,13 @@
            inValues char(32740) value;
           end-pi;
 
-         dcl-s bigEmailString char(300)inz;
-         dcl-s count int(10:0) inz;
-         dcl-s emailAddress char(50) inz;
-         dcl-s found  zoned(10:0) inz;
-         dcl-s foundDot zoned(10:0) inz;
-         dcl-s myMessage char(200) inz;
-         dcl-s mySubject char(200) inz;
-         dcl-s sendThisMessage ind inz(*off);
-         dcl-s shortSystemName char(10) inz;
+          dcl-s dsplyMessage char(52) inz;
+          dcl-s found  zoned(10:0) inz;
+          dcl-s foundDot zoned(10:0) inz;
+          dcl-s myMessage char(200) inz;
+          dcl-s mySubject char(200) inz;
+          dcl-s sendThisMessage ind inz(*off);
+          dcl-s shortSystemName char(10) inz;
 
 
          dcl-ds wValuesDS  qualified inz;
@@ -1004,31 +1006,16 @@
 
          if sendThisMessage;
 
-          // WVALUESDS.HELPDESKEMAIL
-          reset bigEmailString;
-          for count = 1 to 10;
-           bigEmailString = %trim(bigEmailString) +
-            Q+ %trim(wValuesDS.helpDeskEmail(count)) +Q+ '^';
-          endfor;
-
-          bigEmailString = %xlate('^':' ':bigEmailString);
-
-          // addlible MAILTOOL
-          commandString =
-          'ADDLIBLE MAILTOOL *LAST';
-          commandLength = %len(%trim(commandString));
-          monitor;
-           $command(commandString: commandLength);
-          on-error;
-          endmon;
-
           myMessage = %trim(myMessage);
 
+          // display using shorter 52 char variable
+          dsplyMessage = %subst(myMessage:1:%min(52:%len(%trim(myMessage))));
+          dsply dsplyMessage;
+
           commandString =
-          'MAILTOOL TOADDR(' + %trim(bigEmailString) + ') ' +
-          'FROMADDR(isdept@ecmdi.com) '  +
-          'SUBJECT(' + Q + %trim(mySubject) + Q +
-          ') MESSAGE(' + Q + %trim(myMessage) + Q + ')';
+          'ARPEGGIOL/ATSNDSMS USRACT(ITDEPT) ' +
+          'PHONELIST(ERP_DEV) ' +
+          'MESSAGE(' + Q + %trim(myMessage) + Q + ')';
           commandLength = %len(%trim(commandString));
           monitor;
            $command(commandString: commandLength);
@@ -1076,6 +1063,7 @@
          dcl-s overrideEmail char(40) inz;
          dcl-s char10  char(10) inz;
          dcl-s isodate  date inz;
+         dcl-s foundInLibrary char(10) inz;
 
          dcl-ds wValuesDS  qualified inz;
           maxSpool zoned(4:0);
@@ -1225,21 +1213,21 @@
 
            reset wValuesDS.jobQueueQuantity;
            exec sql
-            select dec(substr(TBNO03,1,4),4,0)
+            select int(trim(TBNO03))
              into :wValuesDS.jobQueueQuantity
              from tbpmtbl
              where TBNO01 = 'SMON' and TBNO02 = :maxJobQueueQuantityKey;
 
            reset wValuesDS.messageResendDelay;
            exec sql
-            select dec(substr(TBNO03,1,4),4,0)
+            select int(trim(TBNO03))
              into :wValuesDS.messageResendDelay
              from tbpmtbl
              where TBNO01 = 'SMON' and TBNO02 = :messageResendDelayKey;
 
            reset wValuesDS.overrideEmail;
            exec sql
-            select dec(substr(TBNO03,1,4),4,0)
+            select TBNO03
              into :wValuesDS.overrideEmail
              from tbpmtbl
              where TBNO01 = 'SMON' and TBNO02 = :overrideEmailKey;
@@ -1306,13 +1294,17 @@
              where a.TBNO01 >= 'SMON' and a.tbno02 = :skipErrorsIdKey;
            wValuesDS.ErrorId  = skipErrorIDsDS.list;
 
-           // check for data area SYSMONITOR create if not found
-           reset foundDataArea;
+           // check for data area SYSMONITOR - use DATA_AREA_INFO only
+           // avoids OBJECT_STATISTICS *LIBL scan and 01xxx lock warnings
+           reset foundInLibrary;
            exec sql
-            SELECT '1'
-             into :foundDataArea
-              FROM TABLE(QSYS2.OBJECT_STATISTICS
-              ('*LIBL','DTAARA',OBJECT_NAME => 'SYSMONITOR')) A;
+            select data_area_library
+             into :foundInLibrary
+             from qsys2.data_area_info
+             where data_area_name = 'SYSMONITOR';
+
+           // if foundInLibrary is not blank, data area exists
+           foundDataArea = (foundInLibrary <> *blanks);
 
            // CRTDTAARA DTAARA(HD1100PO/SYSMONITOR)
            // TYPE(*CHAR) LEN(26)
