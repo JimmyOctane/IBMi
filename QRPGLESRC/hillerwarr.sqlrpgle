@@ -22,6 +22,7 @@
 ¢D     //                       CPYTOIMPF process
 ¢E     // 5133      021825 CLP  -Added sell branch to the report
 ¢E     //                       -Renamded ship branch from BRANCH to SHIPBR
+¢F     // 3209      062426 JJF  -Removed QTEMP table, using HD1100pd version
        //-------------------------------------------------------------------
        CTL-OPT option(*srcstmt:*nodebugio) Debug(*yes);
 
@@ -72,7 +73,8 @@
 ¢C            From oeptohy h inner join oeptoly l on h.oeno01=l.oeno01
 ¢C             inner join arpmcus c on h.arno01=c.arno01
 ¢C             inner join ivpmstr i on l.ivno07=i.ivno07
-¢C            Where h.arno01=750503 and h.oeno06='WARR ' and l.ivno07<>0 and
+¢C        Where h.arno01in ( 750503, 487413) and h.oeno06='WARR ' and
+¢C             l.ivno07<>0 and
 ¢C             i.ivno05=14141 and (h.oecd08<>'C' or (h.oecd08='C' and
 ¢C             h.oefl31<>'Y'))
 ¢C            Order by h.oeno01,l.ivno07);
@@ -92,7 +94,8 @@
 ¢C            From oeptohy h inner join oeptoly l on h.oeno01=l.oeno01
 ¢C             inner join arpmcus c on h.arno01=c.arno01
 ¢C             inner join ivpmstr i on l.ivno07=i.ivno07
-¢C            Where h.arno01=750503 and h.oeno06='WARR ' and l.ivno07<>0 and
+¢C        Where h.arno01=in ( 750503, 487413) and h.oeno06='WARR ' and
+¢C             l.ivno07<>0 and
 ¢C             i.ivno05=14141 and h.oecd08='C' and oefl31='Y'
 ¢C            Order by h.oeno01,l.ivno07);
 
@@ -177,20 +180,23 @@
 ¢A     //  have a paid vendor return
 ¢A
 ¢A       // Delete the temporary tables
-¢A         Exec SQL
-¢A           Drop table qtemp/TmpInvSum;
+¢A        // Exec SQL
+¢A        //   Drop table qtemp/TmpInvSum;
+¢F         Exec SQL
+¢F          delete from TmpInvSum;
 ¢A
-¢A       // Summarize invoices and credit memos
-¢A         Exec SQL
-¢A           Create table qtemp/TmpInvSum as
-¢A            (Select invoice,nochg,
-¢A             cast(0 as dec(11,2)) as sumext,
-¢A             cast(' ' as char(10)) as vrsts
-¢A             from hillerwar1)
-¢A           Definition only;
+¢A ¢F      // Summarize invoices and credit memos
+¢A ¢F      // Exec SQL
+¢A ¢F      //   Create table qtemp/TmpInvSum as
+¢A ¢F      //    (Select invoice,nochg,
+¢A ¢F      //     cast(0 as dec(11,2)) as sumext,
+¢A ¢F      //     cast(' ' as char(10)) as vrsts
+¢A ¢F      //     from hillerwar1)
+¢A ¢F      //   Definition only;
 ¢A
 ¢A         Exec SQL
-¢A           Insert into Qtemp/TmpInvSum
+¢A ¢F      //  Insert into Qtemp/TmpInvSum
+¢F              Insert into TmpInvSum
 ¢A             (Select invoice,nochg,
 ¢A              cast(sum(lineext) as dec(11,2)),' '
 ¢A              from hillerwar1
@@ -200,21 +206,23 @@
 ¢A
 ¢A       // Update the vendor status in the invoice summary file
 ¢A         Exec SQL
-¢A           Update Qtemp/TmpInvSum q set vrsts='Paid'
+¢A ¢F      //Update Qtemp/TmpInvSum q set vrsts='Paid'
+¢F          Update TmpInvSum q set vrsts='Paid'
 ¢A           Where exists (Select * from hillerwar1 where invoice=q.invoice and
 ¢A            vrsts='Paid');
 ¢A
 ¢A       // Delete invoices and credit lines that do not come to zero or
 ¢A       //  have not been paid
 ¢A         Exec SQL
-¢A           Delete from Qtemp/TmpInvSum
+¢A ¢F       //  Delete from Qtemp/TmpInvSum
+¢F            Delete from TmpInvSum
 ¢A           Where sumext<>0 or vrsts<>'Paid';
 ¢A
 ¢A       // Delete invoices and credit lines from the original list that have
 ¢A       //  been completed successfully
 ¢A         Exec SQL
-¢A           Delete from HILLERWAR1 h
-¢A           Where exists (Select * from Qtemp/TmpInvSum
+¢A          Delete from HILLERWAR1 h
+¢A           Where exists (Select * from TmpInvSum
 ¢A            where invoice=h.invoice);
 ¢B
 ¢B       // Delete invoices and credit lines from the original list that have

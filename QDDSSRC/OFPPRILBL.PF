@@ -1,0 +1,61 @@
+     A*------------------------------------------------------------------------*
+     A*N FILE NAME - OFPPRILBL                                                 *
+     A*------------------------------------------------------------------------*
+     A*P COPYRIGHT MINCRON SBC CORP. 1983,1990,2006.                           *
+     A*------------------------------------------------------------------------*
+     A*D OF PRICING LABEL PRINT FOR ITEMS OR LOCATIONS 2X4                     *
+     A*M ----------------------------------------------------------------------*
+     A*M TASK       DATE   ID  DESCRIPTION                                     *
+     A*M ---------- ------ --- ------------------------------------------------*
+     A*  3209       062426 JJF INITIAL FILE
+     A*M ----------------------------------------------------------------------*
+     A                                      REF(DBFREF)
+     A          R OFPRILBL
+
+     A* Key information
+
+     A            OFPTYPE       10          TEXT('Label Type')
+     A                                      COLHDG('Label' 'Type')
+
+     A            OFPBRANCH      3S 0       TEXT('Print Branch')
+     A                                      COLHDG('Print' 'Branch')
+
+     A            OFPITEM        6S 0       TEXT('Item')
+     A                                      COLHDG('Item')
+
+     A            OFPPRODUCT    15          TEXT('Product')
+     A                                      COLHDG('Product')
+
+     A            OFPQTY         3S 0       TEXT('Quantity')
+     A                                      COLHDG('Quantity')
+
+     A            OFPROW         3          TEXT('Row')
+     A                                      COLHDG('Row')
+
+     A            OFPBIN         3          TEXT('Bin')
+     A                                      COLHDG('Bin')
+
+     A            OFPSHELF       3          TEXT('Shelf')
+     A                                      COLHDG('Shelf')
+
+     A* Audit Fields
+     A            ADDUSER       20          TEXT('Add User')
+     A                                      COLHDG('Add' 'User')
+
+     A            ADDJOBNBR      6          TEXT('Add Job Number')
+     A                                      COLHDG('Add' 'Job' 'Number')
+
+     A            ADDJOBNAM     10          TEXT('Add Job Name')
+     A                                      COLHDG('Add' 'Job' 'Name')
+
+     A            ADDAUTHNAM    10          TEXT('Add Authorization Name')
+     A                                      COLHDG('Add' 'Authorization' 'Name')
+
+     A            ADDAPL        20          TEXT('Add Application')
+     A                                      COLHDG('Add' 'Application')
+
+     A            ADDMSTMP        Z         TEXT('Record Add Stamp')
+     A                                      COLHDG('Record' 'Add' 'Stamp')
+
+     A            OFPRINTER     10          TEXT('Printer')
+     A                                      COLHDG('Printer')

@@ -22,6 +22,17 @@
        // 3208      061925 JJF Removed duplicate exec SQL close WorkCursor
        //                      in checkOutQueues, checkwrkactjob,
        //                      checkScheduledJobs - cursor not open errors
+       //                      Fixed remaining dec(substr()) casts in
+       //                      startOfDay6/endOfDay6 selects - SQL0420 error
+       //                      Added FETCH FIRST 1 ROW ONLY to DATA_AREA_INFO
+       //                      selects for SYSMONITOR in setProgramValues and
+       //                      checkQsysopr - SQL0811 if data area in multiple libs
+       // 3208      062225 JJF Fixed lastRunStamp select in checkQsysopr -
+       //                      select into char(26) then convert via %timestamp
+       //                      in RPG to avoid SQL0420 implicit CHAR->TIMESTAMP
+       //                      cast inside OBJECT_STATISTICS (DATA_AREA_INFO
+       //                      calls OBJECT_STATISTICS internally; blank or
+       //                      invalid data area value triggers the cast error)
        //------------------------------------------------------------------------
          ctl-opt option(*srcstmt: *nodebugio) debug(*yes) dftactgrp(*no)
           bnddir('SHBIND':'WMBIND':'HDBIND':'WKBIND':'MNBIND':'YAJL');
@@ -785,6 +796,7 @@
          dcl-s i7 int(10:0) inz;
          dcl-s jobNameString char(30) inz;
          dcl-s lastRunStamp timestamp inz;
+         dcl-s lastRunStampChar char(26) inz;
          dcl-s maxItemLines7 zoned(5:0) inz(10000);
          dcl-s messageStamp timestamp inz;
          dcl-s messageQsysopr char(30) inz;
@@ -845,12 +857,28 @@
 
         wValuesDS = inValues;
         // pull in last runstamp
+        // select into char first to avoid SQL0420 implicit cast error
+        // (DB2 calls OBJECT_STATISTICS internally which throws cast warning
+        //  if data_area_value is blank or not a valid timestamp)
+        // fetch first 1 row only avoids SQL0811 if found in multiple libs
         reset lastRunStamp;
+        reset lastRunStampChar;
         exec sql
-         select data_area_value
-         into :lastRunStamp
+         select coalesce(trim(data_area_value),' ')
+         into :lastRunStampChar
          from qsys2.data_area_info
-         WHERE data_area_name = 'SYSMONITOR';
+         WHERE data_area_name = 'SYSMONITOR'
+           and data_area_library = 'HD1100PO'
+         fetch first 1 row only;
+        if sqlcode = 0 and lastRunStampChar <> *blanks;
+         monitor;
+          lastRunStamp = %timestamp(lastRunStampChar:*ISO);
+         on-error;
+          lastRunStamp = %timestamp() - %minutes(5);
+         endmon;
+        else;
+         lastRunStamp = %timestamp() - %minutes(5);
+        endif;
 
         myMaxMessageSeverity = wValuesDS.maxMessageSeverity;
          // grab the data and place into array
@@ -1294,14 +1322,15 @@
              where a.TBNO01 >= 'SMON' and a.tbno02 = :skipErrorsIdKey;
            wValuesDS.ErrorId  = skipErrorIDsDS.list;
 
-           // check for data area SYSMONITOR - use DATA_AREA_INFO only
-           // avoids OBJECT_STATISTICS *LIBL scan and 01xxx lock warnings
+           // check for data area SYSMONITOR in HD1100PO specifically
+           // library-qualified avoids OBJECT_STATISTICS *LIBL scan warning
            reset foundInLibrary;
            exec sql
             select data_area_library
              into :foundInLibrary
              from qsys2.data_area_info
-             where data_area_name = 'SYSMONITOR';
+             where data_area_name = 'SYSMONITOR'
+               and data_area_library = 'HD1100PO';
 
            // if foundInLibrary is not blank, data area exists
            foundDataArea = (foundInLibrary <> *blanks);
@@ -1323,23 +1352,37 @@
            endif;
 
            // get start of day time
+           // TBNO03 stored as 'HHMMSS' e.g. '083000'
+           // select raw into char10, convert in RPG to avoid SQL0420
            reset wValuesDS.startOfDay;
            reset startOfDay6;
+           reset char10;
            exec sql
-            select dec(substr(TBNO03,1,6),6,0)
-             into :startOfDay6
+            select coalesce(trim(TBNO03),'080000')
+             into :char10
              from tbpmtbl
              where TBNO01 = 'SMON' and TBNO02 = :SODKey;
-           wValuesDS.startOfDay = %time(endOfDay6:*HMS);
+           if sqlcode = 0 and char10 <> *blanks;
+            startOfDay6 = %dec(char10:6:0);
+           else;
+            startOfDay6 = 080000;
+           endif;
+           wValuesDS.startOfDay = %time(startOfDay6:*HMS);
 
            // get end of day time
            reset wValuesDS.endOfDay;
            reset endOfDay6;
+           reset char10;
            exec sql
-            select dec(substr(TBNO03,1,6),6,0)
-             into :endOfDay6
+            select coalesce(trim(TBNO03),'170000')
+             into :char10
              from tbpmtbl
              where TBNO01 = 'SMON' and TBNO02 = :EODKey;
+           if sqlcode = 0 and char10 <> *blanks;
+            endOfDay6 = %dec(char10:6:0);
+           else;
+            endOfDay6 = 170000;
+           endif;
            wValuesDS.endOfDay = %time(endOfDay6:*HMS);
 
            wValuesDS.scheduled = skipScheduledDS.list;
