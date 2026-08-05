@@ -1,0 +1,325 @@
+     A*%%TS  SD  20220407  150110  CPETERSON   REL-V7R4M0  5770-WDS
+     A*------------------------------------------------------------------------*
+     A*N FILE NAME - OEDC620                                                   *
+     A*------------------------------------------------------------------------*
+     A*P                                                                       *
+     A*------------------------------------------------------------------------*
+     A*D PURPOSE - WORK WITH SALES ORDERS                                      *
+     A*M ----------------------------------------------------------------------*
+     A*M TASK       DATE   ID  DESCRIPTION                                     *
+     A*M ---------- ------ --- ------------------------------------------------*
+     A*V 5008       111021 CLP Initial creation                                *
+¢A   A*V 5019       022322 CLP -Always position cursor in the order nbr of the *
+¢A   A*V                        C1 format                                      *
+¢A   A*V                       -Added selection on tickets printed or not      *
+¢A   A*V                       -Added selection on picking status              *
+¢A   A*V                       -Added option 8 to display promised date        *
+¢A   A*V                        change history                                 *
+¢B   A*V CP005186   063026 CLP Added 3rd line on S1 fold for prob/pric hold    *
+¢B   A*V                        info or anything else needed                   *
+¢I   A*V JJF        073126 JJF Added Ord Status selection for Invoiced         *
+¢I   A*V                        orders (D1STSI)                                *
+     A*M ----------------------------------------------------------------------*
+     A*%%EC
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      CF01(25 'HELP')
+     A                                      PRINT
+     A          R OEFC620D1
+     A*%%TS  SD  20220407  150110  CPETERSON   REL-V7R4M0  5770-WDS
+     A                                      RTNCSRLOC(&@RCD &@FLD &@POS)
+     A                                      CF03(03 'Exit')
+     A                                      CF04(04 'Prompt')
+     A                                      CA05(05 'Refresh')
+     A                                      OVERLAY
+     A            @RCD          10A  H
+     A            @FLD          10A  H
+     A            @POS           4S 0H
+     A            RECNAME       10A  H
+     A            FLDNAME       10A  H
+     A            FLDPOSI        4S 0H
+     A                                  1  2'OEFC620D1'
+     A                                  1 29'Work with Orders'
+     A                                      DSPATR(HI)
+     A                                  1 63DATE
+     A                                      EDTCDE(Y)
+     A                                  1 72TIME
+     A                                  3  2'Order:'
+     A            D1NO01         7A  B  3  9
+     A  51                                  DSPATR(RI)
+     A  51                                  DSPATR(PC)
+     A                                  5  3'--- or ---'
+     A                                      COLOR(BLU)
+     A                                  7  2'Region:'
+     A            D1REGN         1A  B  7 10
+     A  52                                  DSPATR(RI)
+     A  52                                  DSPATR(PC)
+     A                                  7 13'or'
+     A                                      COLOR(BLU)
+     A                                  7 17'Sell Branch:'
+     A            D1NO08         3Y 0B  7 30EDTCDE(4)
+     A  53                                  DSPATR(RI)
+     A  53                                  DSPATR(PC)
+   ¢AA* 50
+   ¢AA*O 53                                  DSPATR(PC)
+     A                                  7 35'Ship Branch:'
+     A            D1NO16         3Y 0B  7 48EDTCDE(4)
+     A  54                                  DSPATR(RI)
+     A  54                                  DSPATR(PC)
+     A                                  8  2'Customer:'
+     A            D1CUST         6Y 0B  8 12
+     A  55                                  DSPATR(RI)
+     A  55                                  DSPATR(PC)
+     A                                      EDTCDE(Z)
+     A                                  8 20'Job Nbr:'
+     A            D1NO06         7A  B  8 29
+     A  56                                  DSPATR(RI)
+     A  56                                  DSPATR(PC)
+     A                                  8 38'Job Name:'
+     A            D1NM02        15A  B  8 48
+     A                                  9  2'Customer PO:'
+     A            D1NO07        22A  B  9 15
+     A                                 10  2'Entered After:'
+     A            D1ENTFR        8A  B 10 18
+     A  57                                  DSPATR(RI)
+     A  57                                  DSPATR(PC)
+     A                                 10 28'Entered by:'
+     A            D1ID01         3A  B 10 40
+     A  58                                  DSPATR(RI)
+     A  58                                  DSPATR(PC)
+     A                                 10 45'Sales ID:'
+     A            D1ID02         3A  B 10 55
+     A  59                                  DSPATR(RI)
+     A  59                                  DSPATR(PC)
+     A                                 11  2'Promised After:'
+     A            D1PRMFR        8A  B 11 18
+     A  60                                  DSPATR(RI)
+     A  60                                  DSPATR(PC)
+     A                                 12  2'Ship Type:'
+     A            D1CD01         1A  B 12 13
+     A  61                                  DSPATR(RI)
+     A  61                                  DSPATR(PC)
+     A            D1CDC6         2A  B 12 15
+     A  62                                  DSPATR(RI)
+     A  62                                  DSPATR(PC)
+     A                                 13  2'Ord Types:'
+     A                                 13 13'Ord'
+     A            D1TYPO         1A  B 13 17
+     A                                 13 19'CM'
+     A            D1TYPC         1A  B 13 22
+     A                                 13 24'DM'
+     A            D1TYPD         1A  B 13 27
+     A                                 13 29'Quotes'
+     A            D1TYPQ         1A  B 13 36
+     A                                 14  2'Ord Status:'
+     A                                 14 14'Opn'
+     A            D1STSO         1A  B 14 18
+     A                                 14 20'Rsvd'
+     A            D1STSK         1A  B 14 25
+     A                                 14 27'Pnd'
+     A            D1STSN         1A  B 14 31
+     A                                 14 33'Rvwd'
+     A            D1STSR         1A  B 14 38
+¢I   A                                 14 40'Inv'
+¢I   A            D1STSI         1A  B 14 44
+     A                                 15  2'Pricing Hold Only:'
+     A            D1FL05         1A  B 15 21
+     A                                 16  2'Problem Hold Only:'
+     A            D1FL04         1A  B 16 21
+¢A   A                                 17  2'Printed Tickets (Y=Yes,N=No,blank=-
+¢A   A                                      All):'
+¢A   A            D1PRNTD        1A  B 17 42
+¢A   A  63                                  DSPATR(RI)
+¢A   A  63                                  DSPATR(PC)
+¢A   A                                 18  2'Picking Status Only:'
+¢A   A                                 18 23'IP'
+¢A   A            D1INCIP        1   B 18 26
+¢A   A                                 18 28'POD'
+¢A   A            D1INCPOD       1   B 18 32
+¢A   A                                 19  2'Exclude Picking Status:'
+¢A   A                                 19 26'IP'
+¢A   A            D1EXCIP        1   B 19 29
+¢A   A                                 19 31'POD'
+¢A   A            D1EXCPOD       1   B 19 35
+¢A   A                                 23  2'F3=Exit  F4=Prompt  F5=Refresh'
+¢A   A                                      COLOR(BLU)
+     A*-------------------------------------------------------------------*
+     A          R OEFC620S1                 SFL
+     A*%%TS  SD  20220407  150110  CPETERSON   REL-V7R4M0  5770-WDS
+     A            S1IN81         1A  H
+     A            S1IN82         1A  H
+¢A   A            S1CD04         1A  H
+¢A   A            S1LSTS         1A  H
+     A            S1CD38         1A  H
+     A            S1FL04         1A  H
+     A            S1FL05         1A  H
+     A            S1OPT          1A  B  6  3
+     A  51                                  DSPATR(PC)
+     A  51                                  DSPATR(RI)
+     A            S1NO01         7A  O  6  5
+     A  81                                  COLOR(RED)
+     A  82                                  COLOR(PNK)
+   ¢AA*           S1NM01        29A  O  6 13
+¢A   A            S1NM01        28A  O  6 13
+¢A   A            S1ODTE         8A  O  6 42
+¢A   A            S1NO08         3Y 0O  6 51EDTCDE(4)
+     A  82                                  COLOR(PNK)
+¢A   A            S1CD03         1A  O  6 55
+¢A   A            S1CD08         1A  O  6 57
+¢A   A            S1STS          2A  O  6 59
+     A            S1PRNTD        1A  O  6 62
+     A            S1NO07        16A  O  6 64
+     A                                  7 13'Ship:'
+     A            S1CD01         1A  O  7 19
+     A            S1CDC6         2A  O  7 21
+     A                                  7 25'SC:'
+     A            S1CD65         1A  O  7 29
+¢A   A                                  7 35'Prmsd:'
+¢A   A            S1PDTE         5A  O  7 42
+¢A   A            S1NO16         3Y 0O  7 51EDTCDE(4)
+     A  82                                  COLOR(PNK)
+¢A   A            S1NO06         7A  O  7 56
+     A            S1NM02        15A  O  7 65
+¢B   A            S1MSG         70   O  8 10
+¢B   A  83                                  COLOR(RED)
+     A*-------------------------------------------------------------------*
+     A          R OEFC620C1                 SFLCTL(OEFC620S1)
+     A*%%TS  SD  20220407  150110  CPETERSON   REL-V7R4M0  5770-WDS
+   ¢BA*                                     SFLSIZ(0009)
+   ¢BA*                                     SFLPAG(0008)
+¢B   A                                      SFLSIZ(0006)
+¢B   A                                      SFLPAG(0005)
+     A                                      CF03(03 'Exit')
+     A                                      CA05(05 'Refresh')
+     A                                      CA12(12 'Previous')
+     A                                      OVERLAY
+     A                                      SFLCSRRRN(&CSRRR1)
+     A  89                                  SFLDROP(CA20)
+     A N89                                  SFLFOLD(CA20)
+     A  90                                  SFLDSP
+     A  90                                  SFLDSPCTL
+     A  96                                  SFLDLT
+     A  92                                  SFLEND(*MORE)
+     A            S1BOTTOM       4S 0H      SFLRCDNBR
+     A            CSRRR1         5S 0H
+     A            D1NO01         7A  H
+     A            D1NO08         3Y 0H
+     A            D1NO16         3Y 0H
+     A            D1CD01         1A  H
+     A            D1CDC6         2A  H
+     A            D1CUST         6Y 0H
+     A            D1NO06         7A  H
+     A            D1N007        22A  H
+     A            D1DT03         8A  H
+     A            D1ID01         3A  H
+     A            D1ID02         3A  H
+     A            D1TYPO         1A  H
+     A            D1TYPC         1A  H
+     A            D1TYPD         1A  H
+     A            D1TYPQ         1A  H
+     A            D1STSO         1A  H
+     A            D1STSR         1A  H
+     A            D1STSP         1A  H
+     A            D1STSV         1A  H
+¢I   A            D1STSI         1A  H
+     A                                  1  2'OEFC620C1'
+     A                                  1 29'Work with Orders'
+     A                                      DSPATR(HI)
+     A                                  1 63DATE
+     A                                      EDTCDE(Y)
+     A                                  1 72TIME
+   ¢AA*                                 2 60'Pricing/Problem Hold'
+¢A   A                                  2 68'Prc/Prb Hold'
+     A                                      COLOR(RED)
+   ¢AA*           C1OPTS        50A  O  3  2
+¢A   A            C1OPTS        65A  O  3  2
+   ¢AA*                                 3 60'Ship branch different'
+¢A   A                                  3 68'Ship Br Diff'
+     A                                      COLOR(PNK)
+     A                                  5  2'Op'
+     A                                      DSPATR(HI)
+     A                                  5  3'Nbr'
+     A                                      DSPATR(HI)
+     A                                  5  5'SO#'
+     A                                      DSPATR(HI)
+     A                                  5 13'Customer'
+     A                                      DSPATR(HI)
+   ¢AA*                                 5 43'Ordered  Brn $ T S'
+¢A   A                                  5 42'Ordered  Brn $ T St'
+     A                                      DSPATR(HI)
+     A                                  5 62'P'
+     A                                      DSPATR(HI)
+     A                                  5 64'PO#/Job'
+     A                                      DSPATR(HI)
+     A          R OEFC620K1
+     A*%%TS  SD  20220406  145427  CPETERSON   REL-V7R4M0  5770-WDS
+     A                                      OVERLAY
+¢A   A                                 23  3'F3=Exit  F5=Refresh  F12=Previous -
+¢A   A                                       F20=Fold/Unfold'
+     A                                      DSPATR(BL)
+     A                                      COLOR(BLU)
+¢A   A*-------------------------------------------------------------------*
+¢A   A          R OEFC620S2                 SFL
+¢A   A*%%TS  SD  20220407  100244  CPETERSON   REL-V7R4M0  5770-WDS
+¢A   A            S2PDTE         8A  O  6  9
+¢A   A            S2NM18        10A  O  6 19
+¢A   A            S2CDTE         8A  O  6 31
+¢A   A            S2CTME         8A  O  6 41
+¢A   A*-------------------------------------------------------------------*
+¢A   A          R OEFC620C2                 SFLCTL(OEFC620S2)
+¢A   A*%%TS  SD  20220407  100244  CPETERSON   REL-V7R4M0  5770-WDS
+¢A   A                                      SFLSIZ(0017)
+¢A   A                                      SFLPAG(0016)
+¢A   A                                      CA12(12 'Previous')
+¢A   A                                      OVERLAY
+¢A   A                                      SFLCSRRRN(&CSRRR2)
+¢A   A  90                                  SFLDSP
+¢A   A  90                                  SFLDSPCTL
+¢A   A  96                                  SFLDLT
+¢A   A  92                                  SFLEND(*MORE)
+¢A   A            S2BOTTOM       4S 0H      SFLRCDNBR
+¢A   A            CSRRR2         5S 0H
+¢A   A                                  1  2'OEFC620C2'
+¢A   A                                  1 29'Work with Orders'
+¢A   A                                      DSPATR(HI)
+¢A   A                                  1 63DATE
+¢A   A                                      EDTCDE(Y)
+¢A   A                                  1 72TIME
+¢A   A            S1NO01         7A  O  3  1
+¢A   A            S1NM01        28A  O  3  9
+¢A   A                                  5  9'Prm Date'
+¢A   A                                      DSPATR(HI)
+¢A   A                                  5 19'Chged by'
+¢A   A                                      DSPATR(HI)
+¢A   A                                  5 31'Chg Date'
+¢A   A                                      DSPATR(HI)
+¢A   A                                  5 41'Chg Time'
+¢A   A                                      DSPATR(HI)
+¢A   A          R OEFC620K2
+¢A   A*%%TS  SD  20220407  120619  CPETERSON   REL-V7R4M0  5770-WDS
+¢A   A                                      OVERLAY
+¢A   A                                 23  3'F12=Previous'
+¢A   A                                      DSPATR(BL)
+¢A   A                                      COLOR(BLU)
+     A*******************************************************************
+     A*  SFRMSG - MESSAGE SUBFILE
+     A*******************************************************************
+     A          R SFRMSG                    SFL
+     A                                      SFLMSGRCD(24)
+     A                                      TEXT('MSG SFL RECORD')
+     A            MSGKEY                    SFLMSGKEY
+     A            PGMMSGQ                   SFLPGMQ
+     A*
+     A*******************************************************************
+     A*  SFCMSG - MESSAGE SUBFILE CONTROL
+     A*******************************************************************
+     A          R SFCMSG                    SFLCTL(SFRMSG)
+     A                                      SFLSIZ(0100)
+     A                                      SFLPAG(0001)
+     A                                      TEXT('MSG SFL CONTROL')
+     A                                      BLINK
+     A                                      OVERLAY
+     A                                      SFLDSP
+     A                                      SFLDSPCTL
+     A                                      SFLINZ
+     A N01                                  SFLEND
+     A            PGMMSGQ                   SFLPGMQ

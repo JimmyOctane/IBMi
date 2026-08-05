@@ -4,7 +4,7 @@
                 Ctl-Opt bnddir('ECBIND');
                 Ctl-Opt DecEdit('0,');
                 Ctl-Opt Copyright('East Coast Metals - BECTRAN SFTP');
-                Ctl-Opt DftActGrp(*No);
+                //Ctl-Opt DftActGrp(*No);
 
             //************************************************************
             // BECTRANR - SFTP Customer Credit Application Data
@@ -88,6 +88,10 @@
             dcl-s continueLoop ind inz(*on);
             dcl-ds returnIFSFolderListDS likeds(returnIFSDocumentsDS);
 
+            // Change job to CCSID 37 for .xlsx creation
+            commandString = 'CHGJOB CCSID(37)';
+            OutErrorDS = runIBMCommand(commandString);
+
             // Determine sleep interval
             if %parms >= 1 and %addr(pSleepSeconds) <> *null;
               sleepSeconds = pSleepSeconds;
@@ -96,8 +100,17 @@
             // Main processing loop
             dow continueLoop;
 
+              // End job daily at 5:00 PM (17:00:00) sharp
+              if %time() >= %time('17.00.00':*USA);
+                continueLoop = *off;
+                iter;
+              endif;
+
+
+
               // Download files from BECTRAN SFTP site to IFS
               DownloadBectranFiles();
+
 
               // Test 1: Valid directory with potential files
               testPath = '/home/bectran';
@@ -133,6 +146,9 @@
                   // PASS 3: Create all customers in ERP system
                   // (both with and without matching BECCREDP records)
                   CreateAllCustomers();
+
+                  // PASS 4: Update all current customer decision
+                  UpdateAllCustomers();
 
                   else;
                   endif;
@@ -383,14 +399,14 @@
                   numOfEmployeeDescription VARCHAR(100) PATH
                   'customer-profile-detail/numOfEmployee/description',
                   invoiceEmail VARCHAR(100) PATH
-                  'page-2-info/entry[categoryCode="2381" and name="Email:"]/value'
+           'page-2-info/entry[categoryCode="2381" and name="Email:"]/value'
                 ) AS X
                 for read only;
 
               exec sql open custCursor;
               // Check for errors opening cursor
               if SQLCODE <> 0;
-                LogError('': '': 'ProcessCustomerXML':
+                LogError(pfilepath:'': '': 'ProcessCustomerXML':
                          'Error opening customer cursor for file: '
                          + %trim(pFilePath));
                 return;
@@ -401,7 +417,7 @@
                 into :c1;
               // Check for errors fetching data
               if SQLCODE <> 0 and SQLCODE <> 100;
-                LogError('': '': 'ProcessCustomerXML':
+                LogError(pfilepath:'': '': 'ProcessCustomerXML':
                          'Error fetching customer data from cursor');
                 exec sql close custCursor;
                 return;
@@ -452,8 +468,8 @@
                      REQUESTID, REQSRC, AMTREQ, TERMREQCD,
                      TERMREQDS, PLANPURCH, REQDATE, REQFRMTYP,
                      POREQ, ACNUMEXST, CLIACCTID, ORDPEND,
-                     ORDPNDAMT, STATUS, CUSTCRTBY, CUSTCRTTS,
-                     CRTTS, UPDTS
+                     ORDPNDAMT, INVEMAIL, STATUS, CUSTCRTBY,
+                     CUSTCRTTS, CRTTS, UPDTS
                    ) VALUES (
                      :wGUID, :c1Row.account_id,
                      CAST(:c1Row.transaction_id AS INTEGER),
@@ -506,14 +522,15 @@
                      :c1Row.purchaseOrderRequired,
                      :c1Row.accountNumExist, :c1Row.clientAccountId,
                      :c1Row.orderPending, :c1Row.orderPendingAmount,
-                     //' ', CURRENT_USER, CURRENT_TIMESTAMP,
+                     :c1Row.invoiceemail,
                      ' ', 'BECTRAN', CURRENT_TIMESTAMP,
                      CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
                    );
                   // Check for SQL errors
                   if SQLCODE <> 0;
                     // Log error to BECERRLG table
-                    LogError(wGUID: c1Row.account_id: 'ProcessCustomerXML':
+                    LogError(pfilepath: wGUID: c1Row.account_id:
+                             'ProcessCustomerXML':
                              'Error inserting customer record into BECCUSTP');
                   endif;
                 else;
@@ -633,7 +650,8 @@
                       X.clientAccountId, X.creditTerm, X.creditTermCode,
                       X.riskRating, X.riskRatingClass, X.rawScore,
                       X.transactionId, X.creditDecision, X.decisionDate,
-                      X.nextReviewDate, X.requestId, X.requestSource,
+                      COALESCE(X.nextReviewDate, current date),
+                      X.requestId, X.requestSource,
                       X.requestAmountRequested, X.termRequestedCode,
                       X.termRequestedDescription, X.plannedPurchase,
                       X.requestDate, X.requestFormType,
@@ -782,7 +800,7 @@
               exec sql open credCursor;
               // Check for errors opening cursor
               if SQLCODE <> 0;
-                LogError('': '': 'ProcessCreditXML':
+                LogError(pfilepath: '': '': 'ProcessCreditXML':
                          'Error opening credit cursor for file: '
                          + %trim(pFilePath));
                 return;
@@ -793,7 +811,7 @@
                 into :c2;
               // Check for errors fetching data
               if SQLCODE <> 0 and SQLCODE <> 100;
-                LogError('': '': 'ProcessCreditXML':
+                LogError(pfilepath: '': '': 'ProcessCreditXML':
                          'Error fetching credit data from cursor');
                 exec sql close credCursor;
                 return;
@@ -839,7 +857,8 @@
                     wGUID = ReturnGUID();
                     // Log that no matching customer was found
                     if SQLCODE <> 100;
-                      LogError(wGUID: c2Row.account_id: 'ProcessCreditXML':
+                      LogError(pfilepath: wGUID: c2Row.account_id:
+                               'ProcessCreditXML':
                                'Error retrieving GUID from BECCUSTP');
                     endif;
                   endif;
@@ -927,7 +946,8 @@
                   // Check for SQL errors
                   if SQLCODE <> 0;
                     // Log error to BECERRLG table
-                    LogError(wGUID: c2Row.account_id: 'ProcessCreditXML':
+                    LogError(pfilepath: wGUID: c2Row.account_id:
+                             'ProcessCreditXML':
                              'Error inserting credit record into BECCREDP');
                   endif;
                 else;
@@ -973,7 +993,7 @@
                 );
               // Check for errors creating table
               if SQLCODE <> 0;
-                LogError('': '': 'DownloadBectranFiles':
+                LogError('': '': '': 'DownloadBectranFiles':
                          'Error creating QTEMP.BECTRANP table');
                 return;
               endif;
@@ -988,7 +1008,7 @@
                 fetch first 1 row only;
               // Check for errors retrieving production indicator
               if SQLCODE <> 0;
-                LogError('': '': 'DownloadBectranFiles':
+                LogError('': '': '': 'DownloadBectranFiles':
                          'Error retrieving production/test indicator');
                 ProdTest = 'TEST';  // Default to test if error
               endif;
@@ -1056,7 +1076,7 @@
                 open c1;
               // Check for errors opening cursor
               if SQLCODE <> 0;
-                LogError('': '': 'DownloadBectranFiles':
+                LogError('': '': '': 'DownloadBectranFiles':
                          'Error opening cursor for BECTRANP table');
                 return;
               endif;
@@ -1180,6 +1200,7 @@
             //********************************************************
             dcl-proc LogError;
               dcl-pi *n;
+                pFilePath  char(300) const;
                 pGUID char(36) const;
                 pAcctID varchar(50) const;
                 pProcName varchar(50) const;
@@ -1197,9 +1218,10 @@
               // Insert error record into log table
               exec sql
                 INSERT INTO BECERRLG (
-                  GUID, ACCTID, ERRPROC, ERRMSG, SQLCODE, SQLSTATE
+                  FILEPATH, GUID, ACCTID, ERRPROC, ERRMSG,
+                  SQLCODE, SQLSTATE
                 ) VALUES (
-                  :pGUID, :pAcctID, :pProcName, :pErrMsg,
+                  :pFilePath, :pGUID, :pAcctID, :pProcName, :pErrMsg,
                   :wSQLCODE, :wSQLSTATE
                 );
 
@@ -1235,7 +1257,7 @@
             exec sql open allCustCursor;
             // Check for errors opening cursor
             if SQLCODE <> 0;
-              LogError('': '': 'CreateAllCustomers':
+              LogError('': '': '': 'CreateAllCustomers':
                        'Error opening all customers cursor');
               return;
             endif;
@@ -1252,6 +1274,54 @@
             enddo;
 
             exec sql close allCustCursor;
+
+            end-proc;
+
+
+            //********************************************************
+            // UpdateAllCustomers - If decision is made after customer
+            // is created read all BECCREDP records without a BECCUSTP
+            // record and update the customer master.
+            // Purpose: Finds all unprocessed BECCREDP records and call
+            //  CreateCustomer for them.
+            //
+            // Parameters: None
+            //
+            // Returns: None
+            //********************************************************
+            dcl-proc UpdateAllCustomers;
+
+            // Local variables
+            dcl-s wGUID char(36);
+            dcl-s custCount int(10) inz(0);
+
+            // Declare cursor to find all unprocessed decision records
+            exec sql
+              declare allCredCursor cursor for
+               select GUID
+               from BECCREDP
+               where STATUS = ' ';
+
+            exec sql open allCredCursor;
+            // Check for errors opening cursor
+            if SQLCODE <> 0;
+              LogError('': '': '': 'UpdateAllCustomers':
+                       'Error opening all credit cursor');
+              return;
+            endif;
+
+            exec sql fetch allCredCursor into :wGUID;
+
+            dow SQLCODE = 0;
+              custCount += 1;
+              // Update customer in ERP with decision from BECCREDP
+              // included if it exists for this GUID)
+              CreateCustomer(wGUID);
+
+              exec sql fetch allCredCursor into :wGUID;
+            enddo;
+
+            exec sql close allCredCursor;
 
             end-proc;
 
