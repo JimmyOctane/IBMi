@@ -1,0 +1,132 @@
+     A*%%TS  SD  20190614  111841  KCHERRY     REL-V7R2M0  5770-WDS
+     A*------------------------------------------------------------------------*
+     A*N FILE NAME - ARD5616                                                   *
+     A*------------------------------------------------------------------------*
+     A*P COPYRIGHT MINCRON SBC CORP. 1983,1990,2006.                           *
+     A*------------------------------------------------------------------------*
+     A*D MAINT CREDIT CARD DEVICE MASTER                                       *
+     A*M ----------------------------------------------------------------------*
+     A*M TASK       DATE   ID  DESCRIPTION                                     *
+     A*M ---------- ------ --- ------------------------------------------------*
+     A*V 8000013122 011819 282 CARD CONNECT - CREDIT CARD PROCESS              *
+AA   A*U 1400000453 041421 171 ABILIBTY TO REUSE DEACTIVATED DEVICE            *
+AB   A*E 1400000502 092022 171 INCREASE DEVICE SERIAL# LENGTH                  *
+     A*M ----------------------------------------------------------------------*
+     A*%%EC
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      REF(*LIBL/DBFREF)
+     A                                      CF01(25 'HELP')
+     A                                      PRINT
+     A          R ARS5616A                  SFL
+     A*%%TS  SD  20190607  141501  KCHERRY     REL-V7R2M0  5770-WDS
+     A                                      SFLNXTCHG
+     A            SVNM71    R        H      REFFLD(ARNM71)
+     A            SVNOF5    R        H      REFFLD(ARNOF5)
+     A            SVNM72    R        H      REFFLD(ARNM72)
+     A            SVCDL3    R        H      REFFLD(ARCDL3)
+     A            S2NM71    R        H      REFFLD(ARNM71)
+     A            S2NOF5    R        H      REFFLD(ARNOF5)
+     A            S2NM72    R        H      REFFLD(ARNM72)
+     A            S2CDL3    R        H      REFFLD(ARCDL3)
+     A            ARCDL3    R        H      REFFLD(ARCDL3)
+AA   A            ACT_TX_CNT     9  0H
+AA   A            DLTWARNED      1A  H
+   ABA*           SEL            1A  B  7  4
+AB   A            SEL            1A  B  7  3
+     A  53                                  DSPATR(RI)
+     A  53                                  DSPATR(PC)
+   ABA*           ARNM71    R        B  7  8
+AB   A            ARNM71    R        B  7  7
+     A  50                                  DSPATR(RI)
+     A  50                                  DSPATR(PC)
+     A  55                                  DSPATR(PR)
+     A  55                                  COLOR(RED)
+     A N55                                  DSPATR(UL)
+     A            ARNOF5    R        B  7 39
+     A  51                                  DSPATR(RI)
+     A  51                                  DSPATR(PC)
+     A  55
+     AO 54                                  DSPATR(PR)
+     A N54                                  DSPATR(UL)
+     A  55                                  COLOR(RED)
+   ABA*           ARNM72    R        B  7 60
+AB   A            ARNM72    R        B  8 39
+     A  52                                  DSPATR(RI)
+     A  52                                  DSPATR(PC)
+     A  55                                  DSPATR(PR)
+     A  55                                  COLOR(RED)
+     A N55                                  DSPATR(UL)
+     A          R ARC5616A                  SFLCTL(ARS5616A)
+     A*%%TS  SD  20190614  111841  KCHERRY     REL-V7R2M0  5770-WDS
+     A                                      SFLSIZ(0099)
+   ABA*                                     SFLPAG(0014)
+AB   A                                      SFLPAG(0007)
+     A                                      CF10(10 'Update')
+     A                                      CF03(03 'EXIT')
+     A                                      CF04(04 'Prompt')
+     A                                      OVERLAY
+     A  73                                  SFLCLR
+     A  74                                  SFLEND(*MORE)
+     A  75                                  SFLDSP
+     A  76                                  SFLDSPCTL
+     A                                      SFLCSRRRN(&CRRN)
+     A                                      RTNCSRLOC(&CRCD &CFLD &CPOS)
+     A                                      CSRLOC(CROW       CCOL)
+     A            CROW           3S 0H
+     A            CCOL           3S 0H
+     A            CRRN           5S 0H
+     A            CRCD          10A  H
+     A            CFLD          10A  H
+     A            CPOS           4S 0H
+     A            RRN            4S 0H      SFLRCDNBR
+     A            SRNOB5    R        H      REFFLD(ARNOB5)
+     A                                  1  2'ARC5616A'
+     A                                      COLOR(BLU)
+     A                                  1 28'Credit Card Device Master'
+     A                                      DSPATR(HI)
+     A  56                              1 61'Inactive Device(s)'
+     A  56                                  COLOR(RED)
+   ABA*                                 3  3'Branch'
+   ABA*                                     DSPATR(HI)
+   ABA*           SRNO16    R        O  3 10REFFLD(ARNO16)
+   ABA*                                 3 15'Branch Name'
+   ABA*                                     DSPATR(HI)
+   ABA*           SRNM07    R        O  3 27REFFLD(ARNM07)
+   ABA*                                 5  3'Sel'
+   ABA*                                     DSPATR(HI)
+   ABA*                                 5 39'Serial'
+   ABA*                                     DSPATR(HI)
+   ABA*                                 6 39'Number'
+   ABA*                                     DSPATR(HI)
+   ABA*                                 5  8'Device'
+   ABA*                                     DSPATR(HI)
+   ABA*                                 6  8'Name'
+   ABA*                                     DSPATR(HI)
+   ABA*                                 5 60'Device'
+   ABA*                                     DSPATR(HI)
+   ABA*                                 6 60'Model'
+   ABA*                                     DSPATR(HI)
+AB   A                                  3  2'Branch'
+AB   A                                      DSPATR(HI)
+AB   A            SRNO16    R        O  3  9REFFLD(ARNO16)
+AB   A                                  3 14'Branch Name'
+AB   A                                      DSPATR(HI)
+AB   A            SRNM07    R        O  3 26REFFLD(ARNM07)
+AB   A                                  5 39'Serial Number'
+AB   A                                      DSPATR(HI)
+AB   A                                  6  2'Sel'
+AB   A                                      DSPATR(HI)
+AB   A                                  6  7'Device Name'
+AB   A                                      DSPATR(HI)
+AB   A                                  6 39'Device Model/Comments'
+AB   A                                      DSPATR(HI)
+     A          R ARF5616A
+     A*%%TS  SD  20190608  112815  KCHERRY     REL-V7R2M0  5770-WDS
+     A                                      OVERLAY
+     A                                 23  2'F3=Exit'
+     A                                      COLOR(BLU)
+     A                                 23 12'F4=Prompt'
+     A                                      COLOR(BLU)
+     A            ZDMSG         78A  O 24  2DSPATR(HI)
+     A                                 23 24'F10=Update'
+     A                                      COLOR(BLU)
