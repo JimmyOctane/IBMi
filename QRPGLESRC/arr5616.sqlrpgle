@@ -1,45 +1,27 @@
-      F*------------------------------------------------------------------------*
-      F*N PROGRAM NAME - ARR5616                                                *
-      F*------------------------------------------------------------------------*
-      F*P COPYRIGHT MINCRON SBC CORP. 1983,1990,2006.                           *
-      F*------------------------------------------------------------------------*
-      F*D MAINT CREDIT CARD DEVICE MASTER                                       *
-      F*------------------------------------------------------------------------*
-      F*S PURPOSE:                                                              *
-      F*S    This program maintains credit card divice master records           *
-      F*S                                                                       *
-      F*S SPECIAL NOTES:                                                        *
-      F*S                                                                       *
-      F*M ----------------------------------------------------------------------*
-      F*M TASK       DATE   ID  DESCRIPTION                                     *
-      F*M ---------- ------ --- ------------------------------------------------*
-      F*V 8000013122 011819 282 CARD CONNECT - CREDIT CARD PROCESS              *
-      AA   F*U 1400000418 072820 171 validate dup name and serial number             *
-      AB   F*U 1400000453 041421 171 Ability to reuse deactivated device             *
-      AC   F*E 1290000727 092421 168 WORLDPAY INTEGRATION                            *
-      AD   F*U 8000014024 111721 168 CLEAR ALL HIDDEN FIELDS                         *
-      AE   F*E 1400000502 092022 171 INCREASE DEVICE SERIAL# LENGTH                  *
-      AF   F*U 0000000000 080226 JJF ADD SEL 'M' MOVE DEVICE TO ANOTHER BRANCH       *
-      F*M ----------------------------------------------------------------------*
-      F*C ----------------------------------------------------------------------*
-      F*C CHANGES IN PROGRESS - TASK AF (JJF 080226):                            *
-      F*C   1. Added H-spec: DFTACTGRP(*NO) ACTGRP(*NEW) BNDDIR('ECBIND')         *
-      F*C      to allow calling bound procedure retrieveAuthorizedBranches()      *
-      F*C      from RTVABRC_CP (used to prompt user for branch to move device     *
-      F*C      to when SEL='M' is entered).                                      *
-      F*C   2. PENDING: /COPY QCPYSRC,RTVABRC_CP and newBranch work field.        *
-      F*C   3. PENDING: Update SEL edit validation (srEditD) to allow 'M' as a    *
-      F*C      valid selection value, alongside blank/D/R/T.                      *
-      F*C   4. PENDING: Add SEL='M' processing logic in srEditD to:               *
-      F*C        - call retrieveAuthorizedBranches('Y') to prompt for branch      *
-      F*C        - delete/rewrite ARFMCCD record for device under new branch key  *
-      F*C        - set zdmsg = 'Device moved.' and clear SEL                      *
-      F*C   NOTE: Implementation not yet complete - see items above.             *
-      F*C ----------------------------------------------------------------------*
-      H DFTACTGRP(*NO) ACTGRP(*NEW) BNDDIR('ECBIND') OPTION(*SRCSTMT: *NODEBUGIO)
-
-      FARD5616   CF   E             WORKSTN
-
+     H DFTACTGRP(*No) BNDDIR('ECBIND') OPTION(*SRCSTMT: *NODEBUGIO)
+     F*------------------------------------------------------------------------*
+     F*N PROGRAM NAME - ARR5616                                                *
+     F*------------------------------------------------------------------------*
+     F*P COPYRIGHT MINCRON SBC CORP. 1983,1990,2006.                           *
+     F*------------------------------------------------------------------------*
+     F*D MAINT CREDIT CARD DEVICE MASTER                                       *
+     F*------------------------------------------------------------------------*
+     F*S PURPOSE:                                                              *
+     F*S    This program maintains credit card divice master records           *
+     F*S                                                                       *
+     F*S SPECIAL NOTES:                                                        *
+     F*S                                                                       *
+     F*M ----------------------------------------------------------------------*
+     F*M TASK       DATE   ID  DESCRIPTION                                     *
+     F*M ---------- ------ --- ------------------------------------------------*
+     F*V 8000013122 011819 282 CARD CONNECT - CREDIT CARD PROCESS              *
+AA   F*U 1400000418 072820 171 validate dup name and serial number             *
+AB   F*U 1400000453 041421 171 Ability to reuse deactivated device             *
+AC   F*E 1290000727 092421 168 WORLDPAY INTEGRATION                            *
+AD   F*U 8000014024 111721 168 CLEAR ALL HIDDEN FIELDS                         *
+AE   F*E 1400000502 092022 171 INCREASE DEVICE SERIAL# LENGTH                  *
+     F*M ----------------------------------------------------------------------*
+     FARD5616   CF   E             WORKSTN
      F                                     INFDS(FIL1DS)
      F                                     SFILE(ARS5616A:RRN)
      Farlmbch2  if   e           k disk
@@ -70,14 +52,19 @@ AB   D  lst_year               1      4  0
 AB   D  lst_month              5      6  0
 AB   D  lst_ccyrmo             1      6  0
 
-        dcl-s OutUseScreen char(1) inz('Y');
+         dcl-s branch packed(3:0);
+         dcl-s OutUseScreen char(1) inz('Y');
+         dcl-s reply char(30) inz;
+         dcl-s returnedBranch packed(3:0);
+         dcl-s branchMoved ind inz(*off);
 
-      /COPY qcpysrc,RTVABRC_CP
+        /COPY qcpysrc,RTVABRC_CP
      **********************************************************************
      *  define all parameter lists
      C     *entry        plist
-     C                   parm                    BRANCH            3 0
+     C                   parm                    inBRANCH         15 5
      C                   parm                    Merchant         20
+      *
       *
      C     ccdkey2       klist
      C                   kfld                    branch
@@ -110,6 +97,7 @@ AE   C                   PARM                    piDeviceSN       40
      C                   PARM                    poErrCode        50
      C                   PARM                    poErrMsg        150
     **********************************************************************
+                 branch = inBranch;
 AB    * Get last year/month from today's date
 AB   C                   if        umonth = 12
 AB   C                   eval      lst_month = 1
@@ -297,10 +285,11 @@ AA   C                   endif
      C                             and sel <> 'D'
      C                             and sel <> 'R'
      C                             and sel <> 'T'
+     C                              and sel <> 'M'
      C                   eval      *in53 = *on
      C                   if        zdmsg = *blanks
-     C                   eval      zdmsg = 'Selection must be blank, D, R, +
-     C                                     or T'
+     C                   eval      zdmsg = 'Selection must be blank, D, R,' +
+     C                                     ',T or M'
      C                   endif
      C                   endif
      *  if selection is D test connection
@@ -345,7 +334,18 @@ AA   C                   endif
      C                   eval      zdmsg = 'Device is valid.'
      C                   endif
      C                   endif
-     *  update subfile record
+
+           if sel = 'M';
+            authorizedBranchesDS = retrieveAuthorizedBranches(OutUseScreen);
+            returnedBranch = authorizedBranchesDS.returnBranch;
+            exec sql
+             update ARPMCCD  set ARNO16 = :returnedBranch where
+               ARNO16 = :SRNO16 and ARNM71 = :ARNM71;
+            branchMoved = *on;
+            eval sel = *blanks;
+           endif;
+
+      *  update subfile record
      C                   if        s2nof5 = arnof5
      C                             and arnof5 <> *blanks
      C                   eval      *in54 = *on
@@ -366,7 +366,16 @@ AA   C                   endif
      C                   endif
      C                   endfor
 
+      *  if a device was moved to another branch, reload the subfile so
+      *  the moved device no longer appears in this branch's list.
+           if branchMoved = *on;
+            exsr srLoadD;
+            eval zdmsg = 'Device moved.';
+            eval branchMoved = *off;
+           endif;
+
      C                   endsr
+
 
       *----------------------------------------------------------------
       *  @PRMPT - SUBROUTINE: PROCESS F4 , ALL FORMATS
