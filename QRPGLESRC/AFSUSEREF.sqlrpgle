@@ -8,63 +8,70 @@
                 decedit('0.')
                 text('AFS Quote Shipment Update Driver');
 
-      F*------------------------------------------------------------------------*
-      F*N PROGRAM NAME - AFSUSEREF                                              *
-      F*------------------------------------------------------------------------*
-      F*P COPYRIGHT East Coast Metals                                           *
-      F*------------------------------------------------------------------------*
-      F*D AFS - Update AFS Quote with Shipment Id by Sales Order Number        *
-      F*------------------------------------------------------------------------*
-      F*S PURPOSE:                                                              *
-      F*S Read AFSQUOTE records, call the AFS API using ORDERNBR as reference, *
-      F*S and write the returned shipment id back to AFSSHIPID.                *
-      F*S                                                                       *
-      F*M ----------------------------------------------------------------------*
-      F*M TASK       DATE   ID  DESCRIPTION                                     *
-      F*M ---------- ------ --- ------------------------------------------------*
-      F*M ----------------------------------------------------------------------*
+      // ------------------------------------------------------------------------
+      // PROGRAM NAME - AFSUSEREF
+      // ------------------------------------------------------------------------
+      // COPYRIGHT East Coast Metals
+      // ------------------------------------------------------------------------
+      // AFS - Update AFS Quote with Shipment Id by Sales Order Number
+      // ------------------------------------------------------------------------
+      // PURPOSE:
+      // Read AFSQUOTE records, call the AFS API using ORDERNBR as reference,
+      // and write the returned shipment id back to AFSSHIPID.
+      //
+      // ----------------------------------------------------------------------
+      // TASK       DATE   ID  DESCRIPTION
+      // ---------- ------ --- ------------------------------------------------
+      // ----------------------------------------------------------------------
 
         /copy QCPYSRC,AFSGDTR_CP
 
-        dcl-f AFSQUOTE usage(*input:*update) keyed;
+        exec sql include sqlca;
 
         dcl-s OrderNbr    char(7);
         dcl-s ApiResult   char(8000);
-        dcl-s ShipId      char(25);
-        dcl-s ShipIdTs    timestamp;
-        dcl-ds QuoteRec extname('AFSQUOTE':'AFSQUOTER') end-ds;
+        dcl-s UniqueID    zoned(15:0);
+        dcl-s ShipId      char(10);
 
-        // Process only records that have not yet been assigned a shipment timestamp.
-        // This assumes SHIPID_TS is a key/searchable field in the AFSQUOTE access path.
-        chain ( *loval ) AFSQUOTE QuoteRec;
+        // Process through SQL so the program does not depend on externally
+        // described record-format fields in this source member.
+        exec sql
+          declare c1 cursor for
+            select ORDERNBR
+            from AFSQUOTE
+           where AFSSHIPID = ' '
+           for update of AFSSHIPID, SHIPID_TS;
 
-        dow not %eof(AFSQUOTE);
+        exec sql open c1;
 
-          if QuoteRec.SHIPID_TS = *loval;
-            OrderNbr = QuoteRec.ORDERNBR;
+        exec sql fetch c1 into :OrderNbr;
 
-            if %trim(OrderNbr) <> *blanks;
-              ApiResult = AFS_GetShipmentDetailsByReference(%trim(OrderNbr));
+        dow SQLCODE <> 100;
+          ApiResult = AFS_GetShipmentDetailsByReference(%trim(OrderNbr));
+          AFS_ReturnDS.unique_Character = %dec(%trim(ApiResult):10:0);  
+          UniqueID = AFS_ReturnDS.uniqueID;
+          ShipId = *blanks;
 
-              // The service program returns a character payload and also populates
-              // AFS_ReturnDS in the called module.  We keep the driver focused on
-              // the standard output field behavior requested by the user.
-              // If the caller needs to derive the shipment id from the returned
-              // payload, that logic can be added here once the API response format
-              // is confirmed in the live environment.
-              ShipId = %trim(ApiResult);
+          exec sql
+            select SHIPID
+              into :ShipId
+              from AFSDRSP
+             where UID = :UniqueID
+             order by RSPTS desc
+             fetch first 1 row only;
 
-              if %trim(ShipId) <> *blanks;
-                QuoteRec.AFSSHIPID = ShipId;
-                ShipIdTs = %timestamp();
-                QuoteRec.SHIPID_TS = ShipIdTs;
-                update AFSQUOTE QuoteRec;
-              endif;
-            endif;
+          if %trim(ShipId) <> *blanks;
+            exec sql
+              update AFSQUOTE
+                 set AFSSHIPID = :ShipId,
+                     SHIPID_TS = current timestamp
+               where current of c1;
           endif;
 
-          reade *next AFSQUOTE QuoteRec;
+          exec sql fetch c1 into :OrderNbr;
         enddo;
+
+        exec sql close c1;
 
         *inlr = *on;
         return;
