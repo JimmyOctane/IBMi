@@ -1,0 +1,396 @@
+ /*---------------------------------------------------------------------------*/
+ /*   *N PROGRAM NAME - BACKUPBRMC                                            */
+ /*---------------------------------------------------------------------------*/
+ /*   *P COPYRIGHT MINCRON SBC CORP. 1983, 1990, 1992, 1997.                  */
+ /*---------------------------------------------------------------------------*/
+ /*   *D Daily/Weekly Backup Process to Cloud                                 */
+ /*---------------------------------------------------------------------------*/
+ /*   *S PURPOSE:                                                             */
+ /*   *S                                                                      */
+ /*   *S   With Skytap, we can take a template (snap) copy of our             */
+ /*   *S   iseries box periodically and use it as a base system               */
+ /*   *S   if needed for a restore.  The critical pieces in that              */
+ /*   *S   scenario would be the user data and not the SAVSYS                 */
+ /*   *S   pieces.                                                            */
+ /*   *S                                                                      */
+ /*   *S   We would need to take a SNAP of the system before                  */
+ /*   *S   any upgrades are made to the OS for group or cum PTF's             */
+ /*   *S                                                                      */
+ /*   *S  Backups run after midnight                                          */
+ /*   *S                                                                      */
+ /*   *S  Run Schedule - W=weekly and D=Daily                                 */
+ /*   *S             Sun  Mon Tue Wed Thu Fri Sat                             */
+ /*   *S  ECMPRDSK    W        D   D   D   D   D                              */
+ /*   *S  ECMDEVSK             D   D   D   D   W                              */
+ /*   *S                                                                      */
+ /*   *S  This program can be used for 5 day a week Daily Backups             */
+ /*   *S  and 1 day a week for Weekly Full Save.  Parm controls               */
+ /*   *S  which type to run                                                   */
+ /*   *S                                                                      */
+ /*   *S   Daily Backup will use QCLDBUSR02 BRMS control group and            */
+ /*   *S   set the Retention Days to 31:                                      */
+ /*   *S                                                                      */
+ /*   *S    Save Security Data & Config - FULL                                */
+ /*   *S    Save Sys Info - FULL (saves pieces of the system that is          */
+ /*   *S     usually handled by SAVSYS                                        */
+ /*   *S                                                                      */
+ /*   *S    Save Mincron libs with Save while Active = Yes and with           */
+ /*   *S    FULL option                                                       */
+ /*   *S                                                                      */
+ /*   *S    Save Project Libs with FULL option and  not Save while            */
+ /*   *S    active                                                            */
+ /*   *S                                                                      */
+ /*   *S    Remaining libs are saved without using Save While Active          */
+ /*   *S    Daily flag saves it with *CUML option and Weekly saves            */
+ /*   *S    it with *FULL                                                     */
+ /*   *S                                                                      */
+ /*   *S    Save DLO with cumulative if Daily or Full if Weekly               */
+ /*   *S                                                                      */
+ /*   *S    Save IFS and omit qsys.lib, /QDLS, image catalogs for BRMS        */
+ /*   *S    with cumulative option if Daily and Full option if Weekly         */
+ /*   *S                                                                      */
+ /*   *S SPECIAL NOTES:                                                       */
+ /*   *S BRMS Commands                                                        */
+ /*   *S   GO BRMBKUANL _ addlible QBRM first and then take opt 3             */
+ /*   *S     Display Backup Analysis.  Helps to show what may be              */
+ /*   *S     missing in the backup logic                                      */
+ /*   *S   GO BRMS - takes you to the BRMS menu                               */
+ /*   *S   WRKCTLGBRM - defines media policy for full & incr saves            */
+ /*   *S    as well as frequency of save and what should be saved via         */
+ /*   *S    opt 2 Edit Entries.  You can copy a Control Group to create       */
+ /*   *S    a new one.  If the LPAR saves to Cloud, you should use a          */
+ /*   *S    control group that starts with QCLD. You can copy a control       */
+ /*   *S    group that starts with QCLD and keep the name as                  */
+ /*   *S    QCLD??????.  You can define things to save in the Ctlg Opt2       */
+ /*   *S    or you can control it totally by the CL command in the pgm.       */
+ /*   *S  WRKPCYBRM *MED - For Cloud, we have two media policies              */
+ /*   *S    FTPCLD and FTPCLD730.  FTPCLD says to expire the media            */
+ /*   *S    after 31 days.  FTPCLD730 says to expire the media after          */
+ /*   *S    730 days.  Both policies use the same MOVE policy of FTPCLD       */
+ /*   *S  WRKPCYBRM *MOV - For Cloud, we have one move policy of FTPCLD       */
+ /*   *S    which tells the system where to move the media to after it        */
+ /*   *S    is created.                                                       */
+ /*   *S  WRKMEDBRM - shows all of the media created with exp date and        */
+ /*   *S    where the media currently resides (Iron Mountain, Vault           */
+ /*   *S    FTP Cloud etc)                                                    */
+ /*   *S  WRKMEDIBRM - shows what is saved on each Media (libs etc)           */
+ /*   *S  WRKSTSICC *all *all - shows the current status of media             */
+ /*   *S    being moved to/from the cloud.                                    */
+ /*   *S                                                                      */
+ /*   *M ---------------------------------------------------------------------*/
+ /*   *M TASK       DATE   ID  DESCRIPTION                                    */
+ /*   *M ---------- ------ --- -----------------------------------------------*/
+ /*   *U KSB   8139 050421 KSB Initial pgm                                    */
+ /*¢A *U KSB   8155 010222 KSB Save lib with detail                           */
+ /*¢B *U JJF   3068 030624 JJF change MOVPCY from QICC FTPCLD to FALCONSTOR   */
+ /*¢B *U                       STORSIGHT                                      */
+ /*¢C *U KSB   8190 102924 KSB Removed QWB                                    */
+ /*¢D *U JJF   5125 120624 CCP added production changes for FALCONSTOR        */
+ /*¢E *U JJF   3306 082026 JJF added production changes for RDOI              */
+ /*¢F *U JJF   3306 082826 JJF rewrite                                        */
+ /*   *M ---------------------------------------------------------------------*/
+             PGM        PARM(&TYPE)
+             DCL        VAR(&TYPE) TYPE(*CHAR) LEN(1)
+
+/* type of 'D' = Daily and type of 'W' = weekly */
+/* weekly saves more data - should only be run once per weekend */
+
+             DCL        VAR(&SUBJ1) TYPE(*CHAR) LEN(80) VALUE('Cloud +
+                          backup aborted.')
+             DCL        VAR(&SUBJ2) TYPE(*CHAR) LEN(80) VALUE('Cloud +
+                          daily backup job completed normally!')
+             DCL        VAR(&SUBJECT) TYPE(*CHAR) LEN(91)
+             DCL        VAR(&SYS) TYPE(*CHAR) LEN(8)
+             DCL        VAR(&SAVTYP) TYPE(*CHAR) LEN(5)
+             DCL        VAR(&CHKSTS) TYPE(*CHAR) LEN(1) VALUE('Y')
+             DCL        VAR(&UPDHST) TYPE(*CHAR) LEN(1) VALUE('N')
+             DCL        VAR(&SAVSYS) TYPE(*CHAR) LEN(1) VALUE('N')
+             DCL        VAR(&STSOK) TYPE(*CHAR) LEN(1) VALUE(' ')
+
+
+             DCL        VAR(&CTLGRP) TYPE(*CHAR) LEN(10) +
+                          VALUE('STORSIGHT')
+             DCL        VAR(&MIMIXROLE) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&PRODTEST) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&DLOOPT) TYPE(*CHAR) LEN(7)
+             DCL        VAR(&SYSNAME) TYPE(*CHAR) LEN(8) +
+                          VALUE('        ')
+             DCL        VAR(&MEDPCY) TYPE(*CHAR) LEN(10) +
+                          VALUE('TAPMLB02')
+             DCL        VAR(&MEDPCY_P) TYPE(*CHAR) LEN(10) +
+                          VALUE('TAPMLB03')
+             DCL        VAR(&MOVPCY) TYPE(*CHAR) LEN(10) +
+                          VALUE('STORSIGHT')
+             DCL        VAR(&MEDCLS) TYPE(*CHAR) LEN(9) +
+                          VALUE('STORSIGHT')
+
+             RTVDTAARA  DTAARA(QGPL/PRODTEST) RTNVAR(&PRODTEST)
+             RTVDTAARA  DTAARA(MIMIXMSF/MXSYSROLE) RTNVAR(&MIMIXROLE)
+             RTVNETA    SYSNAME(&SYSNAME)
+
+             CHGJOB     OUTQ(QGPL/COMPILE)
+
+/* if lib QICC isn't on the system, then you can't do a Cloud backup*/
+             CHKOBJ     OBJ(QSYS/QICC) OBJTYPE(*LIB)
+             MONMSG     MSGID(CPF9801) EXEC(GOTO CMDLBL(SKIPIT))
+
+/* change the tape drive name if in production */
+             IF         COND(&PRODTEST *EQ 'PROD') THEN(DO)
+             CHGVAR     VAR(&MEDPCY) VALUE(&MEDPCY_P)
+             ENDDO
+/* set default save type variable */
+             IF         COND(&TYPE = 'D') THEN(CHGVAR VAR(&SAVTYP) +
+                          VALUE('*CUML'))
+             IF         COND(&TYPE = 'W') THEN(CHGVAR VAR(&SAVTYP) +
+                          VALUE('*FULL'))
+             IF         COND(&TYPE = 'D') THEN(CHGVAR VAR(&DLOOPT) +
+                          VALUE('*SEARCH'))
+             IF         COND(&TYPE = 'W') THEN(CHGVAR VAR(&DLOOPT) +
+                          VALUE('*ALL'))
+
+/* check to make sure disk space is ok */
+/* if disk% used is higher than limit, don't do the backup */
+             CALL       PGM(CHKSYSSTS) PARM(&CHKSTS &UPDHST +
+                          &SAVSYS &STSOK)
+             IF         COND(&STSOK *NE 'Y') THEN(GOTO CMDLBL(SKIPIT))
+
+/* End subsystems */
+             ENDSBS     SBS(QINTER) OPTION(*IMMED)
+             MONMSG     MSGID(CPF0000)
+             ENDSBS     SBS(HDSPROD) OPTION(*IMMED)
+             MONMSG     MSGID(CPF0000)
+             ENDSBS     SBS(B2B_BATCH) OPTION(*IMMED)
+             MONMSG     MSGID(CPF0000)
+             CALL       PGM(HD1100PO/STPESX)
+             MONMSG     MSGID(CPF0000)
+
+/* if production and mimix role is Target, end mimix    */
+             IF         COND(&MIMIXROLE *EQ 'TGT' *AND &PRODTEST *EQ +
+                          'PROD') THEN(DO)
+             ADDLIBLE   LIB(MIMIX)
+             MONMSG     MSGID(CPF0000)
+             MIMIX/ENDMMX ENDOPT(*IMMED)
+             MONMSG     MSGID(CPF0000)
+             DLYJOB     DLY(120)
+             ENDDO
+
+/* Sometimes NITJ'S still has ROR's in the jobq and they can't run */
+/* when backup is running so hold the jobq temporarily */
+             IF         COND(&PRODTEST *EQ 'PROD' *AND &MIMIXROLE +
+                          *EQ 'SRC') THEN(DO)
+             HLDJOBQ    JOBQ(QBATCH)
+             MONMSG     MSGID(CPF0000)
+             ENDDO
+
+/* Move any Media that still shows at *HOME */
+             MOVMEDBRM  MOVPCY(&MOVPCY) LOC(*HOME) MEDCLS(&MEDCLS)
+             MOVMEDBRM  MOVPCY(&MOVPCY) LOC(*HOME) MEDCLS(&MEDCLS)
+
+/* Save the Config & Security Data regardless of Save Type */
+/* Also do a SAVSYSINF which saves things like Jobd JOBQ etc */
+/* To view the details of the save, WRKCTLGBRM and place option 2 */
+/* Edit Entries to see the details of this save */
+             STRBKUBRM  CTLGRP(&CTLGRP) SBMJOB(*NO) /* Call BRMS +
+                          Control Group to Save Security Data */
+             MONMSG     MSGID(BRM148A) EXEC(GOTO CMDLBL(SKIPIT))
+
+
+/*  Save the Mincron libs first with Save while Active *YES and      */
+/*  save any SAVF data.  Save all with FULL  Omit any Journals or    */
+/*  Journal Receivers  Run regardless of SAVTYP of Weekly or Daily   */
+
+     IF (&PRODTEST *EQ  'TEST') THEN(DO)
+                          
+/*¢E*/       SAVLIBBRM  LIB(HD1100GP HD1100PD HD1100PO MINGP +
+                          SH1010PD SH1010PO WK1010PD WK1010PO RDOI_DATA RDOI_OBJS +
+                           RDOI_PC_S  RDOI_PM_S RDOI_QA HD1100QD HD1100QO +
+                           APRILDEV  CLAUDIADEV JAMIEDEV TROYDEV ANDREWSDEV RXS ) +
+                          DEV(*MEDCLS) MEDPCY(&MEDPCY) PRLRSC(*NONE) +
+                          SAVACT(*SYNCLIB) SAVACTWAIT(15) +
+                          OBJDTL(*OBJ) CTLGRP(&CTLGRP) +
+                          SAVTYPE(*FULL) ENDOPT(*LEAVE) +
+                          USEOPTBLK(*YES) SAVFDTA(*YES) +
+                          OMITLIB(*NONE) OMITOBJ((*ALL *JRN) (*ALL +
+                          *JRNRCV)) MOVPCY(&MOVPCY)
+             MONMSG     MSGID(CPF3751)
+      ENDDO       
+      if (&PRODTEST *EQ  'PROD') Then(DO)
+      /*¢E*/       SAVLIBBRM  LIB(HD1100GP HD1100PD HD1100PO MINGP +
+                          SH1010PD SH1010PO WK1010PD WK1010PO RDOI_DATA RDOI_OBJS +
+                           RDOI_PC_S  RDOI_PM_S RDOI_QA HD1100QD HD1100QO +
+                            RXS ACMSRCTL ACMSRLIB) +
+                          DEV(*MEDCLS) MEDPCY(&MEDPCY) PRLRSC(*NONE) +
+                          SAVACT(*SYNCLIB) SAVACTWAIT(15) +
+                          OBJDTL(*OBJ) CTLGRP(&CTLGRP) +
+                          SAVTYPE(*FULL) ENDOPT(*LEAVE) +
+                          USEOPTBLK(*YES) SAVFDTA(*YES) +
+                          OMITLIB(*NONE) OMITOBJ((*ALL *JRN) (*ALL +
+                          *JRNRCV)) MOVPCY(&MOVPCY)
+             MONMSG     MSGID(CPF3751)
+      ENDDO 
+
+/*  Save the Project Libs with FULL as well as misc Mincron libs */
+/* which don't require Save While Active */
+
+/* if Daily  run these SAVES */
+             IF         COND(&TYPE = 'D') THEN(DO)
+
+ /*¢E*/       SAVLIBBRM  LIB(HD1100DV HD1100MS +
+                          HD1100PC HD1100PH HD1100PM HD1100PS +
+                          HD1100UT SH1010DV SH1010PM SH1010PS +
+                          WK1010DV WK1010PM WK1010PS) DEV(*MEDCLS) +
+                          MEDPCY(&MEDPCY) PRLRSC(*NONE) SAVACT(*NO) +
+                          OBJDTL(*OBJ) CTLGRP(&CTLGRP) +
+                          SAVTYPE(*FULL) ENDOPT(*LEAVE) +
+                          USEOPTBLK(*YES) SAVFDTA(*YES) +
+                          OMITLIB(*NONE) OMITOBJ((*ALL *JRN) (*ALL +
+                          *JRNRCV)) MOVPCY(&MOVPCY)
+             MONMSG     MSGID(CPF3751)
+
+/* Save the rest of the user libs  and omit the */
+/* libs shown as well as journals, journal receivers and don't save */
+/* SAVF data.  Do not use Save While Active */
+
+/*¢B*/       SAVLIBBRM  LIB(*ALLUSR) DEV(*MEDCLS) MEDPCY(&MEDPCY) +
+                          OBJDTL(*OBJ) CTLGRP(&CTLGRP) +
+                          SAVTYPE(&SAVTYP) ENDOPT(*LEAVE) +
+                          USEOPTBLK(*YES) SAVFDTA(*NO) +
+                          OMITLIB(#MXJRN #MXJRN@R AB* CLAUDIA CP* +
+                          DB* HD1100DV HD1100GP HD1100MS HD1100PC +
+                          HD1100PD HD1100PH HD1100PM HD1100PO +
+                          HD1100PS HD1100UT KB* MIMIX MIMIX_0 +
+                          MIMIX_1 MIMIX_A MINGP MLLIBR MLCTRL +
+                          MTHEND NOBACKUP QMPGDATA QPFRDATA +
+                          SH1010DV SH1010PD SH1010PM SH1010PO +
+                          SH1010PS WK1010DV WK1010PD WK1010PM +
+                          APRILDEV  CLAUDIADEV JAMIEDEV TROYDEV +
+                          ANDREWSDEV RXS WK1010PO WK1010PS XX* YY*) +
+                           OMITOBJ((*ALL +
+                          *JRN) (*ALL *JRNRCV)) MOVPCY(&MOVPCY)
+             MONMSG     MSGID(CPF3751)
+
+             ENDDO
+
+/* if Weekly, run this type of Save */
+
+/* ??PROJECTS libs store just SAVF so we need to save them separately*/
+             IF         COND(&TYPE = 'W') THEN(DO)
+
+
+/*¢B*/       SAVLIBBRM  LIB(*ALLUSR) DEV(*MEDCLS) MEDPCY(&MEDPCY) +
+                          OBJDTL(*OBJ) CTLGRP(&CTLGRP) +
+                          SAVTYPE(&SAVTYP) ENDOPT(*LEAVE) +
+                          USEOPTBLK(*YES) SAVFDTA(*NO) +
+                          OMITLIB(HD1100GP HD1100PD HD1100PO MIMIX +
+                          MIMIX_0 MIMIX_1 MIMIX_A MINGP MTHEND +
+                          NOBACKUP QMPGDATA QPFRDATA SH1010PD +
+                          SH1010PO WK1010PD WK1010PO XX* YY* +
+                          ABPROJECTS AAPROJECTS DBPROJECTS +
+                          CPPROJECTS KBPROJECTS) OMITOBJ((*ALL +
+                          *JRN) (*ALL *JRNRCV)) MOVPCY(&MOVPCY)
+             MONMSG     MSGID(CPF3751)
+             ENDDO
+
+/* Release jobq qbatch on Prod & Source */
+             IF         COND(&PRODTEST *EQ 'PROD' *AND &MIMIXROLE +
+                          *EQ 'SRC') THEN(DO)
+             RLSJOBQ    JOBQ(QBATCH)
+             MONMSG     MSGID(CPF0000)
+             ENDDO
+
+/* Save folders  */
+
+/*¢B*/       SAVDLOBRM  DLO(&DLOOPT) DEV(*MEDCLS) MEDPCY(&MEDPCY) +
+                          CTLGRP(&CTLGRP) SAVTYPE(&SAVTYP) +
+                          ENDOPT(*LEAVE) USEOPTBLK(*YES)
+
+/* Save IFS with omit QDLS (folders) & Qsys.lib */
+
+
+/*¢B*/       SAVBRM     CTLGRP(&CTLGRP) DEV(*MEDCLS) MEDPCY(&MEDPCY) +
+                          OBJ(('/*' *INCLUDE) ('/QDLS' *OMIT) +
+                          ('/QSYS.LIB' *OMIT) ('/QBRMSASP02' *OMIT) +
+                          ('/QIBM/UserData/BRMS/cloud' *OMIT) +
+                          ('/QIBM/ProdData' *OMIT) +
+                          ('/QOpenSys/QIBM/ProdData' *OMIT)) +
+                          SAVTYPE(&SAVTYP) ENDOPT(*LEAVE) +
+                          ASYNCBRING(*YES)
+             MONMSG     MSGID(BRM14A1)
+
+/* Move any Media that still shows at *HOME */
+/* temp code to run it only for Prod at this time */
+             IF         COND(&PRODTEST *EQ 'PROD' *AND &MIMIXROLE +
+                          *EQ 'SRC') THEN(DO)
+
+/*¢B*/       MOVMEDBRM  MOVPCY(&MOVPCY) LOC(*HOME) MEDCLS(&MEDCLS)
+/*¢B*/       MOVMEDBRM  MOVPCY(&MOVPCY) LOC(*HOME) MEDCLS(&MEDCLS)
+             ENDDO
+
+/* Prod & SRC has a jobscde to start PROD each day */
+/* so don't start anything */
+
+/* Run Startup for *TEST system only */
+             IF         COND(&PRODTEST = 'TEST') THEN(DO)
+             STRSBS     SBSD(QINTER)
+             MONMSG     MSGID(CPF0000)
+
+             STRSBS     SBSD(HD1100GP/HDSPROD)
+             MONMSG     MSGID(CPF0000)
+             STRSBS     SBSD(QGPL/B2B_BATCH)
+             MONMSG     MSGID(CPF0000)
+             CALL       PGM(HD1100PO/STRESX)
+             MONMSG     MSGID(CPF0000)
+             ENDDO
+
+/* Run Startup for HA system only */
+             IF         COND(&PRODTEST = 'PROD' *AND &MIMIXROLE *EQ +
+                          'TGT') THEN(DO)
+             STRSBS     SBSD(QINTER)
+             MONMSG     MSGID(CPF0000)
+             ENDDO
+
+/* if production and mimix role is Target, start mimix  */
+             IF         COND(&MIMIXROLE *EQ 'TGT' *AND &PRODTEST *EQ +
+                          'PROD') THEN(DO)
+             ADDLIBLE   LIB(MIMIX)
+             MONMSG     MSGID(CPF0000)
+             MIMIX/STRMMX
+             MONMSG     MSGID(CPF0000)
+             DLYJOB     DLY(60)
+             MIMIX/STRDG      DGDFN(*ALL)
+             DLYJOB     DLY(120)
+             enddo
+
+/* Save Media Info for BRMS */
+              SAVMEDIBRM DEV(*MEDCLS) MEDPCY(&MEDPCY) +
+                          CTLGRP(&CTLGRP) ENDOPT(*UNLOAD)
+             MONMSG     MSGID(CPF0000)
+
+             DLYJOB     DLY(90)
+             CHGJOB     OUTQ(QPRINT)
+             DSPLOGBRM  PERIOD(('01:55:00') (*AVAIL)) OUTPUT(*PRINT) +
+                          /* Print BRMS Log */
+
+/* send email stating that job ran successfully */
+ GOOD:       CHGVAR     VAR(&SUBJECT) VALUE(%TRIM(&SYSNAME) *BCAT &SUBJ2)
+             SNDSMTPEMM RCP((ITDEPT@ECMDI.COM)) SUBJECT(&SUBJECT) +
+                          NOTE(&SUBJECT)
+             GOTO       CMDLBL(END)
+
+/* send email with joblog if error occurred    */
+ SKIPIT:     CHGVAR     VAR(&SUBJECT) VALUE(&SYSNAME *BCAT &SUBJ1)
+
+             DSPJOBLOG  OUTPUT(*PRINT)
+
+             CPYSPLF    FILE(QPJOBLOG) TOFILE(*TOSTMF) SPLNBR(*LAST) +
+                          TOSTMF('/tmp/qpjoblog.pdf') WSCST(*PDF) +
+                          STMFOPT(*REPLACE)
+
+             SNDSMTPEMM RCP((ITDEPT@ECMDI.COM)) SUBJECT(&SUBJECT) +
+                          NOTE('Cloud Backup did not execute. +
+                          See the attached joblog') +
+                          ATTACH(('/tmp/qpjoblog.pdf'))
+
+/* Check to see if image catalogs need any attention */
+ END:        CALL       PGM(CHKICCSTS) PARM('N' 'Y')
+             ENDPGM

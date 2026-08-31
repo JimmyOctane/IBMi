@@ -1,0 +1,96 @@
+     A*%%TS  SD  20260824  133842  JFLANARY    REL-V7R5M0  5770-WDS
+     A*------------------------------------------------------------------------*
+     A*N FILE NAME - OED2000                                                   *
+     A*------------------------------------------------------------------------*
+     A*P COPYRIGHT MINCRON SBC CORP. 1983,1990,2006.                           *
+     A*------------------------------------------------------------------------*
+     A*D ORDER ENTRY/MAINTENANCE MENU SCREEN                                   *
+     A*M ----------------------------------------------------------------------*
+     A*M TASK       DATE   ID  DESCRIPTION                                     *
+     A*M ---------- ------ --- ------------------------------------------------*
+     A*V 8000011000 013006 000 MINCRON MSS/HD RELEASE 11.0                     *
+AB   A*E 8000010162 050208 907 MINCRONIZE RGA FOR RELEASE NEXT                 *
+AC   A*E 8000010199 103107 913 INTELLIGENT MESSAGING                           *
+AE   A*E 0840000376 102920 007 ADD DISCLAIMER TO PICK TICKETS                  *
+AF   A*E 1710001054 090821 404 ENHANCED LOST SALES TRACKING                    *
+¢A   A*C CLP   6793 042821 CLP Added opt# 20, Work With Reserved Orders        *
+¢B   A*C CLP   5008 012722 CLP Added opt# 21, Work With Orders                 *
+     A*M ----------------------------------------------------------------------*
+     A*%%EC
+     A                                      DSPSIZ(24 80 *DS3)
+     A                                      MSGLOC(24)
+     A                                      CF03(03 'Return')
+     A                                      CF16(16 'Return to Signon Menu')
+     A                                      CF01(25 'HELP')
+     A                                      PRINT
+     A                                      ROLLUP(27)
+     A                                      ROLLDOWN(28)
+     A          R KIOSKD1
+     A*%%TS  SD  20260824  133842  JFLANARY    REL-V7R5M0  5770-WDS
+     A                                      BLINK
+     A                                  1  2'KIOSKD1'
+     A                                      COLOR(BLU)
+     A                                  1 37'Kiosk'
+     A                                      DSPATR(HI)
+     A            OPTION         2Y 0H
+     A            FPATH          9A  H
+     A            CMDLIN         9A  I 21  7
+     A  99                                  ERRMSG('Option not available.' 99)
+     A  92                                  ERRMSG('Fast Path not available.' 9-
+     A                                      2)
+     A                                  3  2'Select one of the following:'
+     A                                      COLOR(BLU)
+     A  61        NEWMQ          3Y 0O  1 55EDTCDE(4)
+     A  51                                  COLOR(RED)
+     A  52                                  COLOR(BLU)
+     A  53                                  COLOR(WHT)
+     A  61        NEWM          20A  O  1 59
+     A  51                                  COLOR(RED)
+     A  52                                  COLOR(BLU)
+     A  53                                  COLOR(WHT)
+     A  62        NEWUQ          3Y 0O  2 55EDTCDE(4)
+     A  51                                  COLOR(RED)
+     A  52                                  COLOR(BLU)
+     A  53                                  COLOR(WHT)
+     A  62        NEWU          20A  O  2 59
+     A  51                                  COLOR(RED)
+     A  52                                  COLOR(BLU)
+     A  53                                  COLOR(WHT)
+     A  63        NEWTQ          3Y 0O  3 55EDTCDE(4)
+     A  51                                  COLOR(RED)
+     A  52                                  COLOR(BLU)
+     A  53                                  COLOR(WHT)
+     A  63        NEWT          20A  O  3 59
+     A  51                                  COLOR(RED)
+     A  52                                  COLOR(BLU)
+     A  53                                  COLOR(WHT)
+     A                                  5  6' 1. Create Order'
+     A                                  6  6' 2. Work With Orders'
+     A                                  7  6' 3. Stock Status'
+     A                                  8  6' 4. Order Inquiry'
+     A                                  9  6' 5. Review Orders'
+     A                                 10  6' 6. Work with Reserved Orders'
+     A                                 11  6' 7. Reserved Orders'
+     A                                 12  6' 8. Pending Orders'
+     A                                 13  6' 9. Quotation Orders'
+     A                                 14  6'10. Item serial number search'
+     A                                 15  6'11. Bid entry/Maintenance'
+     A                                 16  6'12. Release bid to sales order'
+     A                                 17  6'13. Warranty claim entry'
+     A                                 18  6'14. Stock status inquiry'
+     A                                 23  2'F3=Exit'
+     A                                      COLOR(BLU)
+     A                                 23 12'F16=Main menu'
+     A                                      COLOR(BLU)
+     A                                 20  2'Selection or Fast Path'
+     A                                 21  2'===>'
+A          R KIOSKWN
+A                                      WINDOW(7 18 10 44 *NOMSGLIN)
+A                                      WDWBORDER((*DSPATR CS 1))
+A                                      CF03(03 'Return to main screen')
+A                                      CF12(12 'Leave MINCRON')
+A                                  1  2'Warning'
+A                                      DSPATR(HI)
+A                                  3  2'You are about to leave MINCRON.'
+A                                  4  2'Press Enter to continue.'
+A                                  5  2'Press F3 to return to main screen.'
