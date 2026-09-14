@@ -1,0 +1,16 @@
+     A**************************************************************************
+     A*                                                                        *
+     A*         AFS ORDER QUOTE XREF                                           *
+     A*                                                                        *
+     A*                                                                        *
+     A*  TASK       DATE   ID  DESCRIPTION                                     *
+     A*  ---------- ------ --- ------------------------------------------------*
+     A*  AFS        120624 BDS [42935] INITIAL CREATION                        *
+     A*  ----------------------------------------------------------------------*
+     A          R AFSQUOTER                 TEXT('AFS ORDER QUOTE')
+
+     A            ORDERNBR       7A         COLHDG('Sales Order Nbr')
+     A            AFSQUOTEID    25A         COLHDG('AFS Quote ID')
+     A            AFSSHIPID     25A         COLHDG('AFS Shipment ID')
+     A            QUOTEID_TS      Z         COLHDG('Quote ID Timestamp')
+     A            SHIPID_TS       Z         COLHDG('Ship ID Timestamp')

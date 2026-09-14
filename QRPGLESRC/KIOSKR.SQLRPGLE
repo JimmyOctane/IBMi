@@ -121,6 +121,8 @@ dcl-s endscreen2 ind inz(*off);
    where data_area_name = 'PRODTEST'
      and data_area_library = 'QGPL';
 
+prodTest = 'PROD';
+
 // Restore the library list for the current environment.
 RSTLIBL(prodTest);
 
@@ -223,3 +225,4 @@ dcl-proc WarnExitScreen;
   enddo;
 
 end-proc;
+

@@ -1,0 +1,530 @@
+ /*---------------------------------------------------------------------------*/
+ /*   *N PROGRAM NAME - SIGNON                                                */
+ /*---------------------------------------------------------------------------*/
+ /*   *P COPYRIGHT MINCRON SBC CORP. 1983,1990,2006.                          */
+ /*---------------------------------------------------------------------------*/
+ /*   *D INITIAL USER SIGNON MENU                                             */
+ /*---------------------------------------------------------------------------*/
+ /*   *S PURPOSE:                                                             */
+ /*   *S    INITIAL SIGNON PROCESSING                                         */
+ /*   *S                                                                      */
+ /*   *S SPECIAL NOTES:                                                       */
+ /*   *S                                                                      */
+ /*   *M ---------------------------------------------------------------------*/
+ /*   *M TASK       DATE   ID  DESCRIPTION                                    */
+ /*   *M ---------- ------ --- -----------------------------------------------*/
+ /*   *V 8000011000 013006 000 MINCRON MSS/HD RELEASE 11.0                    */
+ /*CB *V 8000009828 033006 078 WEBFACING                                      */
+ /*CC *U 8000009881 033106 019 CHG TO DETERMINE WHICH MENU SYSTEM TO          */
+ /*CC *U 8000009881 033106 019 USE... PREVENT F3/F12 FROM  NOT TO USE         */
+ /*CD *E 8000009901 041806 019 CHANGE TO GET VERSIONS FROM DATA AREAS         */
+ /*CG *U 0430000248 021007 168 SIGNON REFERENCING NON-EXISTENT PGM            */
+ /*CH *U 1650000343 021407 248 PO RECEIPT POSTED WRONG PERIOD                 */
+ /*CK *E 8000010199 110507 920 INTELLIGENT MESSAGING                          */
+ /*CM *E 8000010390 050808 078 User logging event                             */
+ /*CN *E 8000010420 052808 016 ADD VERSION VALUE FOR WKVERSION DATA AREA      */
+ /*CO *E 8000010455 070908 016 REMOVE WKVERSION FRM SIGNON HD-LIBS            */
+ /*CQ *E 8000010649 020409 085 CREATE CONFIGURATIONS UPON SIGNON              */
+ /*CS *E 8000010830 020310 019 CHANGE MYHD JOBS TO NOT HAVE BREAK MSG'S       */
+ /*CT *E 8000011295 050912 200 CHANGE MYHD JOBS TO NOT ALLOCATE MSGQ          */
+ /*CU *U 8000011756 060314 200 CHANGE DEVICE RECOVERY TO ENDJOB               */
+ /*CV *U 8000011764 061514 275 WARN USER ABOUT COMLINK BEING DISABLED.        */
+/*CX  *E 8000011209 101614 915 CREDIT CARD PROCESSING                         */
+ /*CZ *E 8000012187 112015 001 ALERT/EVENT MANAGEMENT CHANGES FOR 12.2        */
+ /*C1 *E 8000012362 063016 019 Chg Event Notification to use Generic user     */
+ /*C2 *E 8000012436 110916 915 CURBSTONE C2 TO C3 CONVERSION                  */
+ /*DC *E 8000013791 071720 275 retrieve env from SD1                          */
+ /*DD *U 0930000608 022212 097 add monmsg for MNR0005                         */
+/*¢A  *C                       CHG MSGQ DELIVER TO *BREAK\                    */
+/*¢B  *C RELEASE 12 091509 KSB DON'T RUN SHC0150                              */
+/*¢C  *C 6496       062216 CLP ADDED OPTION 20 TO TROUBLESHOOT PRINTER ISSUE  */
+/*¢D  *C 8032 ksb   030818 ksb ADDED OPTION 21 Inv Review Request             */
+/*¢E  *C 9635 CLP   121520 CLP Added call to REFRESHR pgm to make sure that   */
+/*¢E  *C                       test data is active for test environment and   */
+/*¢E  *C                       abort the signon if not                        */
+ /*   *M ---------------------------------------------------------------------*/
+             PGM
+             DCLF       FILE(SIGNON)
+             DCL        VAR(&PROG) TYPE(*CHAR) LEN(8) VALUE('SIGNON')
+             DCL        VAR(&SCREEN) TYPE(*CHAR) LEN(8) VALUE(SIGNON1)
+             DCL        VAR(&USERID) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&TERMID) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&RTNCDE) TYPE(*LGL)
+             DCL        VAR(&JOBNAM) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&USRNAM) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&JOBNUM) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&KEYNO) TYPE(*CHAR) LEN(4)
+             DCL        VAR(&MSG) TYPE(*CHAR) LEN(20)
+             DCL        VAR(&LIBS) TYPE(*CHAR) LEN(4)
+             DCL        VAR(&PGM)    TYPE(*CHAR) LEN(1) VALUE('0')
+             DCL        VAR(&EXIST) TYPE(*LGL)
+             DCL        VAR(&FPGM) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&LIB) TYPE(*CHAR) LEN(10)
+             DCL        VAR(&PTHOPT) TYPE(*CHAR) LEN(1)
+             DCL        VAR(&CMDOPT) TYPE(*CHAR) LEN(2)
+             DCL        VAR(&BAROPT) TYPE(*DEC)  LEN(2)
+             DCL        VAR(&INIT)   TYPE(*CHAR) LEN(1)
+             DCL        VAR(&POS)    TYPE(*CHAR) LEN(2)
+             DCL        VAR(&APLYN)  TYPE(*CHAR) LEN(1)
+/*CC  */     DCL        VAR(&MENU)  TYPE(*CHAR) LEN(10) VALUE('HDMAIN')
+/*CH  */     DCL        VAR(&DATV)  TYPE(*CHAR) LEN(1)
+/*CK  */     DCL        VAR(&NEWMQ)    TYPE(*DEC) LEN(3)
+/*CK  */     DCL        VAR(&NEWUQ)    TYPE(*DEC) LEN(3)
+/*CK  */     DCL        VAR(&NEWTQ)    TYPE(*DEC) LEN(3)
+/*CK  */     DCL        VAR(&NEWM)     TYPE(*CHAR) LEN(20)
+/*CK  */     DCL        VAR(&NEWU)     TYPE(*CHAR) LEN(20)
+/*CK  */     DCL        VAR(&NEWT)     TYPE(*CHAR) LEN(20)
+/*CK  */     DCL        VAR(&MCLR)     TYPE(*CHAR) LEN(1)
+/*CM  */     DCL        VAR(&EVTDTA)   TYPE(*CHAR) LEN(256) VALUE(' ')
+/*CM  */     DCL        VAR(&PACTCD)   TYPE(*CHAR) LEN(2)
+/*CM  */     DCL        VAR(&SYSTIM)   TYPE(*CHAR) LEN(6)
+/*CS  */     DCL        VAR(&QQF)      TYPE(*CHAR) LEN(3)
+/*CV  */     DCL        VAR(&GREENSCRN) TYPE(*LGL)
+/*CV  */     DCL        VAR(&SMARTDIST) TYPE(*LGL)
+/*CV  */     DCL        VAR(&TYPE)      TYPE(*CHAR) LEN(7) VALUE('*MSGQ')
+/*CV  */     DCL        VAR(&LOCKED)    TYPE(*LGL)
+/*CV  */     DCL        VAR(&BYCURJOB)  TYPE(*LGL)
+/*CX  */     DCL        VAR(&TBNO01) TYPE(*CHAR) LEN(4)
+/*CX  */     DCL        VAR(&TBNO02) TYPE(*CHAR) LEN(9)
+/*CX  */     DCL        VAR(&INSTL) TYPE(*CHAR) LEN(30)
+/*C2  */     DCL        VAR(&CLIB) TYPE(*CHAR) LEN(10)
+/*DC  */     DCL        VAR(&INSCRN) TYPE(*CHAR) LEN(10)
+/*DC  */     DCL        VAR(&IOVAR1) TYPE(*CHAR) LEN(50)
+/*DC  */     DCL        VAR(&IOVAR2) TYPE(*CHAR) LEN(50)
+/*DC  */     DCL        VAR(&IOVAR3) TYPE(*CHAR) LEN(50)
+/*DC  */     DCL        VAR(&IOVAR4) TYPE(*CHAR) LEN(50)
+/*DC  */     DCL        VAR(&IOVAR5) TYPE(*CHAR) LEN(50)
+/*DC  */     DCL        VAR(&ENV)    TYPE(*CHAR) LEN(4)
+/*DC  */     DCL        VAR(&FLG)    TYPE(*CHAR) LEN(1)
+/*¢E  */     DCL        VAR(&REFRESHERR)  TYPE(*CHAR) LEN(1)
+
+             MONMSG     MSGID(CPF0001) EXEC(GOTO CMDLBL(ERROR)) +
+                          /*DISPLAY ERRMSG THAT USER IS NOT +
+                          AUTHORIZED TO USE THIS MENU          */
+
+             RTVJOBA    JOB(&JOBNAM) USER(&USRNAM) NBR(&JOBNUM)
+/*CS  */     CHGVAR     VAR(&QQF) VALUE(%SST(&JOBNAM 1 3))
+/*CS  */     IF         COND(&QQF = 'QQF') THEN(DO)
+/*CSCU*/     CHGJOB     BRKMSG(*NOTIFY)
+/*CU  */     CHGJOB     BRKMSG(*NOTIFY) DEVRCYACN(*ENDJOB)
+/*CT  */     DLCOBJ     OBJ((&USRNAM *MSGQ *EXCL *N)) SCOPE(*THREAD)
+/*CT  */     MONMSG     MSGID(CPF1005)
+/*CS  */     ENDDO
+             CHGVAR     VAR(&LIB) VALUE(HD1100GP)
+/*DC  */
+/*DCDD*//*   CHGVAR     VAR(&ENV) VALUE(PROD)                        */
+/*DC  */
+/*DC  *//* Check for SD-One job                                      */
+/*DC  */     CHGVAR     VAR(&ENV) VALUE(PROD)
+/*DC  */     CALL       PGM(MNR0005) PARM(&JOBNAM &FLG)
+/*DD  */     MONMSG     MSGID(CPF0001) EXEC(DO)
+/*DD  */     CHGVAR     VAR(&FLG) VALUE(N)
+/*DD  */     ENDDO
+/*DC  */
+/*DC  */     IF         COND(&FLG = Y) THEN(DO)
+/*DC  */     CHGVAR     VAR(&INSCRN) VALUE(SIGNON)
+/*DC  */     CHGVAR     VAR(&IOVAR1) VALUE(' ')
+/*DC  */     CHGVAR     VAR(&IOVAR2) VALUE(' ')
+/*DC  */     CHGVAR     VAR(&IOVAR3) VALUE(' ')
+/*DC  */     CHGVAR     VAR(&IOVAR4) VALUE(' ')
+/*DC  */     CHGVAR     VAR(&IOVAR5) VALUE(' ')
+/*DC  */     CALL       PGM(MNR0004) PARM(&INSCRN &IOVAR1 &IOVAR2 +
+/*DC  */                  &IOVAR3 &IOVAR4 &IOVAR5)
+/*DC  */
+/*DC  */     IF         COND(&IOVAR1 *NE ' ') THEN(DO)
+/*DC  */     CHGVAR     VAR(&ENV) VALUE(%SST(&IOVAR1 1 4))
+/*DC  */     RSTLIBL &ENV
+/*DC  */     ENDDO
+/*DC  */     ENDDO
+/*DC  */
+/*DC  */     ELSE       CMD(DO)
+/*  DC*//*   CALL       PGM(&LIB/RSTLIBL) PARM(PROD)              */
+/*DC  */     CALL       PGM(&LIB/RSTLIBL) PARM(&ENV)
+/*DC  */     ENDDO
+
+/*¢E  *//* Check the PROD/TEST environment for accuracy           */
+/*¢E  */     CALL       PGM(REFRESHR) PARM('Y' &REFRESHERR)
+/*¢E  */     IF         COND(&REFRESHERR = 'Y') THEN(SIGNOFF)
+
+/*CX  *//* CURBSTONE LIBRARY & SUBSYSTEM                          */
+/*CX  */     CHGVAR     VAR(&TBNO01) VALUE('AR27')
+/*CX  */     CHGVAR     VAR(&TBNO02) VALUE('CARD     ')
+/*CX  */     CALL       PGM(TBR0040) PARM(&TBNO01 &TBNO02 &INSTL)
+/*CX  */     IF         COND(%SST(&INSTL 1 10) *EQ ('YCURBSTONE')) +
+                          THEN(DO)
+/*C2  */     CHGVAR     VAR(&TBNO02) VALUE('CARDLIB  ')
+/*C2  */     CALL       PGM(TBR0040) PARM(&TBNO01 &TBNO02 &INSTL)
+/*C2  */     CHGVAR     VAR(&CLIB) VALUE(%SST(&INSTL 1 10))
+/*CXC2*//*   ADDLIBLE   LIB(CURBSTONE) POSITION(*LAST)               */
+/*C2  */     ADDLIBLE   LIB(&CLIB) POSITION(*LAST)
+/*CX  */     MONMSG     MSGID(CPF0000)
+/*CX  */     ENDDO
+/*CX  */
+/*CV  */
+/*CV  */     IF         COND(&QQF *NE 'QQ') THEN(DO)
+/*CV  */         CHGVAR     VAR(&LIB)      VALUE('*LIBL')
+/*CV  */         CHGVAR     VAR(&LOCKED)   VALUE('0')
+/*CV  */         CHGVAR     VAR(&BYCURJOB) VALUE('0')
+/*CV  */         CALL       PGM(OPC7507) PARM(&USRNAM &LIB &TYPE &LOCKED +
+/*CV  */                                      &BYCURJOB)
+/*CV  */
+/*CV  */         IF         COND(&LOCKED *AND &BYCURJOB) THEN(DO)
+/*CV  */            CALL       PGM(OPC7506) PARM(&GREENSCRN &SMARTDIST)
+/*CV  */
+/*CV  */            IF         COND(&SMARTDIST) THEN(DO)
+/*CV  */               CHGVAR     VAR(&YORN) VALUE('N')
+/*CV  */               SNDRCVF    RCDFMT(COMLNKWRN)
+/*CV  */               IF         COND(&YORN *EQ 'Y') THEN(DO)
+/*CV  */                 DLCOBJ OBJ((*LIBL/&USRNAM *MSGQ *EXCL *N)) +
+/*CV  */                        SCOPE(*THREAD)
+/*CV  */               ENDDO
+/*CV  */            ENDDO
+/*CV  */         ENDDO
+/*CV  */     ENDDO
+/*CV  */
+
+/*CH  */  /* CHECK FOR ACCOUNTING PERIOD DEFINITION  */
+/*CH  */     CALL       PGM(OPR0815) PARM(&DATV)
+/*CH  */     IF         COND(&DATV = 'N') THEN(GOTO ENDIT)
+
+ /* ATTENTION KEY USAGE BY USER ID (TABLE FILE ENTRY 'ATTN')         */
+             CALL       PGM(OPR0000) PARM(&USRNAM &PGM)
+ /* INQUIRY ONLY (GENERAL USERS)                                     */
+             IF         COND(&PGM = '1') THEN(DO)
+               SETATNPGM  PGM(OPC0000)
+               CHGVAR     VAR(&EXIST) VALUE('1')
+               CHKOBJ     OBJ(QTEMP/NOTES) OBJTYPE(*DTAARA)
+               MONMSG     MSGID(CPF9801) EXEC(CHGVAR VAR(&EXIST) +
+                            VALUE('0'))
+               IF         COND(&EXIST) THEN(DLTDTAARA +
+                            DTAARA(QTEMP/NOTES))
+             ENDDO
+
+ /* AS400 - WINDOW PROGRAM (PROGRAMMERS/OPERATORS)                   */
+             IF         COND(&PGM = '2') THEN(DO)
+               SETATNPGM  PGM(OPC7000)
+               CHGVAR     VAR(&EXIST) VALUE('1')
+               CHKOBJ     OBJ(QTEMP/NOTES) OBJTYPE(*DTAARA)
+               MONMSG     MSGID(CPF9801) EXEC(CHGVAR VAR(&EXIST) +
+                            VALUE('0'))
+               IF         COND(&EXIST) THEN(DLTDTAARA +
+                            DTAARA(QTEMP/NOTES))
+             ENDDO
+
+/*  CG*//* /* SYS38 - WINDOW PROGRAM (PROGRAMMERS/OPERATORS)         */
+/*  CG*//*   IF         COND(&PGM = '3') THEN(DO)                    */
+/*  CG*//*     SETATNPGM  PGM(OPC7001)                               */
+/*  CG*//*     CHGVAR     VAR(&EXIST) VALUE('1')                     */
+/*  CG*//*     CHKOBJ     OBJ(QTEMP/NOTES) OBJTYPE(*DTAARA)          */
+/*  CG*//*     MONMSG     MSGID(CPF9801) EXEC(CHGVAR VAR(&EXIST) +   */
+/*  CG*//*                  VALUE('0'))                              */
+/*  CG*//*     IF         COND(&EXIST) THEN(DLTDTAARA +              */
+/*  CG*//*                  DTAARA(QTEMP/NOTES))                     */
+/*  CG*//*   ENDDO                                                   */
+
+/*  CK*//* INQUIRY W/NOTE ENTRY ABILITY (GENERAL USERS)              */
+/*  CK*//*   IF         COND(&PGM = '4') THEN(DO)                    */
+/*  CK*//*     SETATNPGM  PGM(OPC0010)                               */
+/*  CK*//*     CHKOBJ     OBJ(QTEMP/NOTES) OBJTYPE(*DTAARA)          */
+/*  CK*//*     MONMSG     MSGID(CPF9801) EXEC(CRTDTAARA +            */
+/*  CK*//*                  DTAARA(QTEMP/NOTES) TYPE(*CHAR) LEN(465))*/
+/*  CK*//*   ENDDO                                                   */
+
+/*CM  *//*  User logging event */
+/*CM  */     RTVSYSVAL  SYSVAL(QTIME) RTNVAR(&SYSTIM)
+/*CM  */     CHGVAR     VAR(&EVTDTA) VALUE(&USRNAM *CAT 'LOGON ' *CAT &SYSTIM)
+/*CMC1*//*   SBMJOB     CMD(CALL PGM(SHR5050) PARM(&PACTCD &JOBNAM +    */
+/*  C1*//*                'HDE0002' &EVTDTA)) JOBD(HDJPACK) +           */
+/*  C1*//*                JOBQ(QINTER) JOB(HDE0002) MSGQ(*NONE) +       */
+/*  C1*//*                LOG(4 00 *NOLIST)                             */
+/*C1  */     CALL PGM(SHC5050) PARM('HDE0002' &EVTDTA)
+/*CQ  *//*  Create shared configurations */
+/*CQ  ¢B     CALL       PGM(SHC0150)   */
+ /*  MAKE SURE HDSATTN EXIST IN QTEMP.  */
+             CHKOBJ     OBJ(QTEMP/HDSATTN) OBJTYPE(*DTAARA)
+             MONMSG     MSGID(CPF9801) EXEC(CRTDTAARA +
+                          DTAARA(QTEMP/HDSATTN) TYPE(*LGL) +
+                          VALUE('0') TEXT('Attention key in use +
+                          ?.'))
+/*                                                                  */
+ /* RESET DATA AREA IN THE EVENT OF SYSTEM REQ 2 WHILE USING ATTN KEY */
+             CHGDTAARA  DTAARA(QTEMP/HDSATTN) VALUE('0')
+/*CD  *//*  RETRIEVE ENVIRONMENT DATA AREAS FOR SIGNON DISPLAY...    */
+/*CD  */     RTVDTAARA  DTAARA(HDVERSION) RTNVAR(&HDVSN)
+/*CD  */     RTVDTAARA  DTAARA(SHVERSION) RTNVAR(&SHVSN)
+/*CNCO*//*   RTVDTAARA  DTAARA(WKVERSION) RTNVAR(&WKVSN) */
+
+             RTVJOBA    JOB(&TERMID) USER(&USERID)
+
+             CHGMSGQ    MSGQ(&TERMID) DLVRY(*BREAK) SEV(00)
+             MONMSG     MSGID(CPF2451 CPF2403)
+/*¢A */      CHGMSGQ    MSGQ(&USERID) DLVRY(*BREAK) SEV(00)
+/*¢A */      MONMSG     MSGID(CPF2451 CPF2403 CPF2450)
+
+             OVRDBF     FILE(TBLMTBL1) SHARE(*YES)
+             OPNDBF     FILE(TBLMTBL1) OPTION(*ALL)
+             MONMSG     MSGID(CPF4174)
+/*CMCZ*//*   CALL       SHR5115 PARM('' 'MS' '' '' '')          */
+/*CZ  */     CALL       SHR5115 PARM('' 'MS' '' '' '' '')
+ /* CHECK FOR USER DEFINED INITIAL MENU, BYPASS SIGNON IF FOUND */
+             CHGVAR &INIT  VALUE(' ')
+             CALL PGM(OPR0038) PARM(&USRNAM &INIT)
+             IF         COND(&INIT = '1') THEN(CALL PGM(OPC0038) +
+                        PARM(&BAROPT))
+/*CBCC*//*   CALL       PGM(SHR9999) PARM('HDMAIN') */
+/*CBCC*//*   GOTO       CMDLBL(ENDIT) */
+/*CC  */     STAYONMENU:
+/*CC  */     CALL       PGM(SHR9999) PARM(&MENU)
+/*CC  */     IF         COND(&MENU = 'NOSHOW') THEN(DO)
+/*CC  */                GOTO CMDLBL(DISPLAY)
+/*CC  */     ENDDO
+/*CC  */     GOTO       CMDLBL(STAYONMENU)
+             GOTO       CMDLBL(DISPLAY) /* SKIP GREETING SCREEN +
+                          UNLESS CMD 01 */
+
+GREETING:    SNDRCVF    RCDFMT(GREETING)
+             MONMSG     MSGID(CPF4100 +
+                              CPF4200 +
+                              CPF4300 +
+                              CPF5100 +
+                              CPF5200 +
+                              CPF5300 +
+                              CPF5500 +
+                              CPF5600 +
+                              CPF5700) EXEC(SIGNOFF *LIST)
+ /*      THESE ARE DEVICE FAILURE MESSAGES MOST NOT RECOVERABLE   +
+         SO FOR SIMPLICITY WE ARE GOING TO SIGNOFF AND LEAVE A LIST */
+
+/*CK  */ DISPLAY:
+/*CK  */     CHGVAR     VAR(&IN51) VALUE('0')
+/*CK  */     CHGVAR     VAR(&IN52) VALUE('0')
+/*CK  */     CHGVAR     VAR(&IN53) VALUE('0')
+/*CK  */     CHGVAR     VAR(&IN61) VALUE('0')
+/*CK  */     CHGVAR     VAR(&IN62) VALUE('0')
+/*CK  */     CHGVAR     VAR(&IN63) VALUE('0')
+/*CK  */     CALL PGM(OPR2500) +
+/*CK  */          PARM(&NEWM &NEWU &NEWT &NEWMQ &NEWUQ &NEWTQ &MCLR)
+/*CK  */     IF         COND(&NEWMQ > 0) +
+                         THEN(CHGVAR VAR(&IN61) VALUE('1'))
+/*CK  */     IF         COND(&NEWUQ > 0) +
+                         THEN(CHGVAR VAR(&IN62) VALUE('1'))
+/*CK  */     IF         COND(&NEWTQ > 0) +
+                         THEN(CHGVAR VAR(&IN63) VALUE('1'))
+/*CK  */     IF         COND(&MCLR = '1') +
+                         THEN(CHGVAR VAR(&IN51) VALUE('1'))
+/*CK  */     IF         COND(&MCLR = '2') +
+                         THEN(CHGVAR VAR(&IN52) VALUE('1'))
+/*CK  */     IF         COND(&MCLR = '3') +
+                         THEN(CHGVAR VAR(&IN53) VALUE('1'))
+/*CK  */     SNDRCVF    RCDFMT(MAIN)
+/*CK  */ /* DISPLAY:     SNDRCVF    RCDFMT(MAIN) */
+             MONMSG     MSGID(CPF4100 +
+                              CPF4200 +
+                              CPF4300 +
+                              CPF5100 +
+                              CPF5200 +
+                              CPF5300 +
+                              CPF5500 +
+                              CPF5600 +
+                              CPF5700) EXEC(SIGNOFF *LIST)
+ /*      THESE ARE DEVICE FAILURE MESSAGES MOST NOT RECOVERABLE   +
+         SO FOR SIMPLICITY WE ARE GOING TO SIGNOFF AND LEAVE A LIST */
+             CHGVAR     VAR(&IN91) VALUE('0')
+ /*                                                                 */
+ /*      TEST FOR SPECIAL VALUE SENT BY PC (IWS MENU BAR) PROGRAM.  */
+ /*      IF VALUE SENT, THEN END PROGRAM...                         */
+             IF         COND(&CMDLIN = '{~\#?#/~}') THEN(GOTO ENDIT)
+
+             IF         COND(&IN03 = '1') THEN(GOTO CMDLBL(GREETING))
+
+             IF         COND(&IN25 = '1') THEN(DO)
+             CALL       PGM(HTR0010) PARM(&PROG &SCREEN)
+             GOTO       CMDLBL(DISPLAY)
+             ENDDO
+ /* IF NOTHING ENTERED ON COMMAND LINE, THEN REDISPLAY MENU          */
+         IF   COND(&CMDLIN *EQ ' ') THEN(GOTO DISPLAY)
+ /* CALL COMMAND LINE CHECK PROGRAM TO DETERMINE IF FAST PATH OR OPT */
+         IF   COND(&CMDLIN *NE ' ') THEN(CALL PGM(OPR0075) +
+              PARM(&CMDLIN &CMDOPT &PTHOPT))
+
+         IF   COND(&PTHOPT *EQ 'E') THEN(DO)
+              CHGVAR (&IN90) VALUE('1')
+              CHGVAR (&IN92) VALUE('0')
+              GOTO   CMDLBL(DISPLAY)
+              ENDDO
+ /*                                                                  */
+ /* Fast Path                                                        */
+ /*                                                                  */
+         IF   COND(&PTHOPT = 'P') THEN(DO)
+              CHGVAR &FPATH  VALUE(&CMDLIN)
+             IF         COND(%SST(&FPATH 1 1) = '?') THEN(CALL +
+                          PGM(OPR0105) PARM(&FPATH))
+         IF   COND(&FPATH *EQ ' ') THEN(DO)
+              GOTO       CMDLBL(DISPLAY)
+         ENDDO
+             IF         COND(&FPATH *NE ' ') THEN(DO)
+               CALL       PGM(OPR0100) PARM(&FPATH &FPGM &RTNCDE)
+               IF         COND(&RTNCDE) THEN(CHGVAR VAR(&IN92) +
+                            VALUE('1'))
+               ELSE       CMD(CALL PGM(&FPGM) PARM(&BAROPT))
+               GOTO       CMDLBL(DISPLAY)
+             ENDDO
+       ENDDO
+/*                                                                  */
+ /*  CHECK OPTION                                */
+       IF     COND(&PTHOPT = 'O') THEN(DO)
+         CHGVAR    VAR(&OPTION)  VALUE(&CMDOPT)
+
+ /*                                                                  */
+ /* Order Processing                                                 */
+ /*                                                                  */
+             IF         COND(&OPTION = 1) THEN(DO)
+             CALL       PGM(OEC1000) PARM(&BAROPT)
+             GOTO       CMDLBL(DISPLAY)
+             ENDDO
+ /*                                                                  */
+ /* Inventory Control                                                */
+ /*                                                                  */
+             IF         COND(&OPTION = 2) THEN(DO)
+             CALL       PGM(IVC0000) PARM(&BAROPT)
+             GOTO       CMDLBL(DISPLAY)
+             ENDDO
+ /*                                                                  */
+ /* Accounts Receivable                                              */
+ /*                                                                  */
+             IF         COND(&OPTION = 3) THEN(DO)
+             CALL       PGM(ARC0000) PARM(&BAROPT)
+             MONMSG     MSGID(CPF0001) EXEC(CHGVAR VAR(&IN90) +
+                          VALUE('1')) /* Display Errmsg that user is +
+                          not authorized to use this menu option */
+             GOTO       CMDLBL(DISPLAY)
+             ENDDO
+ /*                                                                  */
+ /* Sales Analysis                                                   */
+ /*                                                                  */
+             IF         COND(&OPTION = 4) THEN(DO)
+             CALL       PGM(SAC0100) PARM(&BAROPT)
+             GOTO       CMDLBL(DISPLAY)
+             ENDDO
+ /*                                                                  */
+ /* Purchasing                                                       */
+ /*                                                                  */
+             IF         COND(&OPTION = 5) THEN(DO)
+             CALL       PGM(POC0000) PARM(&BAROPT)
+             GOTO       CMDLBL(DISPLAY)
+             ENDDO
+ /*                                                                  */
+ /* General Ledger                                                   */
+ /*                                                                  */
+             IF         COND(&OPTION = 6) THEN(DO)
+             CALL       PGM(GLC0000) PARM(&BAROPT)
+             GOTO       CMDLBL(DISPLAY)
+             ENDDO
+ /*                                                                  */
+ /* Accounts Payable                                                 */
+ /*                                                                  */
+             IF         COND(&OPTION = 7) THEN(DO)
+             CALL       PGM(APC0000) PARM(&BAROPT)
+             GOTO       CMDLBL(DISPLAY)
+             ENDDO
+ /*                                                                  */
+ /* Pricing                                                          */
+ /*                                                                  */
+             IF         COND(&OPTION = 8) THEN(DO)
+             CALL       PGM(PRC0000) PARM(&BAROPT)
+             GOTO       CMDLBL(DISPLAY)
+             ENDDO
+ /*                                                                  */
+ /* Inventory Management                                             */
+ /*                                                                  */
+             IF         COND(&OPTION = 9) THEN(DO)
+             CALL       PGM(IMC0000) PARM(&BAROPT)
+             GOTO       CMDLBL(DISPLAY)
+             ENDDO
+ /*                                                                  */
+ /* Receiving / Transfers                                            */
+ /* Transfers                                                        */
+ /*                                                                  */
+             IF         COND(&OPTION = 10) THEN(DO)
+             CALL       PGM(IVC4000) PARM(&BAROPT)
+             GOTO       CMDLBL(DISPLAY)
+             ENDDO
+ /*                                                                  */
+ /* Operations                                                       */
+ /* Truck Routing                                                    */
+ /*                                                                  */
+             IF         COND(&OPTION = 11) THEN(DO)
+             CALL       PGM(IVC1500) PARM(&BAROPT)
+             GOTO       CMDLBL(DISPLAY)
+             ENDDO
+ /*                                                                  */
+ /*                                                                  */
+ /* Receiving                                                        */
+             IF         COND(&OPTION = 12) THEN(DO)
+             CALL       PGM(IVC0200) PARM(&BAROPT)
+             GOTO       CMDLBL(DISPLAY)
+             ENDDO
+ /*                                                                  */
+ /*                                                                  */
+
+ /* Operations                                                      */
+ /*                                                                 */
+             IF         COND(&OPTION = 13) THEN(DO)
+             CALL       PGM(OPC1000) PARM(&BAROPT)
+             GOTO       CMDLBL(DISPLAY)
+             ENDDO
+/*                                                                    */
+/* Warehouse Management                                               */
+/*                                                                    */
+             IF         COND(&OPTION = 14) THEN(DO)
+        /* Check ADON table to see WM System is installed or not              */
+             CHGVAR     VAR(&POS) VALUE('03')
+             CHGVAR     VAR(&APLYN) VALUE('N')
+             CALL       PGM(OPR0400) PARM(&POS &APLYN)
+             IF         COND(&APLYN = 'Y') THEN(DO)
+             CALL       PGM(WMC9900) PARM(&BAROPT)
+             ENDDO
+             ELSE       (DO)
+             CHGVAR     VAR(&IN91) VALUE('1')
+             ENDDO
+             GOTO       CMDLBL(DISPLAY)
+             ENDDO
+
+ /* ¢C Troubleshoot Printer Issue                                   */
+ /* ¢C */
+ /* ¢C */    IF         COND(&OPTION = 20) THEN(DO)
+ /* ¢C */    CALL       PGM(OPC7100)
+ /* ¢C */    GOTO       CMDLBL(DISPLAY)
+ /* ¢C */    ENDDO
+
+
+ /* ¢D Inventory Review Request                                     */
+ /* ¢D */
+ /* ¢D */    IF         COND(&OPTION = 21) THEN(DO)
+ /* ¢D */    CALL       PGM(IMCC600) PARM(&BAROPT)
+ /* ¢D */    GOTO       CMDLBL(DISPLAY)
+ /* ¢D */    ENDDO
+
+ /*                                                                  */
+ /* Signoff                                                          */
+ /*                                                                  */
+/*  CM*//*   IF         COND(&OPTION = 90) THEN(SIGNOFF LOG(*LIST)) */
+/*CM  */     IF         COND(&OPTION = 90) THEN(DO)
+
+/*CM  *//*  User logging event */
+/*CM  */     RTVSYSVAL  SYSVAL(QTIME) RTNVAR(&SYSTIM)
+/*CM  */     CHGVAR     VAR(&EVTDTA) VALUE(&USRNAM *CAT 'LOGOFF' *CAT &SYSTIM)
+/*CMC1*//*   SBMJOB     CMD(CALL PGM(SHR5050) PARM(&PACTCD &JOBNAM + */
+/*  C1*//*                'HDE0002' &EVTDTA)) JOBD(HDJPACK) +        */
+/*  C1*//*                JOBQ(QINTER) JOB(HDE0002) MSGQ(*NONE) +    */
+/*  C1*//*                LOG(4 00 *NOLIST)                          */
+/*C1  */     CALL PGM(SHC5050) PARM('HDE0002' &EVTDTA)
+/*CM  */     SIGNOFF LOG(*LIST)
+/*CM  */     ENDDO
+
+/*   DISPLAY MESSAGE THAT NOT AUTHORIZED TO THIS OPTION **************/
+ERROR:       CHGVAR &IN90 '1'
+             GOTO DISPLAY
+       ENDDO
+
+ENDIT:       ENDPGM
