@@ -62,6 +62,7 @@ C1   F*U 1710001189 022723 404 Missing Ship Qty on Line Item                   *
 ¢B   F*U KSB   2222 012203 KSB GMC REBATE COST
 ¢C   F*U KSB   4906 110206 KSB Cr memo w/aff inv = No r updating oh
 ¢D   F*U KSB   4945 020107 KSB GMC REBATE COST
+¢E   F*U JJF   3314 092926 JJF OVERFLOW MONITOR ADDED FOR ST_SACN03/ST_SACN05  *
      F*M ----------------------------------------------------------------------*
      FOEPWBIS   IF   E           K DISK
      FARLTCCT1  UF   E           K DISK
@@ -2787,8 +2788,19 @@ CT   C                   endif
 CT
 CT   C                   if        oecd08 <> 'C'
 CT   C                   eval      st_sacn02 += 1
-CT   C                   eval      st_sacn03 += oecn01
-CT   C                   eval      st_sacn05 += (oecn01 - oecn05)
+
+¢E   C                   monitor
+¢E   C                   eval      st_sacn03 += oecn01
+¢E   C                   on-error
+¢E   C                   eval      st_sacn03 = *hival
+¢E   C                   endmon
+
+¢E   C                   monitor
+¢E   C                   eval      st_sacn05 += (oecn01 - oecn05)
+¢E   C                   on-error
+¢E   C                   eval      st_sacn05 = *hival
+¢E   C                   endmon
+
 CT   C                   eval      st_saam31 += oetl02
 CT   C                   eval      st_saam45 += oetl04
 CT   C                   else
