@@ -27,12 +27,7 @@
        //                      Added FETCH FIRST 1 ROW ONLY to DATA_AREA_INFO
        //                      selects for SYSMONITOR in setProgramValues and
        //                      checkQsysopr - SQL0811 if data area in multiple libs
-       // 3208      062225 JJF Fixed lastRunStamp select in checkQsysopr -
-       //                      select into char(26) then convert via %timestamp
-       //                      in RPG to avoid SQL0420 implicit CHAR->TIMESTAMP
-       //                      cast inside OBJECT_STATISTICS (DATA_AREA_INFO
-       //                      calls OBJECT_STATISTICS internally; blank or
-       //                      invalid data area value triggers the cast error)
+// 3208      100126 JJF Added modification description to header
        //------------------------------------------------------------------------
          ctl-opt option(*srcstmt: *nodebugio) debug(*yes) dftactgrp(*no)
           bnddir('SHBIND':'WMBIND':'HDBIND':'WKBIND':'MNBIND':'YAJL');
@@ -796,7 +791,6 @@
          dcl-s i7 int(10:0) inz;
          dcl-s jobNameString char(30) inz;
          dcl-s lastRunStamp timestamp inz;
-         dcl-s lastRunStampChar char(26) inz;
          dcl-s maxItemLines7 zoned(5:0) inz(10000);
          dcl-s messageStamp timestamp inz;
          dcl-s messageQsysopr char(30) inz;
@@ -846,39 +840,23 @@
 
         dcl-ds c7 dim(10000) qualified inz;
          messageStamp timestamp;
-         messageID char(7);
-         messageQsysopr char(30);
-         runOutQueueChecks char(1);
-          monitorJobScheduler char(1);
-         messageSeverity zoned(3:0);
-         fromJob char(32);
-         fromProgram char(10);
+         messageID varchar(7);
+         messageQsysopr char(100);
+         messageSeverity int(5:0);
+         fromJob varchar(28);
+         fromProgram varchar(10);
         end-ds c7;
 
         wValuesDS = inValues;
         // pull in last runstamp
-        // select into char first to avoid SQL0420 implicit cast error
-        // (DB2 calls OBJECT_STATISTICS internally which throws cast warning
-        //  if data_area_value is blank or not a valid timestamp)
         // fetch first 1 row only avoids SQL0811 if found in multiple libs
         reset lastRunStamp;
-        reset lastRunStampChar;
         exec sql
-         select coalesce(trim(data_area_value),' ')
-         into :lastRunStampChar
+         select data_area_value
+         into :lastRunStamp
          from qsys2.data_area_info
          WHERE data_area_name = 'SYSMONITOR'
-           and data_area_library = 'HD1100PO'
          fetch first 1 row only;
-        if sqlcode = 0 and lastRunStampChar <> *blanks;
-         monitor;
-          lastRunStamp = %timestamp(lastRunStampChar:*ISO);
-         on-error;
-          lastRunStamp = %timestamp() - %minutes(5);
-         endmon;
-        else;
-         lastRunStamp = %timestamp() - %minutes(5);
-        endif;
 
         myMaxMessageSeverity = wValuesDS.maxMessageSeverity;
          // grab the data and place into array
@@ -1035,9 +1013,10 @@
          if sendThisMessage;
 
           myMessage = %trim(myMessage);
-
+          myMessage = %trim(prodtest) + '-' + %trim(myMessage);
           // display using shorter 52 char variable
           dsplyMessage = %subst(myMessage:1:%min(52:%len(%trim(myMessage))));
+          dsplyMessage = %trim(prodtest) + '-' + %trim(dsplyMessage);
           dsply dsplyMessage;
 
           commandString =
@@ -1322,15 +1301,17 @@
              where a.TBNO01 >= 'SMON' and a.tbno02 = :skipErrorsIdKey;
            wValuesDS.ErrorId  = skipErrorIDsDS.list;
 
-           // check for data area SYSMONITOR in HD1100PO specifically
-           // library-qualified avoids OBJECT_STATISTICS *LIBL scan warning
+           // check for data area SYSMONITOR - use DATA_AREA_INFO only
+           // avoids OBJECT_STATISTICS *LIBL scan and 01xxx lock warnings
+           // fetch first 1 row only avoids SQL0811 if found in multiple libs
            reset foundInLibrary;
            exec sql
             select data_area_library
              into :foundInLibrary
              from qsys2.data_area_info
-             where data_area_name = 'SYSMONITOR'
-               and data_area_library = 'HD1100PO';
+             where data_area_name = 'SYSMONITOR' and
+             data_area_library = 'HD1100PO'
+             fetch first 1 row only;
 
            // if foundInLibrary is not blank, data area exists
            foundDataArea = (foundInLibrary <> *blanks);
@@ -1407,3 +1388,4 @@
            Return  wValuesDS;
 
            end-proc setProgramValues;
+
