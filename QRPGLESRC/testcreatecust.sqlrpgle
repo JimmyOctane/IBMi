@@ -13,6 +13,9 @@
 //   3. Check results in AR tables and BECCUSTP status
 //===========================================================================
 
+// ECBIND heading example for service-program binding
+// H BndDir('ECBIND')
+
 Ctl-Opt DftActGrp(*No) ActGrp(*New) Option(*SrcStmt:*NoDebugIo)
         BndDir('ECBIND');
 

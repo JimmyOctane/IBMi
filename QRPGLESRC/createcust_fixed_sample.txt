@@ -4,6 +4,10 @@
 CONTROL SPECIFICATIONS (H-SPEC)
 =============================================================================
 
+ECBIND-SPECIFIC HEADING EXAMPLE:
+H DftActGrp(*No) ActGrp(*New) Option(*SrcStmt:*NoDebugIo)
+H BndDir('ECBIND')
+
 **FREE FORMAT:
 Ctl-Opt DftActGrp(*No) ActGrp(*New) Option(*SrcStmt:*NoDebugIo)
         BndDir('ECBIND');
