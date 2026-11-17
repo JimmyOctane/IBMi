@@ -12,6 +12,6 @@
     //     records in multiple AR tables
     //--------------------------------------------------------------
 
-    Dcl-PR CreateCustomer ExtProc('CREATECUST');
+    Dcl-Pr CreateCustomer ExtProc('CREATECUST');
       pGUID Char(36) Const;
-    End-PR;
+    End-Pr;

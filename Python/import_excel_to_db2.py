@@ -1,6 +1,165 @@
 """
 Excel to IBM i DB2 Import Script
 =================================
+Updated for: ECM_DailyReport_20261008.xlsx
+This script can import multiple columns (easily expandable).
+"""
+
+import pandas as pd
+import pyodbc
+import sys
+from datetime import datetime
+
+# ============================================================================
+# CONFIGURATION - CUSTOMIZE THESE VALUES
+# ============================================================================
+
+# Excel file configuration
+EXCEL_FILE = r'/home/jflanary/ECM_DailyReport_20261008.xlsx'
+SHEET_NAME = 0                    # 0 = first sheet
+
+# Columns to import - CHANGE THESE TO MATCH YOUR EXCEL FILE
+# You can use column names (strings) or zero-based indices (integers)
+COLUMNS_TO_IMPORT = ['ColumnA', 'ColumnB']   # ←←← CHANGE THIS
+# Example alternatives:
+# COLUMNS_TO_IMPORT = [0, 1, 5]                    # first, second, and column F
+# COLUMNS_TO_IMPORT = ['Policy Number', 'Amount', 'Status']
+
+# Database configuration
+DB_LIBRARY = 'YOURLIB'            # Change to your library (e.g. HD1100PS)
+DB_TABLE   = 'ECM_DAILY_REPORT'   # Change to your target table name
+DB_COLUMNS = ['FIELD1', 'FIELD2'] # Must match number and order of COLUMNS_TO_IMPORT
+
+# IBM i connection
+DB_SYSTEM = 'your_ibmi_system'    # System name or IP
+DB_USER   = 'your_user'
+DB_PASSWORD = 'your_password'
+
+# ============================================================================
+# FUNCTIONS
+# ============================================================================
+
+def read_excel_file(excel_file, sheet_name, columns):
+    """Read selected columns from Excel file"""
+    try:
+        print(f"Reading Excel file: {excel_file}")
+        df = pd.read_excel(excel_file, sheet_name=sheet_name)
+        
+        print(f"Total rows in Excel: {len(df)}")
+        print(f"Available columns: {list(df.columns)}")
+        
+        # Select the requested columns
+        if isinstance(columns[0], int):
+            df_subset = df.iloc[:, columns].copy()
+        else:
+            df_subset = df[columns].copy()
+        
+        # Rename columns to match DB field names
+        df_subset.columns = DB_COLUMNS
+        
+        # Drop rows where all selected columns are null
+        df_subset = df_subset.dropna(how='all')
+        
+        print(f"Rows after cleaning: {len(df_subset)}")
+        print("\nFirst 5 rows of data:")
+        print(df_subset.head())
+        
+        return df_subset
+        
+    except Exception as e:
+        print(f"Error reading Excel file: {e}")
+        sys.exit(1)
+
+
+def connect_to_db2():
+    """Connect to IBM i DB2"""
+    try:
+        print(f"\nConnecting to IBM i system: {DB_SYSTEM}")
+        
+        conn_string = (
+            f"DRIVER={{IBM i Access ODBC Driver}};"
+            f"SYSTEM={DB_SYSTEM};"
+            f"UID={DB_USER};"
+            f"PWD={DB_PASSWORD};"
+            f"DBQ={DB_LIBRARY};"
+        )
+        
+        conn = pyodbc.connect(conn_string)
+        print("Connected successfully!")
+        return conn
+        
+    except Exception as e:
+        print(f"Connection error: {e}")
+        print("\nTroubleshooting tips:")
+        print("1. Make sure IBM i Access ODBC Driver is installed")
+        print("2. Check system name, user, and password")
+        print("3. Verify the library exists")
+        sys.exit(1)
+
+
+def import_to_db2(df, conn):
+    """Import data to DB2 table"""
+    try:
+        cursor = conn.cursor()
+        table_full = f"{DB_LIBRARY}.{DB_TABLE}"
+        print(f"\nImporting to table: {table_full}")
+        
+        # Build dynamic INSERT statement
+        cols = ', '.join(DB_COLUMNS)
+        placeholders = ', '.join(['?' for _ in DB_COLUMNS])
+        insert_sql = f"INSERT INTO {table_full} ({cols}) VALUES ({placeholders})"
+        
+        success_count = 0
+        error_count = 0
+        
+        for index, row in df.iterrows():
+            try:
+                cursor.execute(insert_sql, row.tolist())
+                success_count += 1
+                if success_count % 100 == 0:
+                    print(f"Imported {success_count} rows...")
+            except Exception as e:
+                error_count += 1
+                print(f"Error on row {index + 1}: {e}")
+        
+        conn.commit()
+        
+        print(f"\n{'='*60}")
+        print("Import completed!")
+        print(f"Successfully imported: {success_count} rows")
+        print(f"Errors: {error_count} rows")
+        print(f"{'='*60}")
+        
+        cursor.close()
+        
+    except Exception as e:
+        print(f"Import error: {e}")
+        conn.rollback()
+        sys.exit(1)
+
+
+def main():
+    print("="*60)
+    print("ECM Daily Report Import to IBM i DB2")
+    print("="*60)
+    print(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"Source file: {EXCEL_FILE}")
+    print()
+    
+    df = read_excel_file(EXCEL_FILE, SHEET_NAME, COLUMNS_TO_IMPORT)
+    conn = connect_to_db2()
+    import_to_db2(df, conn)
+    conn.close()
+    
+    print(f"\nCompleted: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+
+if __name__ == "__main__":
+    main()
+
+"""
+Excel to IBM i DB2 Import Script
+=================================
 This script reads 2 specific fields from the first tab of an Excel file
 and imports them into an IBM i DB2 table.
 

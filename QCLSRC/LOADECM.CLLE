@@ -1,0 +1,61 @@
+/* ================================================================== */
+/* CLLE Program: LOADECM - Load ECM Daily Report                      */
+/* ================================================================== */
+/* This program:
+   1. Runs load_ecm_report.py (generates /tmp/load_ecm.sql)
+   2. Runs the generated SQL with RUNSQLSTM
+*/
+
+             PGM
+
+             DCL        VAR(&CMD)     TYPE(*CHAR) LEN(512)
+             DCL        VAR(&MSGID)   TYPE(*CHAR) LEN(7)
+             DCL        VAR(&MSGDTA)  TYPE(*CHAR) LEN(512)
+             DCL        VAR(&PYSCRIPT) TYPE(*CHAR) LEN(80) +
+                          VALUE('/home/jflanary/load_ecm_report.py')
+             DCL        VAR(&SQLFILE)  TYPE(*CHAR) LEN(80) +
+                          VALUE('/tmp/load_ecm.sql')
+
+             /* Start message */
+             SNDPGMMSG  MSGID(CPF9897) MSGF(QCPFMSG) +
+                          MSGDTA('Starting ECM Daily Report Load (Pendords + bookdshp)...') +
+                          TOPGMQ(*EXT) MSGTYPE(*STATUS)
+
+             /* Step 1: Run Python script to generate SQL */
+             CHGVAR     VAR(&CMD) VALUE('QSH CMD(''cd /home/jflanary && python3 ' *TCAT &PYSCRIPT *TCAT ''')')
+             CALL       PGM(QCMDEXC) PARM(&CMD 512)
+
+             MONMSG     MSGID(CPF0000) EXEC(DO)
+                RCVMSG     MSGTYPE(*EXCP) MSGDTA(&MSGDTA) MSGID(&MSGID)
+                SNDPGMMSG  MSG('Python script failed with ' *CAT &MSGID) MSGTYPE(*DIAG)
+                GOTO       ERROR
+             ENDDO
+
+             /* Step 2: Run the generated SQL */
+             SNDPGMMSG  MSGID(CPF9897) MSGF(QCPFMSG) +
+                          MSGDTA('Running generated SQL...') +
+                          TOPGMQ(*EXT) MSGTYPE(*STATUS)
+
+             CHGVAR     VAR(&CMD) VALUE('RUNSQLSTM SRCSTMF(''' *TCAT &SQLFILE *TCAT ''') COMMIT(*NONE) NAMING(*SQL)')
+             CALL       PGM(QCMDEXC) PARM(&CMD 512)
+
+             MONMSG     MSGID(CPF0000) EXEC(DO)
+                RCVMSG     MSGTYPE(*EXCP) MSGDTA(&MSGDTA) MSGID(&MSGID)
+                SNDPGMMSG  MSG('RUNSQLSTM failed with ' *CAT &MSGID) MSGTYPE(*DIAG)
+                GOTO       ERROR
+             ENDDO
+
+             /* Success */
+             SNDPGMMSG  MSGID(CPF9897) MSGF(QCPFMSG) +
+                          MSGDTA('ECM Daily Report load completed successfully. ' +
+                                 'Tables ECMPENDORD and ECMBOOKSHP updated in JAMIEDEV.') +
+                          TOPGMQ(*EXT) MSGTYPE(*COMP)
+
+             RETURN
+
+ ERROR:      SNDPGMMSG  MSGID(CPF9897) MSGF(QCPFMSG) +
+                          MSGDTA('ECM Load failed. Please check job log and /tmp/load_ecm.log') +
+                          TOPGMQ(*EXT) MSGTYPE(*ESCAPE)
+
+             ENDPGM
+

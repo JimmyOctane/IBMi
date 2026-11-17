@@ -1,20 +1,22 @@
 #!/QOpenSys/pkgs/bin/bash
 # ============================================================================
-# Shell Script to Run Excel Import Python Program
+# Shell Script to Run ECM Daily Report Import
 # ============================================================================
-# This script runs the Python program to import Excel data to DB2
-# Place this file in /home/jflanary/ (or your home directory)
-# Make it executable: chmod +x run_excel_import.sh
+# This script runs the Python program to import ECM_DailyReport_20261008.xlsx
+# The Excel file is located in /home/jflanary/
+# Make executable: chmod +x /home/jflanary/run_excel_import.sh
 # ============================================================================
 
 # Set paths
 PYTHON_SCRIPT="/home/jflanary/import_excel_to_db2.py"
+EXCEL_FILE="/home/jflanary/ECM_DailyReport_20261008.xlsx"
 OUTPUT_FILE="/tmp/excel_import_output.txt"
 ERROR_FILE="/tmp/excel_import_error.txt"
 
 # Log start time
 echo "============================================================" > $OUTPUT_FILE
-echo "Excel to DB2 Import - Started at $(date)" >> $OUTPUT_FILE
+echo "ECM Daily Report Import - Started at $(date)" >> $OUTPUT_FILE
+echo "Excel File: $EXCEL_FILE" >> $OUTPUT_FILE
 echo "============================================================" >> $OUTPUT_FILE
 echo "" >> $OUTPUT_FILE
 

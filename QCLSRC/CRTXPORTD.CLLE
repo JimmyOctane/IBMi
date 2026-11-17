@@ -1,0 +1,8 @@
+PGM
+
+/* Create the EXPORTDS data area used by QRPGLESRC/export.sqlrpgle */
+
+CRTDTAARA DTAARA(JAMIEDEV/EXPORTDS) TYPE(*CHAR) LEN(256) +
+          VALUE(*BLANKS) TEXT('Export status data area')
+
+ENDPGM

@@ -1,4 +1,67 @@
 /* ================================================================== */
+/* CLLE Program: RUNECMIMP - Run ECM Daily Report Import             */
+/* ================================================================== */
+/* This CL program calls the Python script that imports data from    */
+/* ECM_DailyReport_20261008.xlsx into an IBM i DB2 table.            */
+/*                                                                    */
+/* Prerequisites:                                                     */
+/*   1. Python script must exist at /home/jflanary/import_excel_to_db2.py */
+/*   2. run_excel_import.sh must exist and be executable             */
+/*   3. pandas, openpyxl, and pyodbc must be installed               */
+/*                                                                    */
+/* Compile:                                                           */
+/*   CRTBNDCL PGM(YOURLIB/RUNECMIMP)                                 */
+/*            SRCFILE(YOURLIB/QCLSRC)                                 */
+/*            SRCMBR(RUNECMIMP)                                       */
+/*                                                                    */
+/* Run:                                                               */
+/*   CALL YOURLIB/RUNECMIMP                                          */
+/* ================================================================== */
+
+             PGM
+
+             DCL        VAR(&CMD)     TYPE(*CHAR) LEN(500)
+             DCL        VAR(&MSGID)   TYPE(*CHAR) LEN(7)
+             DCL        VAR(&MSGDTA)  TYPE(*CHAR) LEN(512)
+
+             /* Display start message */
+             SNDPGMMSG  MSGID(CPF9897) MSGF(QCPFMSG) +
+                          MSGDTA('Starting ECM Daily Report import from Excel...') +
+                          TOPGMQ(*EXT) MSGTYPE(*STATUS)
+
+             /* Build QSH command to run the shell wrapper */
+             CHGVAR     VAR(&CMD) VALUE('QSH CMD(''/home/jflanary/run_excel_import.sh'')')
+
+             /* Execute the shell script via QSH */
+             CALL       PGM(QCMDEXC) PARM(&CMD 500)
+
+             /* Monitor for errors */
+             MONMSG     MSGID(CPF0000) EXEC(DO)
+                RCVMSG     MSGTYPE(*EXCP) MSGDTA(&MSGDTA) MSGID(&MSGID)
+                SNDPGMMSG  MSGID(CPF9897) MSGF(QCPFMSG) +
+                             MSGDTA('Error running ECM import: ' *CAT +
+                             &MSGID *CAT ' - ' *CAT &MSGDTA) +
+                             TOPGMQ(*EXT) MSGTYPE(*DIAG)
+                GOTO       CMDLBL(ERROR)
+             ENDDO
+
+             /* Success message */
+             SNDPGMMSG  MSGID(CPF9897) MSGF(QCPFMSG) +
+                          MSGDTA('ECM Daily Report import completed successfully. ' +
+                          'Check /tmp/excel_import_output.txt for details.') +
+                          TOPGMQ(*EXT) MSGTYPE(*COMP)
+
+             RETURN
+
+ ERROR:      /* Error handling */
+             SNDPGMMSG  MSGID(CPF9897) MSGF(QCPFMSG) +
+                          MSGDTA('ECM Daily Report import failed. ' +
+                          'Check /tmp/excel_import_error.txt and the output log.') +
+                          TOPGMQ(*EXT) MSGTYPE(*ESCAPE)
+
+             ENDPGM
+
+/* ================================================================== */
 /* CL Program to Run Excel Import                                     */
 /* ================================================================== */
 /* This CL program calls the shell script to run the Python program  */

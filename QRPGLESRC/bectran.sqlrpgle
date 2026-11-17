@@ -154,27 +154,14 @@
             //********************************************************
             dcl-proc ProcessCustomerXML;
               dcl-pi *n;
-                pFilePath varchar(300) const;
-              end-pi;
-
-              // Local variables
-              dcl-s custCount int(10) inz(0);
-              dcl-s rowCount int(10) inz(0);
-              dcl-s maxRows int(10) inz(1000);
-              dcl-s i int(10) inz(0);
-              dcl-s wGUID char(36);
-              dcl-ds archiveResult likeds(returnArchiveDS);
-
-
-              // Customer data structure array
               dcl-ds c1 dim(1000) qualified inz;
                 account_id varchar(50);
-                transaction_id varchar(50);
                 addressLineOne varchar(100);
                 addressLineTwo varchar(100);
                 annualSalesRange varchar(50);
                 bectranCustomerId varchar(50);
                 city varchar(50);
+                contactPersonEmail varchar(100);
                 contactPersonFirstName varchar(50);
                 contactPersonLastName varchar(50);
                 contactPersonPhone varchar(30);
@@ -192,13 +179,18 @@
                 state varchar(10);
                 stateOfIncorporation varchar(10);
                 styleOfBusiness varchar(100);
+                styleOfBusinessBectranCode varchar(50);
+                styleOfBusinessClientCode varchar(50);
+                styleOfBusinessDescription varchar(100);
                 typeOfBusiness varchar(50);
+                typeOfBusinessBectranCode varchar(50);
+                typeOfBusinessClientCode varchar(50);
+                typeOfBusinessDescription varchar(100);
                 yearEstablished varchar(10);
                 zipCode varchar(20);
-                contactPersonEmail varchar(100);
                 requestId varchar(50);
                 requestSource varchar(50);
-                amountRequested packed(15:2);
+                amountRequested varchar(20);
                 termRequestedCode varchar(50);
                 termRequestedDescription varchar(100);
                 plannedPurchase varchar(50);
@@ -208,11 +200,19 @@
                 accountNumExist varchar(10);
                 clientAccountId varchar(50);
                 orderPending varchar(10);
-                orderPendingAmount packed(15:2);
-                styleOfBusinessBectranCode varchar(50);
-                styleOfBusinessClientCode varchar(50);
-                styleOfBusinessDescription varchar(100);
-                typeOfBusinessBectranCode varchar(50);
+                orderPendingAmount varchar(20);
+                annualSalesBectranCode varchar(50);
+                annualSalesClientCode varchar(50);
+                annualSalesDescription varchar(100);
+                numOfEmployeeBectranCode varchar(50);
+                numOfEmployeeClientCode varchar(50);
+                numOfEmployeeDescription varchar(100);
+              end-ds;
+                annualSalesDescription varchar(100);
+                numOfEmployeeBectranCode varchar(50);
+                numOfEmployeeClientCode varchar(50);
+                numOfEmployeeDescription varchar(100);
+              end-ds;
                 typeOfBusinessClientCode varchar(50);
                 typeOfBusinessDescription varchar(100);
                 annualSalesBectranCode varchar(50);
